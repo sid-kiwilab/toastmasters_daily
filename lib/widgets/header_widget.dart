@@ -22,14 +22,7 @@ class HeaderWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (authProvider.isLoggedIn) ...[
-                // Show user info and logout button when logged in
-                Text(
-                  'Welcome, ${authProvider.userName ?? 'User'}!',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 16),
+                // Show logout button when logged in
                 ElevatedButton(
                   onPressed: () async {
                     await authProvider.logout();
@@ -40,8 +33,8 @@ class HeaderWidget extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.error,
-                    foregroundColor: theme.colorScheme.onError,
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
                   ),
                   child: const Text('Logout'),
                 ),

@@ -1,19 +1,28 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
-const {onRequest} = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
+// Initialize Firebase Admin
+admin.initializeApp();
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+// Automatically import all function modules from utils folder
+const utilsPath = path.join(__dirname, 'utils');
+const functionModules = {};
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// Read all files in utils directory
+const files = fs.readdirSync(utilsPath);
+
+// Import each .js file and merge their exports
+files.forEach(file => {
+  if (file.endsWith('.js')) {
+    const moduleName = path.basename(file, '.js');
+    const modulePath = path.join(utilsPath, file);
+    const moduleExports = require(modulePath);
+    
+    // Merge all exports from this module
+    Object.assign(functionModules, moduleExports);
+  }
+});
+
+// Export all functions
+module.exports = functionModules;
