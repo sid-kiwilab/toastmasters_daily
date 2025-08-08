@@ -69,9 +69,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // Toastmasters Daily title right above the container
                       Text(
-                        'Join Meeting',
-                        style: theme.textTheme.headlineMedium,
+                        'Toastmasters Daily',
+                        style: theme.textTheme.headlineLarge,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
@@ -92,6 +93,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            Text(
+                              'Join Meeting',
+                              style: theme.textTheme.headlineMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
                             Text(
                               'Enter the 8-digit meeting code',
                               style: theme.textTheme.bodyMedium,
