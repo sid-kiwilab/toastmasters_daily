@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../providers/auth_provider.dart';
 
 class AuthDialog extends StatefulWidget {
@@ -27,9 +28,11 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
   
   bool _isSignUpLoading = false;
   bool _isLoginLoading = false;
-  bool _obscureSignUpPassword = true;
-  bool _obscureSignUpConfirmPassword = true;
-  bool _obscureLoginPassword = true;
+  bool _obscurePassword = true; // Single password visibility state for all fields
+
+  // Error states
+  String? _signUpError;
+  String? _loginError;
 
   @override
   void initState() {
@@ -48,11 +51,46 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  void _setSignUpError(String error) {
+    setState(() {
+      _signUpError = error;
+    });
+    // Clear error after 5 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted && _signUpError == error) {
+        setState(() {
+          _signUpError = null;
+        });
+      }
+    });
+  }
+
+  void _setLoginError(String error) {
+    setState(() {
+      _loginError = error;
+    });
+    // Clear error after 5 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted && _loginError == error) {
+        setState(() {
+          _loginError = null;
+        });
+      }
+    });
+  }
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
+
   void _handleSignUp() async {
     if (!_signUpFormKey.currentState!.validate()) return;
     
     setState(() {
       _isSignUpLoading = true;
+      _signUpError = null; // Clear previous errors
     });
     
     try {
@@ -64,22 +102,23 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
       );
       
       if (mounted) {
-        Navigator.of(context).pop();
         if (success) {
+          Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Account created successfully!')),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to create account. Please try again.')),
-          );
+          _setSignUpError('Failed to create account. Please try again.');
         }
+      }
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (mounted) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        _setSignUpError(authProvider.getErrorMessage(e.code));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
+        _setSignUpError('An unexpected error occurred. Please try again.');
       }
     } finally {
       if (mounted) {
@@ -95,6 +134,7 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
     
     setState(() {
       _isLoginLoading = true;
+      _loginError = null; // Clear previous errors
     });
     
     try {
@@ -105,22 +145,23 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
       );
       
       if (mounted) {
-        Navigator.of(context).pop();
         if (success) {
+          Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Logged in successfully!')),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login failed. Please check your credentials.')),
-          );
+          _setLoginError('Login failed. Please check your credentials.');
         }
+      }
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (mounted) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        _setLoginError(authProvider.getErrorMessage(e.code));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
+        _setLoginError('An unexpected error occurred. Please try again.');
       }
     } finally {
       if (mounted) {
@@ -211,6 +252,12 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               fillColor: theme.colorScheme.surface,
             ),
             keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) {
+              if (!_isSignUpLoading) {
+                _handleSignUp();
+              }
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your email';
@@ -231,13 +278,9 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscureSignUpPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                 ),
-                onPressed: () {
-                  setState(() {
-                    _obscureSignUpPassword = !_obscureSignUpPassword;
-                  });
-                },
+                onPressed: _togglePasswordVisibility,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -245,7 +288,13 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               filled: true,
               fillColor: theme.colorScheme.surface,
             ),
-            obscureText: _obscureSignUpPassword,
+            obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) {
+              if (!_isSignUpLoading) {
+                _handleSignUp();
+              }
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter a password';
@@ -266,13 +315,9 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscureSignUpConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                 ),
-                onPressed: () {
-                  setState(() {
-                    _obscureSignUpConfirmPassword = !_obscureSignUpConfirmPassword;
-                  });
-                },
+                onPressed: _togglePasswordVisibility,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -280,7 +325,13 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               filled: true,
               fillColor: theme.colorScheme.surface,
             ),
-            obscureText: _obscureSignUpConfirmPassword,
+            obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) {
+              if (!_isSignUpLoading) {
+                _handleSignUp();
+              }
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please confirm your password';
@@ -313,6 +364,39 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                   : const Text('Sign Up'),
             ),
           ),
+          
+          // Error message below button
+          if (_signUpError != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.colorScheme.error),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: theme.colorScheme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _signUpError!,
+                      style: TextStyle(
+                        color: theme.colorScheme.onErrorContainer,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -337,6 +421,12 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               fillColor: theme.colorScheme.surface,
             ),
             keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) {
+              if (!_isLoginLoading) {
+                _handleLogin();
+              }
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your email';
@@ -357,13 +447,9 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscureLoginPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                 ),
-                onPressed: () {
-                  setState(() {
-                    _obscureLoginPassword = !_obscureLoginPassword;
-                  });
-                },
+                onPressed: _togglePasswordVisibility,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -371,7 +457,13 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               filled: true,
               fillColor: theme.colorScheme.surface,
             ),
-            obscureText: _obscureLoginPassword,
+            obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) {
+              if (!_isLoginLoading) {
+                _handleLogin();
+              }
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your password';
@@ -401,6 +493,39 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
                   : const Text('Login'),
             ),
           ),
+          
+          // Error message below button
+          if (_loginError != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.colorScheme.error),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: theme.colorScheme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _loginError!,
+                      style: TextStyle(
+                        color: theme.colorScheme.onErrorContainer,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
