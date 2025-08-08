@@ -33,6 +33,7 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
   // Error states
   String? _signUpError;
   String? _loginError;
+  bool _isResetPasswordLoading = false;
 
   @override
   void initState() {
@@ -167,6 +168,57 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
       if (mounted) {
         setState(() {
           _isLoginLoading = false;
+        });
+      }
+    }
+  }
+
+  void _handleResetPassword() async {
+    final email = _loginEmailController.text.trim();
+    
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your email before sending the reset password link')),
+      );
+      return;
+    }
+    
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
+    
+    setState(() {
+      _isResetPasswordLoading = true;
+    });
+    
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.resetPassword(email: email);
+      
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Reset password link sent! Check your email.')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to send reset password link. Please try again.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('An error occurred. Please try again.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isResetPasswordLoading = false;
         });
       }
     }
@@ -508,6 +560,27 @@ class _AuthDialogState extends State<AuthDialog> with SingleTickerProviderStateM
               ],
             ),
           ],
+          
+          // Reset password link
+          const SizedBox(height: 16),
+          Center(
+            child: _isResetPasswordLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : TextButton(
+                    onPressed: _handleResetPassword,
+                    child: Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+          ),
         ],
       ),
     );

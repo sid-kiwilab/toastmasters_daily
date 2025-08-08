@@ -122,6 +122,20 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // Reset password function
+  Future<bool> resetPassword({required String email}) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      print('Reset password error: ${e.code} - ${e.message}');
+      return false;
+    } catch (e) {
+      print('Reset password error: $e');
+      return false;
+    }
+  }
+
   // Check if user is already logged in (for app startup)
   Future<void> checkAuthStatus() async {
     try {
