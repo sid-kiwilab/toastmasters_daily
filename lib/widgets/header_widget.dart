@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../dialogs/auth_dialog.dart';
 
 class HeaderWidget extends StatelessWidget {
   const HeaderWidget({super.key});
@@ -19,14 +20,20 @@ class HeaderWidget extends StatelessWidget {
           // Sign up and login buttons centered
           TextButton(
             onPressed: () {
-              // TODO: Add sign up functionality
+              showDialog(
+                context: context,
+                builder: (context) => const AuthDialog(initialTab: 0), // Sign Up tab
+              );
             },
             child: const Text('Sign Up'),
           ),
           const SizedBox(width: 16),
           ElevatedButton(
             onPressed: () {
-              // TODO: Add login functionality
+              showDialog(
+                context: context,
+                builder: (context) => const AuthDialog(initialTab: 1), // Login tab
+              );
             },
             child: const Text('Login'),
           ),
