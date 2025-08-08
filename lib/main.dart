@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+// Cache busting version - increment this when making changes that require browser cache clearing
+const String appVersion = '1.0.0';
+
 void main() {
   runApp(const MainApp());
 }
