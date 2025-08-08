@@ -160,20 +160,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      // Version number right below the white container
+                      Text(
+                        'Version: 1.0.0',
+                        style: theme.textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
                 ),
               ),
               
-              // Version at the bottom
-              Padding(
-                padding: const EdgeInsets.only(bottom: 24.0),
-                child: Text(
-                  'Version: 1.0.0',
-                  style: theme.textTheme.bodySmall,
-                  textAlign: TextAlign.center,
-                ),
-              ),
             ],
           ),
         ),

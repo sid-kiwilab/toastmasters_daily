@@ -46,15 +46,13 @@ class HeaderWidget extends StatelessWidget {
                   child: const Text('Logout'),
                 ),
               ] else ...[
-                // Show sign up and login buttons when not logged in
-                TextButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => const AuthDialog(initialTab: 0), // Sign Up tab
-                    );
-                  },
-                  child: const Text('Sign Up'),
+                // Show "Want to create a meeting?" text and login button when not logged in
+                Text(
+                  'Want to create a meeting?',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
