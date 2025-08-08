@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../dialogs/auth_dialog.dart';
+import '../dialogs/logout_dialog.dart';
 import '../providers/auth_provider.dart';
 
 class HeaderWidget extends StatelessWidget {
@@ -25,11 +26,20 @@ class HeaderWidget extends StatelessWidget {
                 // Show logout button when logged in
                 ElevatedButton(
                   onPressed: () async {
-                    await authProvider.logout();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Logged out successfully!')),
-                      );
+                    // Show logout confirmation dialog
+                    final shouldLogout = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => const LogoutDialog(),
+                    );
+                    
+                    // If user confirmed logout, proceed with logout
+                    if (shouldLogout == true && context.mounted) {
+                      await authProvider.logout();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Logged out successfully!')),
+                        );
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(
