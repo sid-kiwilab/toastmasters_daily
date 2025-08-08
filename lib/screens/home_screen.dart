@@ -1,7 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _codeController = TextEditingController();
+  bool _isTyping = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _codeController.addListener(_formatCode);
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  void _formatCode() {
+    final text = _codeController.text;
+    final digitsOnly = text.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    if (digitsOnly.length > 8) {
+      _codeController.text = digitsOnly.substring(0, 8);
+      _codeController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _codeController.text.length),
+      );
+    } else if (digitsOnly.length > 4) {
+      final formatted = '${digitsOnly.substring(0, 4)} ${digitsOnly.substring(4)}';
+      if (text != formatted) {
+        _codeController.text = formatted;
+        _codeController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _codeController.text.length),
+        );
+      }
+    } else if (digitsOnly.length <= 4 && text.contains(' ')) {
+      _codeController.text = digitsOnly;
+      _codeController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _codeController.text.length),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,37 +56,95 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(32.0),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.onSurface.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Welcome to Toastmasters Daily',
+                  'Join Meeting',
                   style: theme.textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Your daily companion for public speaking excellence',
+                  'Enter the 8-digit meeting code',
                   style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () {
-                    // Add your action here
-                  },
-                  child: const Text('Get Started'),
+                Container(
+                  width: 200,
+                  child: TextField(
+                    controller: _codeController,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      letterSpacing: 8.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: _isTyping ? '' : '3927 9034',
+                      hintStyle: TextStyle(
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        letterSpacing: 8.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    maxLength: 9, // 8 digits + 1 space
+                    buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                    onTap: () {
+                      setState(() {
+                        _isTyping = true;
+                      });
+                    },
+                    onChanged: (value) {
+                      setState(() {
+                        _isTyping = value.isNotEmpty;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: 200,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Add join meeting logic here
+                    },
+                    child: const Text('Join Meeting'),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                OutlinedButton(
+                TextButton(
                   onPressed: () {
-                    // Add your action here
+                    // Add create meeting logic here
                   },
-                  child: const Text('Learn More'),
+                  child: const Text('Create Meeting'),
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 24),
                 Text(
                   'Version: 1.0.0',
                   style: theme.textTheme.bodySmall,
