@@ -36,9 +36,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   Future<void> _createMeeting(BuildContext context, String userId, String title) async {
     try {
       // Set loading state
-      setState(() {
-        _isCreatingMeeting = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isCreatingMeeting = true;
+        });
+      }
 
       // Call the Cloud Function
       final functions = FirebaseFunctions.instance;
@@ -48,43 +50,53 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       });
 
       // Clear loading state
-      setState(() {
-        _isCreatingMeeting = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isCreatingMeeting = false;
+        });
+      }
 
       // Check result
       if (result.data['success']) {
         final meeting = result.data['meeting'];
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Meeting created successfully! ID: ${meeting['id']}'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Meeting created successfully! ID: ${meeting['id']}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
         
         // Refresh the meetings list
         final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
         meetingsProvider.initialize();
       } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to create meeting: ${result.data['error']}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Clear loading state
+      if (mounted) {
+        setState(() {
+          _isCreatingMeeting = false;
+        });
+      }
+      
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to create meeting: ${result.data['error']}'),
+            content: Text('Error creating meeting: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      // Clear loading state
-      setState(() {
-        _isCreatingMeeting = false;
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error creating meeting: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
@@ -106,22 +118,26 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       
       // Validate file type
       if (file.extension?.toLowerCase() != 'pdf') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Only PDF files are allowed'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Only PDF files are allowed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
 
       // Show loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Processing and uploading PDF...'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Processing and uploading PDF...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
 
       // Get bytes from file (works on both web and mobile)
       List<int> bytes;
@@ -133,12 +149,14 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
         final fileData = File(file.path!);
         bytes = await fileData.readAsBytes();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not access file data'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not access file data'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
 
@@ -146,9 +164,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       final base64Data = base64Encode(bytes);
 
       // Set uploading state for the meeting (only when calling Cloud Function)
-      setState(() {
-        _uploadingAgendas[meetingId] = true;
-      });
+      if (mounted) {
+        setState(() {
+          _uploadingAgendas[meetingId] = true;
+        });
+      }
 
       // Call the Cloud Function to upload agenda
       final functions = FirebaseFunctions.instance;
@@ -160,35 +180,43 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
 
       if (result2.data['success']) {
         final agenda = result2.data['agenda'];
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Agenda uploaded successfully!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Agenda uploaded successfully!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
         
         print('Agenda uploaded: ${agenda['downloadUrl']}');
       } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to upload agenda: ${result2.data['error']}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to upload agenda: ${result2.data['error']}'),
+            content: Text('Error uploading agenda: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error uploading agenda: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     } finally {
       // Clear uploading state for the meeting
-      setState(() {
-        _uploadingAgendas.remove(meetingId);
-      });
+      if (mounted) {
+        setState(() {
+          _uploadingAgendas.remove(meetingId);
+        });
+      }
     }
   }
 
