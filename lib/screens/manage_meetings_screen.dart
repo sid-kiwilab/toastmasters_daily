@@ -10,6 +10,7 @@ import '../widgets/footer_widget.dart';
 import '../providers/auth_provider.dart';
 import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
+import '../dialogs/setup_polls_dialog.dart';
 
 class ManageMeetingsScreen extends StatefulWidget {
   const ManageMeetingsScreen({super.key});
@@ -189,6 +190,16 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
         _uploadingAgendas.remove(meetingId);
       });
     }
+  }
+
+  void _showSetupPollsDialog(BuildContext context, Meeting meeting) {
+    showDialog(
+      context: context,
+      builder: (context) => SetupPollsDialog(
+        meetingId: meeting.id,
+        meetingTitle: meeting.title ?? 'Untitled Meeting',
+      ),
+    );
   }
 
   @override
@@ -390,9 +401,10 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                                ? const Text('Uploading...')
                                                                : const Text('Upload Agenda'),
                                                            style: ElevatedButton.styleFrom(
-                                                             backgroundColor: theme.colorScheme.secondary,
+                                                             backgroundColor: theme.colorScheme.primary,
                                                              foregroundColor: Colors.white,
                                                              padding: const EdgeInsets.symmetric(vertical: 8),
+                                                             elevation: 2,
                                                            ),
                                                          ),
                                                        ),
@@ -414,27 +426,29 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                                 backgroundColor: theme.colorScheme.primary,
                                                                 foregroundColor: Colors.white,
                                                                 padding: const EdgeInsets.symmetric(vertical: 8),
+                                                                elevation: 2,
                                                               ),
                                                             ),
                                                           ),
                                                           const SizedBox(width: 12),
                                                         ],
                                                        
-                                                       // Setup Polls button
-                                                       Expanded(
-                                                         child: ElevatedButton.icon(
-                                                           onPressed: () {
-                                                             // TODO: Implement polls setup functionality
-                                                           },
-                                                           icon: const Icon(Icons.poll, size: 18),
-                                                           label: const Text('Setup Polls'),
-                                                           style: ElevatedButton.styleFrom(
-                                                             backgroundColor: theme.colorScheme.tertiary,
-                                                             foregroundColor: Colors.white,
-                                                             padding: const EdgeInsets.symmetric(vertical: 8),
-                                                           ),
-                                                         ),
-                                                       ),
+                                                                                                               // Setup Polls button
+                                                        Expanded(
+                                                          child: ElevatedButton.icon(
+                                                            onPressed: () {
+                                                              _showSetupPollsDialog(context, meeting);
+                                                            },
+                                                            icon: const Icon(Icons.poll, size: 18),
+                                                            label: const Text('Setup Polls'),
+                                                            style: ElevatedButton.styleFrom(
+                                                              backgroundColor: theme.colorScheme.primary,
+                                                              foregroundColor: Colors.white,
+                                                              padding: const EdgeInsets.symmetric(vertical: 8),
+                                                              elevation: 2,
+                                                            ),
+                                                          ),
+                                                        ),
                                                      ],
                                                    );
                                                  } else {
@@ -460,9 +474,10 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                                ? const Text('Uploading...')
                                                                : const Text('Upload Agenda'),
                                                            style: ElevatedButton.styleFrom(
-                                                             backgroundColor: theme.colorScheme.secondary,
+                                                             backgroundColor: theme.colorScheme.primary,
                                                              foregroundColor: Colors.white,
                                                              padding: const EdgeInsets.symmetric(vertical: 8),
+                                                             elevation: 2,
                                                            ),
                                                          ),
                                                        ),
@@ -484,29 +499,31 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                                 backgroundColor: theme.colorScheme.primary,
                                                                 foregroundColor: Colors.white,
                                                                 padding: const EdgeInsets.symmetric(vertical: 8),
-                                                              ),
+                                                                elevation: 2,
+                                                           ),
                                                             ),
                                                           ),
                                                         ],
                                                        
                                                        const SizedBox(height: 12),
                                                        
-                                                       // Setup Polls button
-                                                       SizedBox(
-                                                         width: double.infinity,
-                                                         child: ElevatedButton.icon(
-                                                           onPressed: () {
-                                                             // TODO: Implement polls setup functionality
-                                                           },
-                                                           icon: const Icon(Icons.poll, size: 18),
-                                                           label: const Text('Setup Polls'),
-                                                           style: ElevatedButton.styleFrom(
-                                                             backgroundColor: theme.colorScheme.tertiary,
-                                                             foregroundColor: Colors.white,
-                                                             padding: const EdgeInsets.symmetric(vertical: 8),
+                                                                                                                                                                        // Setup Polls button
+                                                         SizedBox(
+                                                           width: double.infinity,
+                                                           child: ElevatedButton.icon(
+                                                             onPressed: () {
+                                                               _showSetupPollsDialog(context, meeting);
+                                                             },
+                                                             icon: const Icon(Icons.poll, size: 18),
+                                                             label: const Text('Setup Polls'),
+                                                             style: ElevatedButton.styleFrom(
+                                                               backgroundColor: theme.colorScheme.primary,
+                                                               foregroundColor: Colors.white,
+                                                               padding: const EdgeInsets.symmetric(vertical: 8),
+                                                               elevation: 2,
+                                                             ),
                                                            ),
                                                          ),
-                                                       ),
                                                      ],
                                                    );
                                                  }
