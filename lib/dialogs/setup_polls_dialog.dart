@@ -240,7 +240,7 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                                                 border: OutlineInputBorder(
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
-                                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                               ),
                                             ),
                                             
@@ -286,7 +286,7 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                                                             border: OutlineInputBorder(
                                                               borderRadius: BorderRadius.circular(8),
                                                             ),
-                                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                                           ),
                                                         ),
                                                       ),
@@ -306,46 +306,7 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                                                 );
                                               })),
                                             
-                                            const SizedBox(height: 16),
-                                            
-                                            // Voting toggle
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  'Allow Voting',
-                                                  style: theme.textTheme.titleSmall?.copyWith(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                const Spacer(),
-                                                Switch(
-                                                  value: poll.isActive,
-                                                  onChanged: (value) async {
-                                                    try {
-                                                      final updatedPoll = Poll(
-                                                        question: poll.question,
-                                                        options: poll.options,
-                                                        isActive: value,
-                                                      );
-                                                      final provider = Provider.of<ManageMeetingsProvider>(context, listen: false);
-                                                      await provider.updatePoll(widget.meetingId, pollId, updatedPoll);
-                                                    } catch (e) {
-                                                      if (mounted && _scaffoldMessenger != null) {
-                                                        _scaffoldMessenger!.showSnackBar(
-                                                          SnackBar(
-                                                            content: Text('Error updating poll: $e'),
-                                                            backgroundColor: Colors.red,
-                                                            duration: Duration(seconds: 2),
-                                                          ),
-                                                        );
-                                                      }
-                                                    }
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                            
-                                            const SizedBox(height: 16),
+                                            const SizedBox(height: 8),
                                             
                                             // Save button
                                             Row(
@@ -491,10 +452,15 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
       
       if (questionController == null || optionControllers == null) return;
       
+      // Preserve the original createdAt timestamp to maintain poll order
+      final originalPoll = _polls[pollId];
+      if (originalPoll == null) return;
+      
       final updatedPoll = Poll(
         question: questionController.text.trim(),
         options: optionControllers.map((controller) => controller.text.trim()).where((text) => text.isNotEmpty).toList(),
-        isActive: _polls[pollId]?.isActive ?? false,
+        isActive: originalPoll.isActive,
+        createdAt: originalPoll.createdAt, // Preserve original creation time
       );
       
       final provider = Provider.of<ManageMeetingsProvider>(context, listen: false);
