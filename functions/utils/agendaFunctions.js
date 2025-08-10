@@ -52,37 +52,34 @@ exports.uploadAgenda = functions.https.onCall(async (data, context) => {
     // Get the public URL
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
     
-          // Store agenda reference in Firestore and update meeting documents
-      const db = admin.firestore();
+    // Store agenda reference in Firestore and update meeting documents
+    const db = admin.firestore();
+    
+    // Use a transaction to update both collections atomically
+    await db.runTransaction(async (transaction) => {
+      // Update the active meetings collection
+      const activeMeetingRef = db.collection('activeMeetings').doc(data.meetingId);
+      const activeMeetingDoc = await transaction.get(activeMeetingRef);
       
-      // Use a transaction to update both collections atomically
-      await db.runTransaction(async (transaction) => {
-        // Update the active meetings collection
-        const activeMeetingRef = db.collection('activeMeetings').doc(data.meetingId);
-        const activeMeetingDoc = await transaction.get(activeMeetingRef);
-        
-        if (activeMeetingDoc.exists) {
-          transaction.update(activeMeetingRef, {
-            agenda_url: publicUrl
-          });
-        }
+      if (activeMeetingDoc.exists) {
+        transaction.update(activeMeetingRef, {
+          agenda_url: publicUrl
+        });
         
         // Update the meetings subcollection (for user's meetings)
-        // We need to find which user created this meeting to update their subcollection
-        if (activeMeetingDoc.exists) {
-          const creatorId = activeMeetingDoc.data().creatorId;
-          if (creatorId) {
-            const userMeetingRef = db.collection('users').doc(creatorId).collection('meetings').doc(data.meetingId);
-            const userMeetingDoc = await transaction.get(userMeetingRef);
-            
-            if (userMeetingDoc.exists) {
-              transaction.update(userMeetingRef, {
-                agenda_url: publicUrl
-              });
-            }
+        const creatorId = activeMeetingDoc.data().creatorId;
+        if (creatorId) {
+          const userMeetingRef = db.collection('users').doc(creatorId).collection('meetings').doc(data.meetingId);
+          const userMeetingDoc = await transaction.get(userMeetingRef);
+          
+          if (userMeetingDoc.exists) {
+            transaction.update(userMeetingRef, {
+              agenda_url: publicUrl
+            });
           }
         }
-      });
+      }
+    });
 
 
     

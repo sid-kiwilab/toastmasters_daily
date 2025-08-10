@@ -20,6 +20,7 @@ class ManageMeetingsScreen extends StatefulWidget {
 
 class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   bool _isCreatingMeeting = false;
+  Map<String, bool> _uploadingAgendas = {}; // Track upload state for each meeting
 
   @override
   void initState() {
@@ -143,6 +144,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       // Convert to base64
       final base64Data = base64Encode(bytes);
 
+      // Set uploading state for the meeting (only when calling Cloud Function)
+      setState(() {
+        _uploadingAgendas[meetingId] = true;
+      });
+
       // Call the Cloud Function to upload agenda
       final functions = FirebaseFunctions.instance;
       final result2 = await functions.httpsCallable('uploadAgenda').call({
@@ -177,6 +183,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      // Clear uploading state for the meeting
+      setState(() {
+        _uploadingAgendas.remove(meetingId);
+      });
     }
   }
 
@@ -342,11 +353,20 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                                                                  // Upload Agenda button
                                                  Expanded(
                                                    child: ElevatedButton.icon(
-                                                     onPressed: () {
-                                                       _uploadAgenda(context, meeting.id ?? '');
-                                                     },
-                                                     icon: const Icon(Icons.upload_file, size: 18),
-                                                     label: const Text('Upload Agenda'),
+                                                     onPressed: _uploadingAgendas[meeting.id] == true
+                                                         ? null
+                                                         : () {
+                                                             _uploadAgenda(context, meeting.id ?? '');
+                                                           },
+                                                     icon: _uploadingAgendas[meeting.id] == true
+                                                         ? const SizedBox(
+                                                             width: 20,
+                                                             height: 20,
+                                                           )
+                                                         : const Icon(Icons.upload_file, size: 18),
+                                                     label: _uploadingAgendas[meeting.id] == true
+                                                         ? const Text('Uploading...')
+                                                         : const Text('Upload Agenda'),
                                                      style: ElevatedButton.styleFrom(
                                                        backgroundColor: theme.colorScheme.secondary,
                                                        foregroundColor: Colors.white,
