@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../widgets/header_widget.dart';
@@ -184,19 +185,45 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                  children: meetingsProvider.meetings.map((meeting) {
                                    return Card(
                                      margin: const EdgeInsets.only(bottom: 12),
-                                     child: ListTile(
-                                       leading: Icon(
-                                         Icons.event,
-                                         color: theme.colorScheme.primary,
-                                       ),
-                                       title: Text(
-                                         meeting.title,
-                                         style: const TextStyle(fontWeight: FontWeight.w500),
-                                       ),
-                                       subtitle: Text(
-                                         meeting.description,
-                                         maxLines: 2,
-                                         overflow: TextOverflow.ellipsis,
+                                     child: Padding(
+                                       padding: const EdgeInsets.all(16),
+                                       child: Row(
+                                         children: [
+                                                                                       // Meeting ID
+                                            Expanded(
+                                              child: Text(
+                                                meeting.id ?? 'Unknown ID',
+                                                style: theme.textTheme.headlineSmall?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                           
+                                                                                       // Copy button
+                                            IconButton(
+                                              onPressed: () {
+                                                // Copy meeting ID to clipboard
+                                                final meetingId = meeting.id ?? 'Unknown ID';
+                                                Clipboard.setData(ClipboardData(text: meetingId));
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('Meeting ID copied to clipboard'),
+                                                    duration: const Duration(seconds: 2),
+                                                  ),
+                                                );
+                                              },
+                                              icon: Icon(
+                                                Icons.copy,
+                                                color: theme.colorScheme.primary,
+                                                size: 18,
+                                              ),
+                                              tooltip: 'Copy Meeting ID',
+                                              constraints: const BoxConstraints(
+                                                minWidth: 32,
+                                                minHeight: 32,
+                                              ),
+                                            ),
+                                         ],
                                        ),
                                      ),
                                    );
