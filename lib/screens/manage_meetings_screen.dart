@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../widgets/header_widget.dart';
 import '../widgets/footer_widget.dart';
 import '../providers/auth_provider.dart';
@@ -21,6 +22,63 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
       meetingsProvider.initialize();
     });
+  }
+
+  Future<void> _createMeeting(BuildContext context, String userId) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Call the Cloud Function
+      final functions = FirebaseFunctions.instance;
+      final result = await functions.httpsCallable('createMeeting').call({
+        'title': 'New Meeting',
+        'creatorId': userId,
+      });
+
+      // Hide loading indicator
+      Navigator.of(context).pop();
+
+      // Check result
+      if (result.data['success']) {
+        final meeting = result.data['meeting'];
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Meeting created successfully! ID: ${meeting['id']}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Refresh the meetings list
+        final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+        meetingsProvider.initialize();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create meeting: ${result.data['error']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator
+      Navigator.of(context).pop();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creating meeting: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -51,11 +109,8 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                          children: [
                            // Create Meeting Button
                            ElevatedButton(
-                             onPressed: () {
-                               // Handle create meeting logic
-                               ScaffoldMessenger.of(context).showSnackBar(
-                                 const SnackBar(content: Text('Create meeting functionality coming soon!')),
-                               );
+                             onPressed: () async {
+                               await _createMeeting(context, authProvider.currentUser!.uid);
                              },
                              style: ElevatedButton.styleFrom(
                                backgroundColor: theme.colorScheme.primary,
