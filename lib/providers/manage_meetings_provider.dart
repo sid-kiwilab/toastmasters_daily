@@ -8,12 +8,14 @@ class Meeting {
   final String title;
   final String description;
   final DateTime? createdAt;
+  final String? agendaUrl;
 
   Meeting({
     required this.id,
     required this.title,
     required this.description,
     this.createdAt,
+    this.agendaUrl,
   });
 
   factory Meeting.fromFirestore(DocumentSnapshot doc) {
@@ -23,6 +25,7 @@ class Meeting {
       title: data['title'] ?? 'Untitled Meeting',
       description: data['description'] ?? 'No description',
       createdAt: data['createdAt']?.toDate(),
+      agendaUrl: data['agendaUrl'],
     );
   }
 }

@@ -358,53 +358,168 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                             
                                             const SizedBox(height: 16),
                                             
-                                            // Action buttons row
-                                            Row(
-                                              children: [
-                                                                                                 // Upload Agenda button
-                                                 Expanded(
-                                                   child: ElevatedButton.icon(
-                                                     onPressed: _uploadingAgendas[meeting.id] == true
-                                                         ? null
-                                                         : () {
-                                                             _uploadAgenda(context, meeting.id ?? '');
+                                                                                         // Action buttons - responsive layout
+                                                                                           LayoutBuilder(
+                                                builder: (context, constraints) {
+                                                  // Check if we have enough width for side-by-side layout
+                                                  final hasViewAgenda = meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty;
+                                                  final buttonCount = hasViewAgenda ? 3 : 2;
+                                                  final minButtonWidth = 160.0; // Increased minimum button width for better mobile experience
+                                                  final totalMinWidth = (buttonCount * minButtonWidth) + ((buttonCount - 1) * 12);
+                                                  final useSideBySide = constraints.maxWidth >= totalMinWidth;
+                                                 
+                                                 if (useSideBySide) {
+                                                   // Side by side layout
+                                                   return Row(
+                                                     children: [
+                                                       // Upload Agenda button
+                                                       Expanded(
+                                                         child: ElevatedButton.icon(
+                                                           onPressed: _uploadingAgendas[meeting.id] == true
+                                                               ? null
+                                                               : () {
+                                                                   _uploadAgenda(context, meeting.id ?? '');
+                                                                 },
+                                                           icon: _uploadingAgendas[meeting.id] == true
+                                                               ? const SizedBox(
+                                                                   width: 20,
+                                                                   height: 20,
+                                                                 )
+                                                               : const Icon(Icons.upload_file, size: 18),
+                                                           label: _uploadingAgendas[meeting.id] == true
+                                                               ? const Text('Uploading...')
+                                                               : const Text('Upload Agenda'),
+                                                           style: ElevatedButton.styleFrom(
+                                                             backgroundColor: theme.colorScheme.secondary,
+                                                             foregroundColor: Colors.white,
+                                                             padding: const EdgeInsets.symmetric(vertical: 8),
+                                                           ),
+                                                         ),
+                                                       ),
+                                                       
+                                                       const SizedBox(width: 12),
+                                                       
+                                                       // View Agenda button (only show if agendaUrl exists)
+                                                       if (hasViewAgenda) ...[
+                                                         Expanded(
+                                                           child: ElevatedButton.icon(
+                                                             onPressed: () {
+                                                               // TODO: Implement view agenda functionality
+                                                               ScaffoldMessenger.of(context).showSnackBar(
+                                                                 SnackBar(
+                                                                   content: Text('Opening agenda...'),
+                                                                   duration: const Duration(seconds: 2),
+                                                                 ),
+                                                               );
+                                                             },
+                                                             icon: const Icon(Icons.visibility, size: 18),
+                                                             label: const Text('View Agenda'),
+                                                             style: ElevatedButton.styleFrom(
+                                                               backgroundColor: theme.colorScheme.primary,
+                                                               foregroundColor: Colors.white,
+                                                               padding: const EdgeInsets.symmetric(vertical: 8),
+                                                             ),
+                                                           ),
+                                                         ),
+                                                         const SizedBox(width: 12),
+                                                       ],
+                                                       
+                                                       // Setup Polls button
+                                                       Expanded(
+                                                         child: ElevatedButton.icon(
+                                                           onPressed: () {
+                                                             // TODO: Implement polls setup functionality
                                                            },
-                                                     icon: _uploadingAgendas[meeting.id] == true
-                                                         ? const SizedBox(
-                                                             width: 20,
-                                                             height: 20,
-                                                           )
-                                                         : const Icon(Icons.upload_file, size: 18),
-                                                     label: _uploadingAgendas[meeting.id] == true
-                                                         ? const Text('Uploading...')
-                                                         : const Text('Upload Agenda'),
-                                                     style: ElevatedButton.styleFrom(
-                                                       backgroundColor: theme.colorScheme.secondary,
-                                                       foregroundColor: Colors.white,
-                                                       padding: const EdgeInsets.symmetric(vertical: 8),
-                                                     ),
-                                                   ),
-                                                 ),
-                                                
-                                                const SizedBox(width: 12),
-                                                
-                                                // Setup Polls button
-                                                Expanded(
-                                                  child: ElevatedButton.icon(
-                                                    onPressed: () {
-                                                      // TODO: Implement polls setup functionality
-                                                    },
-                                                    icon: const Icon(Icons.poll, size: 18),
-                                                    label: const Text('Setup Polls'),
-                                                    style: ElevatedButton.styleFrom(
-                                                      backgroundColor: theme.colorScheme.tertiary,
-                                                      foregroundColor: Colors.white,
-                                                      padding: const EdgeInsets.symmetric(vertical: 8),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                                           icon: const Icon(Icons.poll, size: 18),
+                                                           label: const Text('Setup Polls'),
+                                                           style: ElevatedButton.styleFrom(
+                                                             backgroundColor: theme.colorScheme.tertiary,
+                                                             foregroundColor: Colors.white,
+                                                             padding: const EdgeInsets.symmetric(vertical: 8),
+                                                           ),
+                                                         ),
+                                                       ),
+                                                     ],
+                                                   );
+                                                 } else {
+                                                   // Stacked layout for small screens
+                                                   return Column(
+                                                     children: [
+                                                       // Upload Agenda button
+                                                       SizedBox(
+                                                         width: double.infinity,
+                                                         child: ElevatedButton.icon(
+                                                           onPressed: _uploadingAgendas[meeting.id] == true
+                                                               ? null
+                                                               : () {
+                                                                   _uploadAgenda(context, meeting.id ?? '');
+                                                                 },
+                                                           icon: _uploadingAgendas[meeting.id] == true
+                                                               ? const SizedBox(
+                                                                   width: 20,
+                                                                   height: 20,
+                                                                 )
+                                                               : const Icon(Icons.upload_file, size: 18),
+                                                           label: _uploadingAgendas[meeting.id] == true
+                                                               ? const Text('Uploading...')
+                                                               : const Text('Upload Agenda'),
+                                                           style: ElevatedButton.styleFrom(
+                                                             backgroundColor: theme.colorScheme.secondary,
+                                                             foregroundColor: Colors.white,
+                                                             padding: const EdgeInsets.symmetric(vertical: 8),
+                                                           ),
+                                                         ),
+                                                       ),
+                                                       
+                                                       if (hasViewAgenda) ...[
+                                                         const SizedBox(height: 12),
+                                                         // View Agenda button
+                                                         SizedBox(
+                                                           width: double.infinity,
+                                                           child: ElevatedButton.icon(
+                                                             onPressed: () {
+                                                               // TODO: Implement view agenda functionality
+                                                               ScaffoldMessenger.of(context).showSnackBar(
+                                                                 SnackBar(
+                                                                   content: Text('Opening agenda...'),
+                                                                   duration: const Duration(seconds: 2),
+                                                                 ),
+                                                               );
+                                                             },
+                                                             icon: const Icon(Icons.visibility, size: 18),
+                                                             label: const Text('View Agenda'),
+                                                             style: ElevatedButton.styleFrom(
+                                                               backgroundColor: theme.colorScheme.primary,
+                                                               foregroundColor: Colors.white,
+                                                               padding: const EdgeInsets.symmetric(vertical: 8),
+                                                             ),
+                                                           ),
+                                                         ),
+                                                       ],
+                                                       
+                                                       const SizedBox(height: 12),
+                                                       
+                                                       // Setup Polls button
+                                                       SizedBox(
+                                                         width: double.infinity,
+                                                         child: ElevatedButton.icon(
+                                                           onPressed: () {
+                                                             // TODO: Implement polls setup functionality
+                                                           },
+                                                           icon: const Icon(Icons.poll, size: 18),
+                                                           label: const Text('Setup Polls'),
+                                                           style: ElevatedButton.styleFrom(
+                                                             backgroundColor: theme.colorScheme.tertiary,
+                                                             foregroundColor: Colors.white,
+                                                             padding: const EdgeInsets.symmetric(vertical: 8),
+                                                           ),
+                                                         ),
+                                                       ),
+                                                     ],
+                                                   );
+                                                 }
+                                               },
+                                             ),
                                           ],
                                         ),
                                      ),
