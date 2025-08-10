@@ -27,29 +27,30 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Header at the top
-              const HeaderWidget(),
-              
-              // Main content
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Consumer<AuthProvider>(
-                  builder: (context, authProvider, child) {
-                    if (authProvider.currentUser == null) {
-                      return const SizedBox.shrink();
-                    }
-                    
-                                         return Column(
-                       crossAxisAlignment: CrossAxisAlignment.center,
-                       children: [
-                         // Create Meeting Button
-                         Center(
-                           child: ElevatedButton(
+         return Scaffold(
+       body: SafeArea(
+         child: Column(
+           children: [
+             // Header at the top
+             const HeaderWidget(),
+             
+             // Main content
+             Expanded(
+               child: Consumer<AuthProvider>(
+                 builder: (context, authProvider, child) {
+                   if (authProvider.currentUser == null) {
+                     return const SizedBox.shrink();
+                   }
+                   
+                   return Center(
+                     child: SingleChildScrollView(
+                       padding: const EdgeInsets.all(24),
+                       child: Column(
+                         mainAxisAlignment: MainAxisAlignment.center,
+                         crossAxisAlignment: CrossAxisAlignment.center,
+                         children: [
+                           // Create Meeting Button
+                           ElevatedButton(
                              onPressed: () {
                                // Handle create meeting logic
                                ScaffoldMessenger.of(context).showSnackBar(
@@ -63,97 +64,95 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                              ),
                              child: const Text('Create Meeting'),
                            ),
-                         ),
-                         const SizedBox(height: 32),
-                         
-                         // Meetings list using the provider
-                         Consumer<ManageMeetingsProvider>(
-                          builder: (context, meetingsProvider, child) {
-                            if (meetingsProvider.isLoading) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            
-                            if (meetingsProvider.error != null) {
-                              return Center(
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      size: 64,
-                                      color: theme.colorScheme.error,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'Unable to load meetings',
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        color: theme.colorScheme.error,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      meetingsProvider.error!,
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                            
-                            if (meetingsProvider.meetings.isEmpty) {
-                              return Center(
-                                child: Text(
-                                  'You have no upcoming meetings',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              );
-                            }
-                            
-                            // Display meetings list
-                            return Column(
-                              children: meetingsProvider.meetings.map((meeting) {
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  child: ListTile(
-                                    leading: Icon(
-                                      Icons.event,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                    title: Text(
-                                      meeting.title,
-                                      style: const TextStyle(fontWeight: FontWeight.w500),
-                                    ),
-                                    subtitle: Text(
-                                      meeting.description,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            );
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              
-              // Footer at the bottom
-              const FooterWidget(),
-            ],
-          ),
-        ),
-      ),
-    );
+                           const SizedBox(height: 32),
+                           
+                           // Meetings list using the provider
+                           Consumer<ManageMeetingsProvider>(
+                             builder: (context, meetingsProvider, child) {
+                               if (meetingsProvider.isLoading) {
+                                 return const Center(
+                                   child: CircularProgressIndicator(),
+                                 );
+                               }
+                               
+                               if (meetingsProvider.error != null) {
+                                 return Center(
+                                   child: Column(
+                                     children: [
+                                       Icon(
+                                         Icons.error_outline,
+                                         size: 64,
+                                         color: theme.colorScheme.error,
+                                       ),
+                                       const SizedBox(height: 16),
+                                       Text(
+                                         'Unable to load meetings',
+                                         style: theme.textTheme.titleMedium?.copyWith(
+                                           color: theme.colorScheme.error,
+                                         ),
+                                         textAlign: TextAlign.center,
+                                       ),
+                                       const SizedBox(height: 8),
+                                       Text(
+                                         meetingsProvider.error!,
+                                         style: theme.textTheme.bodyMedium?.copyWith(
+                                           color: theme.colorScheme.onSurfaceVariant,
+                                         ),
+                                         textAlign: TextAlign.center,
+                                       ),
+                                     ],
+                                   ),
+                                 );
+                               }
+                               
+                               if (meetingsProvider.meetings.isEmpty) {
+                                 return Text(
+                                   'You have no upcoming meetings',
+                                   style: theme.textTheme.titleMedium?.copyWith(
+                                     color: theme.colorScheme.onSurfaceVariant,
+                                   ),
+                                   textAlign: TextAlign.center,
+                                 );
+                               }
+                               
+                               // Display meetings list
+                               return Column(
+                                 children: meetingsProvider.meetings.map((meeting) {
+                                   return Card(
+                                     margin: const EdgeInsets.only(bottom: 12),
+                                     child: ListTile(
+                                       leading: Icon(
+                                         Icons.event,
+                                         color: theme.colorScheme.primary,
+                                       ),
+                                       title: Text(
+                                         meeting.title,
+                                         style: const TextStyle(fontWeight: FontWeight.w500),
+                                       ),
+                                       subtitle: Text(
+                                         meeting.description,
+                                         maxLines: 2,
+                                         overflow: TextOverflow.ellipsis,
+                                       ),
+                                     ),
+                                   );
+                                 }).toList(),
+                               );
+                             },
+                           ),
+                         ],
+                       ),
+                     ),
+                   );
+                 },
+               ),
+             ),
+             
+             // Footer at the bottom
+             const FooterWidget(),
+           ],
+         ),
+       ),
+     );
   }
 }
