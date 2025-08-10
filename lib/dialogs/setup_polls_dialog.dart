@@ -24,6 +24,9 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
   bool _isLoading = false;
   StreamSubscription<DocumentSnapshot>? _pollsSubscription;
   ScaffoldMessengerState? _scaffoldMessenger;
+  Set<String> _expandedPolls = {};
+  Map<String, TextEditingController> _questionControllers = {};
+  Map<String, List<TextEditingController>> _optionControllers = {};
 
   @override
   Widget build(BuildContext context) {
@@ -144,60 +147,231 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                          ),
                        )
                      else
-                       Expanded(
-                         child: ListView.builder(
-                           itemCount: _polls.length,
-                           itemBuilder: (context, index) {
-                             final pollId = _polls.keys.elementAt(index);
-                             final poll = _polls[pollId]!;
-                             return Card(
-                               margin: const EdgeInsets.only(bottom: 12),
-                               child: ListTile(
-                                 leading: CircleAvatar(
-                                   backgroundColor: theme.colorScheme.primaryContainer,
-                                   child: Text(
-                                     '${index + 1}',
-                                     style: TextStyle(
-                                       color: theme.colorScheme.onPrimaryContainer,
-                                       fontWeight: FontWeight.bold,
-                                     ),
-                                   ),
-                                 ),
-                                 title: Text(
-                                   poll.question,
-                                   style: const TextStyle(fontWeight: FontWeight.w600),
-                                 ),
-                                 subtitle: Text(
-                                   '${poll.options.length} options • ${poll.isActive ? 'Active' : 'Inactive'}',
-                                 ),
-                                 trailing: Row(
-                                   mainAxisSize: MainAxisSize.min,
-                                   children: [
-                                     IconButton(
-                                       onPressed: () => _editPoll(pollId),
-                                       icon: Icon(
-                                         Icons.edit,
-                                         color: theme.colorScheme.primary,
-                                         size: 20,
-                                       ),
-                                       tooltip: 'Edit Poll',
-                                     ),
-                                     IconButton(
-                                       onPressed: () => _deletePoll(pollId),
-                                       icon: Icon(
-                                         Icons.delete,
-                                         color: theme.colorScheme.error,
-                                         size: 20,
-                                       ),
-                                       tooltip: 'Delete Poll',
-                                     ),
-                                   ],
-                                 ),
-                               ),
-                             );
-                           },
-                         ),
-                       ),
+                                               Expanded(
+                          child: ListView.builder(
+                            itemCount: _polls.length,
+                            itemBuilder: (context, index) {
+                              final pollId = _polls.keys.elementAt(index);
+                              final poll = _polls[pollId]!;
+                              final isExpanded = _expandedPolls.contains(pollId);
+                              
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(
+                                    color: theme.colorScheme.outline,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      ListTile(
+                                      title: Text(
+                                        poll.question,
+                                        style: const TextStyle(fontWeight: FontWeight.w600),
+                                      ),
+                                      subtitle: Text(
+                                        '${poll.options.length} options • ${poll.isActive ? 'Active' : 'Inactive'}',
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            onPressed: () => _editPoll(pollId),
+                                            icon: Icon(
+                                              isExpanded ? Icons.expand_less : Icons.edit,
+                                              color: theme.colorScheme.primary,
+                                              size: 20,
+                                            ),
+                                            tooltip: isExpanded ? 'Collapse' : 'Edit Poll',
+                                          ),
+                                          IconButton(
+                                            onPressed: () => _deletePoll(pollId),
+                                            icon: Icon(
+                                              Icons.delete,
+                                              color: theme.colorScheme.error,
+                                              size: 20,
+                                            ),
+                                            tooltip: 'Delete Poll',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    
+                                    // Expandable edit section
+                                    if (isExpanded)
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                                          borderRadius: const BorderRadius.only(
+                                            bottomLeft: Radius.circular(12),
+                                            bottomRight: Radius.circular(12),
+                                          ),
+                                          border: Border(
+                                            top: BorderSide(
+                                              color: theme.colorScheme.outline.withOpacity(0.5),
+                                              width: 1,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // Question field
+                                            Text(
+                                              'Question',
+                                              style: theme.textTheme.titleSmall?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            TextField(
+                                              controller: _questionControllers[pollId],
+                                              decoration: InputDecoration(
+                                                hintText: 'Enter poll question',
+                                                border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                              ),
+                                            ),
+                                            
+                                            const SizedBox(height: 16),
+                                            
+                                            // Options section
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  'Options',
+                                                  style: theme.textTheme.titleSmall?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                IconButton(
+                                                  onPressed: () => _addOption(pollId),
+                                                  icon: const Icon(Icons.add, size: 20),
+                                                  tooltip: 'Add Option',
+                                                  style: IconButton.styleFrom(
+                                                    backgroundColor: theme.colorScheme.primary,
+                                                    foregroundColor: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            
+                                            // Options list
+                                            if (_optionControllers.containsKey(pollId))
+                                              ...(_optionControllers[pollId]!.asMap().entries.map((entry) {
+                                                final optionIndex = entry.key;
+                                                final controller = entry.value;
+                                                return Padding(
+                                                  padding: const EdgeInsets.only(bottom: 8),
+                                                  child: Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: TextField(
+                                                          controller: controller,
+                                                          decoration: InputDecoration(
+                                                            hintText: 'Option ${optionIndex + 1}',
+                                                            border: OutlineInputBorder(
+                                                              borderRadius: BorderRadius.circular(8),
+                                                            ),
+                                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      if (_optionControllers[pollId]!.length > 1)
+                                                        IconButton(
+                                                          onPressed: () => _removeOption(pollId, optionIndex),
+                                                          icon: const Icon(Icons.remove, size: 20),
+                                                          tooltip: 'Remove Option',
+                                                          style: IconButton.styleFrom(
+                                                            backgroundColor: theme.colorScheme.error,
+                                                            foregroundColor: Colors.white,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                );
+                                              })),
+                                            
+                                            const SizedBox(height: 16),
+                                            
+                                            // Voting toggle
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  'Allow Voting',
+                                                  style: theme.textTheme.titleSmall?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                Switch(
+                                                  value: poll.isActive,
+                                                  onChanged: (value) async {
+                                                    try {
+                                                      final updatedPoll = Poll(
+                                                        question: poll.question,
+                                                        options: poll.options,
+                                                        isActive: value,
+                                                      );
+                                                      final provider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+                                                      await provider.updatePoll(widget.meetingId, pollId, updatedPoll);
+                                                    } catch (e) {
+                                                      if (mounted && _scaffoldMessenger != null) {
+                                                        _scaffoldMessenger!.showSnackBar(
+                                                          SnackBar(
+                                                            content: Text('Error updating poll: $e'),
+                                                            backgroundColor: Colors.red,
+                                                            duration: Duration(seconds: 2),
+                                                          ),
+                                                        );
+                                                      }
+                                                    }
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                            
+                                            const SizedBox(height: 16),
+                                            
+                                            // Save button
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.end,
+                                              children: [
+                                                TextButton(
+                                                  onPressed: () => _editPoll(pollId),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                ElevatedButton(
+                                                  onPressed: () => _savePollChanges(pollId),
+                                                  child: const Text('Save Changes'),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              );
+                            },
+                          ),
+                        ),
                   ],
                 ),
               ),
@@ -275,14 +449,83 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
   }
 
   void _editPoll(String pollId) {
-    // TODO: Implement poll editing with a form dialog
-    if (_scaffoldMessenger != null) {
-      _scaffoldMessenger!.showSnackBar(
-        SnackBar(
-          content: Text('Edit poll - Implement editing logic.'),
-          duration: const Duration(seconds: 2),
-        ),
+    setState(() {
+      if (_expandedPolls.contains(pollId)) {
+        _expandedPolls.remove(pollId);
+        // Clean up controllers when collapsing
+        _questionControllers.remove(pollId);
+        _optionControllers.remove(pollId);
+      } else {
+        _expandedPolls.add(pollId);
+        // Initialize controllers when expanding
+        final poll = _polls[pollId];
+        if (poll != null) {
+          _questionControllers[pollId] = TextEditingController(text: poll.question);
+          _optionControllers[pollId] = poll.options.map((option) => TextEditingController(text: option)).toList();
+        }
+      }
+    });
+  }
+
+  void _addOption(String pollId) {
+    setState(() {
+      if (_optionControllers.containsKey(pollId)) {
+        _optionControllers[pollId]!.add(TextEditingController(text: 'Option ${_optionControllers[pollId]!.length + 1}'));
+      }
+    });
+  }
+
+  void _removeOption(String pollId, int optionIndex) {
+    setState(() {
+      if (_optionControllers.containsKey(pollId) && _optionControllers[pollId]!.length > 1) {
+        _optionControllers[pollId]![optionIndex].dispose();
+        _optionControllers[pollId]!.removeAt(optionIndex);
+      }
+    });
+  }
+
+  void _savePollChanges(String pollId) async {
+    try {
+      final questionController = _questionControllers[pollId];
+      final optionControllers = _optionControllers[pollId];
+      
+      if (questionController == null || optionControllers == null) return;
+      
+      final updatedPoll = Poll(
+        question: questionController.text.trim(),
+        options: optionControllers.map((controller) => controller.text.trim()).where((text) => text.isNotEmpty).toList(),
+        isActive: _polls[pollId]?.isActive ?? false,
       );
+      
+      final provider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+      await provider.updatePoll(widget.meetingId, pollId, updatedPoll);
+      
+      // Collapse the edit section
+      setState(() {
+        _expandedPolls.remove(pollId);
+        _questionControllers.remove(pollId);
+        _optionControllers.remove(pollId);
+      });
+      
+      if (mounted && _scaffoldMessenger != null) {
+        _scaffoldMessenger!.showSnackBar(
+          const SnackBar(
+            content: Text('Poll updated successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted && _scaffoldMessenger != null) {
+        _scaffoldMessenger!.showSnackBar(
+          SnackBar(
+            content: Text('Error updating poll: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -369,6 +612,15 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
   @override
   void dispose() {
     _pollsSubscription?.cancel();
+    // Clean up all controllers
+    for (final controller in _questionControllers.values) {
+      controller.dispose();
+    }
+    for (final controllers in _optionControllers.values) {
+      for (final controller in controllers) {
+        controller.dispose();
+      }
+    }
     super.dispose();
   }
 
@@ -392,11 +644,15 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
         
         if (pollsData != null) {
           setState(() {
-            _polls = Map.fromEntries(
-              pollsData.entries.map(
-                (entry) => MapEntry(entry.key, Poll.fromMap(entry.value)),
-              ),
-            );
+            // Convert to list, sort by createdAt (latest first), then convert back to map
+            final pollsList = pollsData.entries.map(
+              (entry) => MapEntry(entry.key, Poll.fromMap(entry.value)),
+            ).toList();
+            
+            // Sort by createdAt in descending order (latest first)
+            pollsList.sort((a, b) => b.value.createdAt.compareTo(a.value.createdAt));
+            
+            _polls = Map.fromEntries(pollsList);
           });
         } else {
           setState(() {
