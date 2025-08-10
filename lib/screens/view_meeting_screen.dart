@@ -36,11 +36,6 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Meeting Details'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-      ),
       body: Consumer<ViewMeetingProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
