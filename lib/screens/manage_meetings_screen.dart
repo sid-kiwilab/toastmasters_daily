@@ -44,20 +44,30 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                       return const SizedBox.shrink();
                     }
                     
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title
-                        Text(
-                          'Upcoming Meetings',
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        // Meetings list using the provider
-                        Consumer<ManageMeetingsProvider>(
+                                         return Column(
+                       crossAxisAlignment: CrossAxisAlignment.center,
+                       children: [
+                         // Create Meeting Button
+                         Center(
+                           child: ElevatedButton(
+                             onPressed: () {
+                               // Handle create meeting logic
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 const SnackBar(content: Text('Create meeting functionality coming soon!')),
+                               );
+                             },
+                             style: ElevatedButton.styleFrom(
+                               backgroundColor: theme.colorScheme.primary,
+                               foregroundColor: Colors.white,
+                               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                             ),
+                             child: const Text('Create Meeting'),
+                           ),
+                         ),
+                         const SizedBox(height: 32),
+                         
+                         // Meetings list using the provider
+                         Consumer<ManageMeetingsProvider>(
                           builder: (context, meetingsProvider, child) {
                             if (meetingsProvider.isLoading) {
                               return const Center(
@@ -97,22 +107,12 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                             
                             if (meetingsProvider.meetings.isEmpty) {
                               return Center(
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.event_busy,
-                                      size: 64,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'You have no upcoming meetings',
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
+                                child: Text(
+                                  'You have no upcoming meetings',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
                               );
                             }
