@@ -29,7 +29,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
 
   @override
   void dispose() {
-    _provider.clearData();
+    _provider.clearData(notify: false);
     super.dispose();
   }
 

@@ -73,11 +73,13 @@ class ViewMeetingProvider extends ChangeNotifier {
     }
   }
 
-  void clearData() {
+  void clearData({bool notify = true}) {
     _meeting = null;
     _polls = [];
     _isLoading = false;
     _error = null;
-    notifyListeners();
+    if (notify) {
+      notifyListeners();
+    }
   }
 }
