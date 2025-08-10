@@ -7,12 +7,14 @@ class AuthProvider extends ChangeNotifier {
   String? _userId;
   String? _userEmail;
   String? _userName;
+  bool _isEmailVerified = false;
 
   // Getters
   bool get isLoggedIn => _isLoggedIn;
   String? get userId => _userId;
   String? get userEmail => _userEmail;
   String? get userName => _userName;
+  bool get isEmailVerified => _isEmailVerified;
   User? get currentUser => _auth.currentUser;
 
   // Constructor - check auth status on initialization
@@ -23,14 +25,34 @@ class AuthProvider extends ChangeNotifier {
         _userId = user.uid;
         _userEmail = user.email;
         _userName = user.displayName ?? user.email?.split('@')[0] ?? 'User';
+        _isEmailVerified = user.emailVerified;
       } else {
         _isLoggedIn = false;
         _userId = null;
         _userEmail = null;
         _userName = null;
+        _isEmailVerified = false;
       }
       notifyListeners();
     });
+  }
+
+  // Send verification email function
+  Future<bool> sendVerificationEmail() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+        return true;
+      }
+      return false;
+    } on FirebaseAuthException catch (e) {
+      print('Send verification email error: ${e.code} - ${e.message}');
+      return false;
+    } catch (e) {
+      print('Send verification email error: $e');
+      return false;
+    }
   }
 
   // Sign up function
@@ -50,6 +72,9 @@ class AuthProvider extends ChangeNotifier {
       if (userCredential.user != null) {
         await userCredential.user!.updateDisplayName(name);
         
+        // Send verification email
+        await userCredential.user!.sendEmailVerification();
+        
         // Refresh user data
         await userCredential.user!.reload();
         
@@ -57,6 +82,7 @@ class AuthProvider extends ChangeNotifier {
         _userId = userCredential.user!.uid;
         _userEmail = userCredential.user!.email;
         _userName = userCredential.user!.displayName ?? name;
+        _isEmailVerified = userCredential.user!.emailVerified;
         
         notifyListeners();
         return true;
@@ -145,11 +171,13 @@ class AuthProvider extends ChangeNotifier {
         _userId = user.uid;
         _userEmail = user.email;
         _userName = user.displayName ?? user.email?.split('@')[0] ?? 'User';
+        _isEmailVerified = user.emailVerified;
       } else {
         _isLoggedIn = false;
         _userId = null;
         _userEmail = null;
         _userName = null;
+        _isEmailVerified = false;
       }
       notifyListeners();
     } catch (e) {
@@ -163,6 +191,7 @@ class AuthProvider extends ChangeNotifier {
     _userId = null;
     _userEmail = null;
     _userName = null;
+    _isEmailVerified = false;
     notifyListeners();
   }
 
