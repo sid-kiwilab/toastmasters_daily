@@ -14,6 +14,8 @@ class ManageMeetingsScreen extends StatefulWidget {
 }
 
 class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
+  bool _isCreatingMeeting = false;
+
   @override
   void initState() {
     super.initState();
@@ -26,16 +28,10 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
 
   Future<void> _createMeeting(BuildContext context, String userId) async {
     try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
+      // Set loading state
+      setState(() {
+        _isCreatingMeeting = true;
+      });
 
       // Call the Cloud Function
       final functions = FirebaseFunctions.instance;
@@ -44,8 +40,10 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
         'creatorId': userId,
       });
 
-      // Hide loading indicator
-      Navigator.of(context).pop();
+      // Clear loading state
+      setState(() {
+        _isCreatingMeeting = false;
+      });
 
       // Check result
       if (result.data['success']) {
@@ -69,8 +67,10 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
         );
       }
     } catch (e) {
-      // Hide loading indicator
-      Navigator.of(context).pop();
+      // Clear loading state
+      setState(() {
+        _isCreatingMeeting = false;
+      });
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -109,7 +109,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                          children: [
                            // Create Meeting Button
                            ElevatedButton(
-                             onPressed: () async {
+                             onPressed: _isCreatingMeeting ? null : () async {
                                await _createMeeting(context, authProvider.currentUser!.uid);
                              },
                              style: ElevatedButton.styleFrom(
@@ -117,7 +117,16 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                foregroundColor: Colors.white,
                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                              ),
-                             child: const Text('Create Meeting'),
+                             child: _isCreatingMeeting
+                                 ? const SizedBox(
+                                     width: 20,
+                                     height: 20,
+                                     child: CircularProgressIndicator(
+                                       strokeWidth: 2,
+                                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                     ),
+                                   )
+                                 : const Text('Create Meeting'),
                            ),
                            const SizedBox(height: 32),
                            
