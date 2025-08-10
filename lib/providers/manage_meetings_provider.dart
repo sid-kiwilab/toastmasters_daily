@@ -336,4 +336,40 @@ class ManageMeetingsProvider extends ChangeNotifier {
       _startListening(user.uid);
     }
   }
+
+  // Get polls for a specific meeting
+  Future<Map<String, Poll>> getPollsForMeeting(String meetingId) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      final meetingRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('meetings')
+          .doc(meetingId);
+
+      final meetingDoc = await meetingRef.get();
+      if (!meetingDoc.exists) {
+        throw Exception('Meeting not found');
+      }
+
+      final data = meetingDoc.data() ?? {};
+      final pollsData = Map<String, dynamic>.from(data['polls'] ?? {});
+      
+      final Map<String, Poll> polls = {};
+      pollsData.forEach((pollId, pollData) {
+        try {
+          polls[pollId] = Poll.fromMap(Map<String, dynamic>.from(pollData));
+        } catch (e) {
+          // Skip invalid poll data
+          print('Error parsing poll $pollId: $e');
+        }
+      });
+      
+      return polls;
+    } catch (e) {
+      throw Exception('Failed to get polls: $e');
+    }
+  }
 }
