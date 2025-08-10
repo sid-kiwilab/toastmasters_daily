@@ -9,6 +9,7 @@ import '../widgets/header_widget.dart';
 import '../widgets/footer_widget.dart';
 import '../providers/auth_provider.dart';
 import '../providers/manage_meetings_provider.dart';
+import '../dialogs/create_meeting_dialog.dart';
 
 class ManageMeetingsScreen extends StatefulWidget {
   const ManageMeetingsScreen({super.key});
@@ -30,7 +31,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     });
   }
 
-  Future<void> _createMeeting(BuildContext context, String userId) async {
+  Future<void> _createMeeting(BuildContext context, String userId, String title) async {
     try {
       // Set loading state
       setState(() {
@@ -40,7 +41,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       // Call the Cloud Function
       final functions = FirebaseFunctions.instance;
       final result = await functions.httpsCallable('createMeeting').call({
-        'title': 'New Meeting',
+        'title': title,
         'creatorId': userId,
       });
 
@@ -207,8 +208,15 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                          children: [
                            // Create Meeting Button
                            ElevatedButton(
-                             onPressed: _isCreatingMeeting ? null : () async {
-                               await _createMeeting(context, authProvider.currentUser!.uid);
+                             onPressed: _isCreatingMeeting ? null : () {
+                               showDialog(
+                                 context: context,
+                                 builder: (context) => CreateMeetingDialog(
+                                   onConfirm: (title) async {
+                                     await _createMeeting(context, authProvider.currentUser!.uid, title);
+                                   },
+                                 ),
+                               );
                              },
                              style: ElevatedButton.styleFrom(
                                backgroundColor: theme.colorScheme.primary,
