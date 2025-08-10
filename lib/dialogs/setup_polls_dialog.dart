@@ -33,13 +33,13 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Container(
-        constraints: const BoxConstraints(
-          maxWidth: 600,
-          maxHeight: 500,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+             child: Container(
+         constraints: const BoxConstraints(
+           maxWidth: 600,
+           maxHeight: double.infinity,
+         ),
+                 child: Column(
+           mainAxisSize: MainAxisSize.max,
           children: [
             // Header
             Container(
