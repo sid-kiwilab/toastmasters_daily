@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Meeting {
   final String id;
@@ -103,5 +104,46 @@ class ManageMeetingsProvider extends ChangeNotifier {
     _isLoading = false;
     _error = null;
     notifyListeners();
+  }
+
+  // View agenda functionality
+  Future<void> viewAgenda(BuildContext context, String agendaUrl) async {
+    try {
+      // For web, we can use url_launcher to open in a new tab
+      // For mobile, we can use url_launcher to open in the default browser
+      // First, let's check if the URL is valid
+      if (agendaUrl.isEmpty) {
+        throw Exception('Agenda URL is empty');
+      }
+
+      // Parse the URL and add cache-busting parameters to ensure fresh content
+      final Uri baseUrl = Uri.parse(agendaUrl);
+      final Uri url = baseUrl.replace(
+        queryParameters: {
+          ...baseUrl.queryParameters,
+          't': DateTime.now().millisecondsSinceEpoch.toString(), // Cache buster
+          'v': DateTime.now().toIso8601String(), // Version timestamp
+        },
+      );
+
+      if (await canLaunchUrl(url)) {
+        await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication, // Opens in default browser/app
+        );
+      } else {
+        throw Exception('Could not launch agenda URL');
+      }
+    } catch (e) {
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening agenda: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

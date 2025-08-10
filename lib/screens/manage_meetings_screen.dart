@@ -399,30 +399,26 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                        
                                                        const SizedBox(width: 12),
                                                        
-                                                       // View Agenda button (only show if agendaUrl exists)
-                                                       if (hasViewAgenda) ...[
-                                                         Expanded(
-                                                           child: ElevatedButton.icon(
-                                                             onPressed: () {
-                                                               // TODO: Implement view agenda functionality
-                                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                                 SnackBar(
-                                                                   content: Text('Opening agenda...'),
-                                                                   duration: const Duration(seconds: 2),
-                                                                 ),
-                                                               );
-                                                             },
-                                                             icon: const Icon(Icons.visibility, size: 18),
-                                                             label: const Text('View Agenda'),
-                                                             style: ElevatedButton.styleFrom(
-                                                               backgroundColor: theme.colorScheme.primary,
-                                                               foregroundColor: Colors.white,
-                                                               padding: const EdgeInsets.symmetric(vertical: 8),
-                                                             ),
-                                                           ),
-                                                         ),
-                                                         const SizedBox(width: 12),
-                                                       ],
+                                                                                                               // View Agenda button (only show if agendaUrl exists)
+                                                        if (hasViewAgenda) ...[
+                                                          Expanded(
+                                                            child: ElevatedButton.icon(
+                                                              onPressed: () {
+                                                                // Use the provider to view agenda
+                                                                final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+                                                                meetingsProvider.viewAgenda(context, meeting.agendaUrl!);
+                                                              },
+                                                              icon: const Icon(Icons.visibility, size: 18),
+                                                              label: const Text('View Agenda'),
+                                                              style: ElevatedButton.styleFrom(
+                                                                backgroundColor: theme.colorScheme.primary,
+                                                                foregroundColor: Colors.white,
+                                                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 12),
+                                                        ],
                                                        
                                                        // Setup Polls button
                                                        Expanded(
@@ -471,31 +467,27 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                          ),
                                                        ),
                                                        
-                                                       if (hasViewAgenda) ...[
-                                                         const SizedBox(height: 12),
-                                                         // View Agenda button
-                                                         SizedBox(
-                                                           width: double.infinity,
-                                                           child: ElevatedButton.icon(
-                                                             onPressed: () {
-                                                               // TODO: Implement view agenda functionality
-                                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                                 SnackBar(
-                                                                   content: Text('Opening agenda...'),
-                                                                   duration: const Duration(seconds: 2),
-                                                                 ),
-                                                               );
-                                                             },
-                                                             icon: const Icon(Icons.visibility, size: 18),
-                                                             label: const Text('View Agenda'),
-                                                             style: ElevatedButton.styleFrom(
-                                                               backgroundColor: theme.colorScheme.primary,
-                                                               foregroundColor: Colors.white,
-                                                               padding: const EdgeInsets.symmetric(vertical: 8),
-                                                             ),
-                                                           ),
-                                                         ),
-                                                       ],
+                                                                                                               if (hasViewAgenda) ...[
+                                                          const SizedBox(height: 12),
+                                                          // View Agenda button
+                                                          SizedBox(
+                                                            width: double.infinity,
+                                                            child: ElevatedButton.icon(
+                                                              onPressed: () {
+                                                                // Use the provider to view agenda
+                                                                final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+                                                                meetingsProvider.viewAgenda(context, meeting.agendaUrl!);
+                                                              },
+                                                              icon: const Icon(Icons.visibility, size: 18),
+                                                              label: const Text('View Agenda'),
+                                                              style: ElevatedButton.styleFrom(
+                                                                backgroundColor: theme.colorScheme.primary,
+                                                                foregroundColor: Colors.white,
+                                                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
                                                        
                                                        const SizedBox(height: 12),
                                                        

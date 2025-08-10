@@ -15,6 +15,7 @@ dependencies:
   cloud_firestore: ^5.4.0
   cloud_functions: ^5.3.3
   file_picker: ^8.0.0+1
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:
