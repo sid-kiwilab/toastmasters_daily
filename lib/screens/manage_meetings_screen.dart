@@ -306,14 +306,25 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                                                child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            // Meeting ID row
+                                            // Meeting ID and Title row
                                             Row(
                                               children: [
+                                                // Meeting ID
+                                                Text(
+                                                  meeting.id ?? 'Unknown ID',
+                                                  style: theme.textTheme.headlineSmall?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                
+                                                const SizedBox(width: 16),
+                                                
+                                                // Meeting Title
                                                 Expanded(
                                                   child: Text(
-                                                    meeting.id ?? 'Unknown ID',
-                                                    style: theme.textTheme.headlineSmall?.copyWith(
-                                                      fontWeight: FontWeight.bold,
+                                                    meeting.title ?? 'Untitled Meeting',
+                                                    style: theme.textTheme.titleMedium?.copyWith(
+                                                      color: theme.colorScheme.onSurfaceVariant,
                                                     ),
                                                   ),
                                                 ),
