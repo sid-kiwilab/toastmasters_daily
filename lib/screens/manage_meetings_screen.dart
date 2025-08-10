@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:convert';
+import 'dart:io';
 import '../widgets/header_widget.dart';
 import '../widgets/footer_widget.dart';
 import '../providers/auth_provider.dart';
@@ -76,6 +79,100 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error creating meeting: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _uploadAgenda(BuildContext context, String meetingId) async {
+    try {
+      // Pick PDF file from device
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+        withData: true, // This ensures we get bytes for web compatibility
+      );
+
+      if (result == null || result.files.isEmpty) {
+        return; // User cancelled
+      }
+
+      final file = result.files.first;
+      
+      // Validate file type
+      if (file.extension?.toLowerCase() != 'pdf') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Only PDF files are allowed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Processing and uploading PDF...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Get bytes from file (works on both web and mobile)
+      List<int> bytes;
+      if (file.bytes != null) {
+        // Web: use bytes directly
+        bytes = file.bytes!;
+      } else if (file.path != null) {
+        // Mobile: read from file path
+        final fileData = File(file.path!);
+        bytes = await fileData.readAsBytes();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not access file data'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Convert to base64
+      final base64Data = base64Encode(bytes);
+
+      // Call the Cloud Function to upload agenda
+      final functions = FirebaseFunctions.instance;
+      final result2 = await functions.httpsCallable('uploadAgenda').call({
+        'meetingId': meetingId,
+        'fileData': base64Data,
+        'fileName': file.name,
+      });
+
+      if (result2.data['success']) {
+        final agenda = result2.data['agenda'];
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Agenda uploaded successfully!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        
+        print('Agenda uploaded: ${agenda['downloadUrl']}');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload agenda: ${result2.data['error']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error uploading agenda: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -187,44 +284,90 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                      margin: const EdgeInsets.only(bottom: 12),
                                      child: Padding(
                                        padding: const EdgeInsets.all(16),
-                                       child: Row(
-                                         children: [
-                                                                                       // Meeting ID
-                                            Expanded(
-                                              child: Text(
-                                                meeting.id ?? 'Unknown ID',
-                                                style: theme.textTheme.headlineSmall?.copyWith(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                           
-                                                                                       // Copy button
-                                            IconButton(
-                                              onPressed: () {
-                                                // Copy meeting ID to clipboard
-                                                final meetingId = meeting.id ?? 'Unknown ID';
-                                                Clipboard.setData(ClipboardData(text: meetingId));
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text('Meeting ID copied to clipboard'),
-                                                    duration: const Duration(seconds: 2),
+                                                                               child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // Meeting ID row
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    meeting.id ?? 'Unknown ID',
+                                                    style: theme.textTheme.headlineSmall?.copyWith(
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
                                                   ),
-                                                );
-                                              },
-                                              icon: Icon(
-                                                Icons.copy,
-                                                color: theme.colorScheme.primary,
-                                                size: 18,
-                                              ),
-                                              tooltip: 'Copy Meeting ID',
-                                              constraints: const BoxConstraints(
-                                                minWidth: 32,
-                                                minHeight: 32,
-                                              ),
+                                                ),
+                                                
+                                                // Copy button
+                                                IconButton(
+                                                  onPressed: () {
+                                                    // Copy meeting ID to clipboard
+                                                    final meetingId = meeting.id ?? 'Unknown ID';
+                                                    Clipboard.setData(ClipboardData(text: meetingId));
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('Meeting ID copied to clipboard'),
+                                                        duration: const Duration(seconds: 2),
+                                                      ),
+                                                    );
+                                                  },
+                                                  icon: Icon(
+                                                    Icons.copy,
+                                                    color: theme.colorScheme.primary,
+                                                    size: 18,
+                                                  ),
+                                                  tooltip: 'Copy Meeting ID',
+                                                  constraints: const BoxConstraints(
+                                                    minWidth: 32,
+                                                    minHeight: 32,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                         ],
-                                       ),
+                                            
+                                            const SizedBox(height: 16),
+                                            
+                                            // Action buttons row
+                                            Row(
+                                              children: [
+                                                                                                 // Upload Agenda button
+                                                 Expanded(
+                                                   child: ElevatedButton.icon(
+                                                     onPressed: () {
+                                                       _uploadAgenda(context, meeting.id ?? '');
+                                                     },
+                                                     icon: const Icon(Icons.upload_file, size: 18),
+                                                     label: const Text('Upload Agenda'),
+                                                     style: ElevatedButton.styleFrom(
+                                                       backgroundColor: theme.colorScheme.secondary,
+                                                       foregroundColor: Colors.white,
+                                                       padding: const EdgeInsets.symmetric(vertical: 8),
+                                                     ),
+                                                   ),
+                                                 ),
+                                                
+                                                const SizedBox(width: 12),
+                                                
+                                                // Setup Polls button
+                                                Expanded(
+                                                  child: ElevatedButton.icon(
+                                                    onPressed: () {
+                                                      // TODO: Implement polls setup functionality
+                                                    },
+                                                    icon: const Icon(Icons.poll, size: 18),
+                                                    label: const Text('Setup Polls'),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: theme.colorScheme.tertiary,
+                                                      foregroundColor: Colors.white,
+                                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                      ),
                                    );
                                  }).toList(),

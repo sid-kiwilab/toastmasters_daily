@@ -43,10 +43,7 @@ exports.createMeeting = functions.https.onCall(async (data, context) => {
       .doc(data.creatorId)
       .collection('meetings')
       .doc(meetingCode);
-    batch.set(userMeetingRef, {
-      title: data.title,
-      createdAt: meetingDoc.createdAt
-    });
+    batch.set(userMeetingRef, meetingDoc);
     
     // Commit the batch - both operations succeed or both fail
     await batch.commit();
@@ -127,6 +124,23 @@ exports.cleanUpMeetings = functions.pubsub.schedule('every 24 hours').onRun(asyn
               .collection('meetings')
               .doc(meetingId);
             batch.delete(userMeetingRef);
+          }
+          
+          // Delete agenda file from Firebase Storage if it exists
+          try {
+            const bucket = admin.storage().bucket();
+            const agendaFilePath = `agendas/${meetingId}.pdf`;
+            const agendaFile = bucket.file(agendaFilePath);
+            
+            // Check if file exists before attempting to delete
+            const [exists] = await agendaFile.exists();
+            if (exists) {
+              await agendaFile.delete();
+              console.error(`Deleted agenda file: ${agendaFilePath}`);
+            }
+          } catch (storageError) {
+            console.error(`Error deleting agenda file for meeting ${meetingId}:`, storageError);
+            // Continue with cleanup even if storage deletion fails
           }
           
           batchDeletedCount++;
