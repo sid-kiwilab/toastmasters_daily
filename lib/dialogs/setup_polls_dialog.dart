@@ -183,6 +183,17 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          // Active/Inactive switch
+                                          Transform.scale(
+                                            scale: 0.7,
+                                            child: Switch(
+                                              value: poll.isActive,
+                                              onChanged: (value) => _togglePollActive(pollId, value),
+                                              activeColor: Colors.green,
+                                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
                                           IconButton(
                                             onPressed: () => _editPoll(pollId),
                                             icon: Icon(
@@ -240,8 +251,10 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                                                 border: OutlineInputBorder(
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
-                                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                isDense: true,
                                               ),
+                                              style: const TextStyle(fontSize: 14),
                                             ),
                                             
                                             const SizedBox(height: 16),
@@ -258,11 +271,13 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                                                 const Spacer(),
                                                 IconButton(
                                                   onPressed: () => _addOption(pollId),
-                                                  icon: const Icon(Icons.add, size: 20),
+                                                  icon: const Icon(Icons.add, size: 16),
                                                   tooltip: 'Add Option',
                                                   style: IconButton.styleFrom(
                                                     backgroundColor: theme.colorScheme.primary,
                                                     foregroundColor: Colors.white,
+                                                    minimumSize: const Size(32, 32),
+                                                    padding: EdgeInsets.zero,
                                                   ),
                                                 ),
                                               ],
@@ -286,19 +301,23 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                                                             border: OutlineInputBorder(
                                                               borderRadius: BorderRadius.circular(8),
                                                             ),
-                                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                            isDense: true,
                                                           ),
+                                                          style: const TextStyle(fontSize: 14),
                                                         ),
                                                       ),
                                                       const SizedBox(width: 8),
                                                       if (_optionControllers[pollId]!.length > 1)
                                                         IconButton(
                                                           onPressed: () => _removeOption(pollId, optionIndex),
-                                                          icon: const Icon(Icons.remove, size: 20),
+                                                          icon: const Icon(Icons.remove, size: 16),
                                                           tooltip: 'Remove Option',
                                                           style: IconButton.styleFrom(
                                                             backgroundColor: theme.colorScheme.error,
                                                             foregroundColor: Colors.white,
+                                                            minimumSize: const Size(32, 32),
+                                                            padding: EdgeInsets.zero,
                                                           ),
                                                         ),
                                                     ],
@@ -561,6 +580,38 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
     // Since we're saving polls immediately when created/updated/deleted,
     // this method just closes the dialog
     Navigator.of(context).pop();
+  }
+
+  void _togglePollActive(String pollId, bool isActive) async {
+    final provider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+    try {
+      await provider.updatePoll(widget.meetingId, pollId, Poll(
+        question: _polls[pollId]!.question,
+        options: _polls[pollId]!.options,
+        isActive: isActive,
+        createdAt: _polls[pollId]!.createdAt,
+      ));
+
+      if (mounted && _scaffoldMessenger != null) {
+        _scaffoldMessenger!.showSnackBar(
+          SnackBar(
+            content: Text('Poll "${_polls[pollId]!.question}" is now ${isActive ? 'Active' : 'Inactive'}'),
+            backgroundColor: isActive ? Colors.green : Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted && _scaffoldMessenger != null) {
+        _scaffoldMessenger!.showSnackBar(
+          SnackBar(
+            content: Text('Error toggling poll active status: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   @override
