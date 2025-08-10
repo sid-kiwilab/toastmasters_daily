@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/header_widget.dart';
+import '../widgets/footer_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -75,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: theme.textTheme.headlineLarge,
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 16),
                       Container(
                         width: 400,
                         padding: const EdgeInsets.all(32.0),
@@ -172,6 +173,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               
+              // Footer at the bottom
+              const FooterWidget(),
             ],
           ),
         ),

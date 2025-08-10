@@ -15,7 +15,6 @@ exports.createUserDocument = functions.auth.user().onCreate(async (user) => {
       .doc(user.uid)
       .set(userDoc);
 
-    console.log(`User document created for UID: ${user.uid}`);
   } catch (error) {
     console.error('Error creating user document:', error);
   }
@@ -24,14 +23,23 @@ exports.createUserDocument = functions.auth.user().onCreate(async (user) => {
 // Cloud Function that triggers when a user is deleted
 exports.deleteUserDocument = functions.auth.user().onDelete(async (user) => {
   try {
-    // Delete the user document from Firestore
-    await admin.firestore()
-      .collection('users')
-      .doc(user.uid)
-      .delete();
-
-    console.log(`User document deleted for UID: ${user.uid}`);
+    const userRef = admin.firestore().collection('users').doc(user.uid);
+    
+    // Delete all subcollections first
+    const collections = await userRef.listCollections();
+    
+    for (const collection of collections) {
+      // Get all documents in the subcollection
+      const snapshot = await collection.get();
+      
+      // Delete each document in the subcollection
+      const deletePromises = snapshot.docs.map(doc => doc.ref.delete());
+      await Promise.all(deletePromises);
+    }
+    
+    // Delete the user document itself
+    await userRef.delete();
   } catch (error) {
-    console.error('Error deleting user document:', error);
+    console.error('Error deleting user document and subcollections:', error);
   }
 });

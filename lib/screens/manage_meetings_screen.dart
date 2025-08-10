@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/header_widget.dart';
+import '../widgets/footer_widget.dart';
 import '../providers/auth_provider.dart';
 import '../providers/manage_meetings_provider.dart';
 
@@ -28,14 +29,14 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header at the top
-            const HeaderWidget(),
-            
-            // Main content
-            Expanded(
-              child: SingleChildScrollView(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Header at the top
+              const HeaderWidget(),
+              
+              // Main content
+              Padding(
                 padding: const EdgeInsets.all(24),
                 child: Consumer<AuthProvider>(
                   builder: (context, authProvider, child) {
@@ -146,8 +147,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                   },
                 ),
               ),
-            ),
-          ],
+              
+              // Footer at the bottom
+              const FooterWidget(),
+            ],
+          ),
         ),
       ),
     );

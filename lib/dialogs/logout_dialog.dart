@@ -13,17 +13,7 @@ class LogoutDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      title: Row(
-        children: [
-          Icon(
-            Icons.logout,
-            color: Colors.grey[700],
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          const Text('Confirm Logout'),
-        ],
-      ),
+      title: const Text('Confirm Logout'),
       content: const Text(
         'Are you sure you want to logout?',
         style: TextStyle(fontSize: 16),
