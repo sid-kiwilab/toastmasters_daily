@@ -378,10 +378,17 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                    
                                                    // Meeting Title
                                                    Expanded(
-                                                     child: Text(
-                                                       meeting.title ?? 'Untitled Meeting',
-                                                       style: theme.textTheme.titleMedium?.copyWith(
-                                                         color: theme.colorScheme.onSurfaceVariant,
+                                                     child: GestureDetector(
+                                                       onTap: () {
+                                                         final urlMeetingId = meeting.id.replaceAll(' ', '');
+                                                         Navigator.pushNamed(context, '/meetings/$urlMeetingId');
+                                                       },
+                                                       child: Text(
+                                                         meeting.title ?? 'Untitled Meeting',
+                                                         style: theme.textTheme.titleMedium?.copyWith(
+                                                           color: theme.colorScheme.primary,
+                                                           decoration: TextDecoration.underline,
+                                                         ),
                                                        ),
                                                      ),
                                                    ),
