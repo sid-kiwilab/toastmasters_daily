@@ -92,171 +92,164 @@ class _HomeScreenState extends State<HomeScreen> {
                                    // Spacer to center main content on viewport
                   SizedBox(height: (_initialViewportHeight ?? MediaQuery.of(context).size.height) * 0.22),
                  
-                 // Main content
-                 Text(
-                 'Toastmasters Daily',
-                 style: theme.textTheme.headlineLarge,
-                 textAlign: TextAlign.center,
-               ),
-               const SizedBox(height: 16),
-               Container(
-                 width: 400,
-                 margin: const EdgeInsets.symmetric(horizontal: 20.0),
-                 padding: const EdgeInsets.all(32.0),
-                 decoration: BoxDecoration(
-                   color: theme.colorScheme.surface,
-                   borderRadius: BorderRadius.circular(16),
-                   boxShadow: [
-                     BoxShadow(
-                       color: theme.colorScheme.onSurface.withOpacity(0.1),
-                       blurRadius: 10,
-                       offset: const Offset(0, 4),
+                                                      // Main content
+                   Text(
+                     'Enter the code to join',
+                     style: theme.textTheme.headlineMedium?.copyWith(
+                       fontSize: 28,
+                       fontWeight: FontWeight.w600,
+                       color: Colors.black87,
                      ),
-                   ],
-                 ),
-                 child: Column(
-                   mainAxisSize: MainAxisSize.min,
-                   children: [
-                     Text(
-                       'Join Meeting',
-                       style: theme.textTheme.headlineMedium,
-                       textAlign: TextAlign.center,
+                     textAlign: TextAlign.center,
+                   ),
+                   const SizedBox(height: 8),
+                                       Text(
+                      "Best speeches coming your way!",
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                   const SizedBox(height: 32),
+                                       Container(
+                      width: 280,
+                      child: TextField(
+                        controller: _codeController,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          letterSpacing: 8.0,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                                               decoration: InputDecoration(
+                          hintText: _isTyping ? '' : '1234 5678',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[500],
+                            letterSpacing: 8.0,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF2F1F0),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                        ),
+                       keyboardType: TextInputType.number,
+                       inputFormatters: [
+                         FilteringTextInputFormatter.digitsOnly,
+                       ],
+                       maxLength: 9, // 8 digits + 1 space
+                       buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                       onTap: () {
+                         setState(() {
+                           _isTyping = true;
+                         });
+                       },
+                       onChanged: (value) {
+                         setState(() {
+                           _isTyping = value.isNotEmpty;
+                         });
+                       },
                      ),
-                     const SizedBox(height: 16),
-                     Text(
-                       'Enter the 8-digit meeting code',
-                       style: theme.textTheme.bodyMedium,
-                       textAlign: TextAlign.center,
-                     ),
-                     const SizedBox(height: 32),
-                     Container(
-                       width: 200,
-                       child: TextField(
-                         controller: _codeController,
-                         textAlign: TextAlign.center,
-                         style: theme.textTheme.headlineSmall?.copyWith(
-                           letterSpacing: 8.0,
-                           fontWeight: FontWeight.bold,
-                         ),
-                         decoration: InputDecoration(
-                           hintText: _isTyping ? '' : '3927 9034',
-                           hintStyle: TextStyle(
-                             color: theme.colorScheme.onSurface.withOpacity(0.5),
-                             letterSpacing: 8.0,
-                             fontWeight: FontWeight.bold,
-                           ),
-                           border: OutlineInputBorder(
-                             borderRadius: BorderRadius.circular(12),
-                           ),
-                           contentPadding: const EdgeInsets.symmetric(
-                             horizontal: 16,
-                             vertical: 16,
-                           ),
-                         ),
-                         keyboardType: TextInputType.number,
-                         inputFormatters: [
-                           FilteringTextInputFormatter.digitsOnly,
-                         ],
-                         maxLength: 9, // 8 digits + 1 space
-                         buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                         onTap: () {
-                           setState(() {
-                             _isTyping = true;
-                           });
-                         },
-                         onChanged: (value) {
-                           setState(() {
-                             _isTyping = value.isNotEmpty;
-                           });
-                         },
-                       ),
-                     ),
-                     const SizedBox(height: 32),
-                     SizedBox(
-                       width: 200,
-                       child: ElevatedButton(
-                         onPressed: _isJoining ? null : () async {
-                           // Clear any previous error
-                           setState(() {
-                             _errorMessage = null;
-                           });
-                           
-                           // Navigate to view meeting screen with the entered code
-                           final meetingCode = _codeController.text.trim();
-                           if (meetingCode.isNotEmpty) {
-                             // Convert the formatted code (e.g., "3927 9034") to meeting ID format
-                             final digitsOnly = meetingCode.replaceAll(RegExp(r'[^0-9]'), '');
-                             if (digitsOnly.length == 8) {
-                               setState(() {
-                                 _isJoining = true;
-                               });
-                               
-                               final meetingId = '${digitsOnly.substring(0, 4)} ${digitsOnly.substring(4)}';
-                               
-                               // Check if meeting exists first
-                               final meetingExists = await _checkMeetingExists(meetingId);
-                               
-                               if (meetingExists) {
-                                 // Navigate to view meeting screen using URL navigation
-                                 final urlMeetingId = meetingId.replaceAll(' ', '');
-                                 await Navigator.pushNamed(context, '/meetings/$urlMeetingId');
-                               } else {
-                                 // Show error message on the same screen
-                                 setState(() {
-                                   _errorMessage = 'Meeting not found';
-                                 });
-                               }
-                               
-                               setState(() {
-                                 _isJoining = false;
-                               });
+                   ),
+                   const SizedBox(height: 32),
+                   SizedBox(
+                     width: 140,
+                     height: 48,
+                     child: ElevatedButton(
+                       onPressed: _isJoining ? null : () async {
+                         // Clear any previous error
+                         setState(() {
+                           _errorMessage = null;
+                         });
+                         
+                         // Navigate to view meeting screen with the entered code
+                         final meetingCode = _codeController.text.trim();
+                         if (meetingCode.isNotEmpty) {
+                           // Convert the formatted code (e.g., "1234 5678") to meeting ID format
+                           final digitsOnly = meetingCode.replaceAll(RegExp(r'[^0-9]'), '');
+                           if (digitsOnly.length == 8) {
+                             setState(() {
+                               _isJoining = true;
+                             });
+                             
+                             final meetingId = '${digitsOnly.substring(0, 4)} ${digitsOnly.substring(4)}';
+                             
+                             // Check if meeting exists first
+                             final meetingExists = await _checkMeetingExists(meetingId);
+                             
+                             if (meetingExists) {
+                               // Navigate to view meeting screen using URL navigation
+                               final urlMeetingId = meetingId.replaceAll(' ', '');
+                               await Navigator.pushNamed(context, '/meetings/$urlMeetingId');
                              } else {
-                               // Show error message for incomplete code
+                               // Show error message on the same screen
                                setState(() {
-                                 _errorMessage = 'Code must be 8 digits';
+                                 _errorMessage = 'Meeting not found';
                                });
                              }
-                           } else {
-                             // Show error message for empty code
+                             
                              setState(() {
-                               _errorMessage = 'Please enter a meeting code';
+                               _isJoining = false;
+                             });
+                           } else {
+                             // Show error message for incomplete code
+                             setState(() {
+                               _errorMessage = 'Code must be 8 digits';
                              });
                            }
-                         },
-                         child: _isJoining 
-                           ? const SizedBox(
-                               width: 20,
-                               height: 20,
-                               child: CircularProgressIndicator(
-                                 strokeWidth: 2,
-                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                               ),
-                             )
-                           : const Text('Join Meeting'),
-                       ),
-                     ),
-                     // Show error message below the button
-                     if (_errorMessage != null) ...[
-                       const SizedBox(height: 16),
-                       Text(
-                         _errorMessage!,
-                         style: TextStyle(
-                           color: Theme.of(context).colorScheme.error,
-                           fontSize: 14,
+                         } else {
+                           // Show error message for empty code
+                           setState(() {
+                             _errorMessage = 'Please enter a meeting code';
+                           });
+                         }
+                       },
+                       style: ElevatedButton.styleFrom(
+                         backgroundColor: Colors.grey[800],
+                         foregroundColor: Colors.white,
+                         shape: RoundedRectangleBorder(
+                           borderRadius: BorderRadius.circular(8),
                          ),
-                         textAlign: TextAlign.center,
+                         elevation: 0,
                        ),
-                     ],
-                   ],
-                 ),
-               ),
-               const SizedBox(height: 16),
-               // Version number right below the white container
-               Text(
-                 'Version: $appVersion',
-                 style: theme.textTheme.bodySmall,
-                 textAlign: TextAlign.center,
-               ),
+                       child: _isJoining 
+                         ? const SizedBox(
+                             width: 20,
+                             height: 20,
+                             child: CircularProgressIndicator(
+                               strokeWidth: 2,
+                               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                             ),
+                           )
+                         : const Text(
+                             'Join',
+                             style: TextStyle(
+                               fontSize: 16,
+                               fontWeight: FontWeight.w500,
+                             ),
+                           ),
+                     ),
+                   ),
+                  // Show error message below the button
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      _errorMessage!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 12,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                
                // Footer at the bottom
                const FooterWidget(),

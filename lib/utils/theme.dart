@@ -21,7 +21,7 @@ class AppTheme {
   static const Color lightSecondary = Color(0xFF404040);
   static const Color lightTertiary = Color(0xFF666666);
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightBackground = Color(0xFFF8F9FA);
+  static const Color lightBackground = Color(0xFFFFFFFF);
   static const Color lightError = Color(0xFFDC3545);
   static const Color lightSuccess = Color(0xFF28A745);
   static const Color lightWarning = Color(0xFFFFC107);
