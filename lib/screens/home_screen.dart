@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/header_widget.dart';
 import '../widgets/footer_widget.dart';
+import 'view_meeting_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,6 +15,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _codeController = TextEditingController();
   bool _isTyping = false;
+  bool _isJoining = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -48,6 +52,18 @@ class _HomeScreenState extends State<HomeScreen> {
       _codeController.selection = TextSelection.fromPosition(
         TextPosition(offset: _codeController.text.length),
       );
+    }
+  }
+
+  Future<bool> _checkMeetingExists(String meetingId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('active_meetings')
+          .doc(meetingId)
+          .get();
+      return doc.exists;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -152,12 +168,78 @@ class _HomeScreenState extends State<HomeScreen> {
                             SizedBox(
                               width: 200,
                               child: ElevatedButton(
-                                onPressed: () {
-                                  // Add join meeting logic here
+                                onPressed: _isJoining ? null : () async {
+                                  // Clear any previous error
+                                  setState(() {
+                                    _errorMessage = null;
+                                  });
+                                  
+                                                                     // Navigate to view meeting screen with the entered code
+                                   final meetingCode = _codeController.text.trim();
+                                   if (meetingCode.isNotEmpty) {
+                                     // Convert the formatted code (e.g., "3927 9034") to meeting ID format
+                                     final digitsOnly = meetingCode.replaceAll(RegExp(r'[^0-9]'), '');
+                                     if (digitsOnly.length == 8) {
+                                       setState(() {
+                                         _isJoining = true;
+                                       });
+                                       
+                                       final meetingId = '${digitsOnly.substring(0, 4)} ${digitsOnly.substring(4)}';
+                                       
+                                       // Check if meeting exists first
+                                       final meetingExists = await _checkMeetingExists(meetingId);
+                                       
+                                       if (meetingExists) {
+                                         // Navigate to view meeting screen using URL navigation
+                                         final urlMeetingId = meetingId.replaceAll(' ', '');
+                                         await Navigator.pushNamed(context, '/meetings/$urlMeetingId');
+                                       } else {
+                                         // Show error message on the same screen
+                                         setState(() {
+                                           _errorMessage = 'Meeting not found';
+                                         });
+                                       }
+                                       
+                                       setState(() {
+                                         _isJoining = false;
+                                       });
+                                     } else {
+                                       // Show error message for incomplete code
+                                       setState(() {
+                                         _errorMessage = 'Code must be 8 digits';
+                                       });
+                                     }
+                                   } else {
+                                     // Show error message for empty code
+                                     setState(() {
+                                       _errorMessage = 'Please enter a meeting code';
+                                     });
+                                   }
                                 },
-                                child: const Text('Join Meeting'),
+                                child: _isJoining 
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Text('Join Meeting'),
                               ),
                             ),
+                            // Show error message below the button
+                            if (_errorMessage != null) ...[
+                              const SizedBox(height: 16),
+                              Text(
+                                _errorMessage!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                  fontSize: 14,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ],
                         ),
                       ),
