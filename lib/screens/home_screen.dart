@@ -82,8 +82,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     
               return Scaffold(
+       resizeToAvoidBottomInset: false,
        body: SafeArea(
          child: SingleChildScrollView(
+           physics: const ClampingScrollPhysics(),
            child: Column(
                             children: [
                  // Header at the top
