@@ -14,7 +14,7 @@ import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
 
 // Cache busting version - increment this when making changes that require browser cache clearing
-const String appVersion = '1.0.0';
+const String appVersion = '1.0.1';
 
 // Custom page transitions builder that removes all animations
 class NoTransitionsBuilder extends PageTransitionsBuilder {
@@ -139,7 +139,7 @@ class MainApp extends StatelessWidget {
             },
           ),
         ),
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.light,
         initialRoute: '/',
         routes: {
           '/': (context) => const AuthWrapper(),
