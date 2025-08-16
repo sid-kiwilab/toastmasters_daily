@@ -14,8 +14,12 @@ dependencies:
   firebase_auth: ^5.3.3
   cloud_firestore: ^5.4.0
   cloud_functions: ^5.3.3
+  firebase_storage: ^12.3.0
   file_picker: ^8.0.0+1
   url_launcher: ^6.2.5
+  http: ^0.13.6
+  pdf_render: ^1.4.12
+  internet_file: ^1.2.0
 
 dev_dependencies:
   flutter_test:
