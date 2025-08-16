@@ -40,6 +40,10 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   }
 
   Future<void> _loadMeetingData() async {
+    // Reset load attempts for new meeting
+    _loadAttempts = 0;
+    _hasAttemptedLoad = false;
+    
     _viewMeetingProvider.initialize(widget.meetingId);
     if (_viewMeetingProvider.meeting != null && 
         _viewMeetingProvider.meeting!.agendaUrl != null) {
@@ -47,10 +51,23 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
     }
   }
 
+  bool _hasAttemptedLoad = false;
+  int _loadAttempts = 0;
+  static const int _maxLoadAttempts = 3;
+
   Future<void> _loadPdfFromUrl(String url) async {
+    if (_loadAttempts >= _maxLoadAttempts) {
+      setState(() {
+        _pdfError = 'Maximum load attempts reached. Please try again later.';
+        _isPdfLoading = false;
+      });
+      return;
+    }
+
     setState(() {
       _isPdfLoading = true;
       _pdfError = null;
+      _loadAttempts++;
     });
 
     try {
@@ -169,6 +186,13 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   }
 
   Widget _buildWebPdfViewer(String url) {
+    // Auto-load PDF if not loaded and not currently loading
+    if (_pdfBytes == null && !_isPdfLoading && _pdfError == null && _loadAttempts < _maxLoadAttempts) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadPdfFromUrl(url);
+      });
+    }
+
     if (_isPdfLoading) {
       return Container(
         width: double.infinity,
@@ -176,7 +200,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: Colors.grey[300]!, width: 0.1),
         ),
         child: const Center(
           child: Column(
@@ -198,7 +222,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
         decoration: BoxDecoration(
           color: Colors.red[50],
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.red[300]!),
+          border: Border.all(color: Colors.red[300]!, width: 0.1),
         ),
         child: Center(
           child: Column(
@@ -239,7 +263,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: Colors.grey[300]!, width: 0.1),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -262,7 +286,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Colors.grey[300]!, width: 0.1),
       ),
       child: const Center(
         child: Text('No PDF loaded'),
@@ -351,9 +375,9 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
           }
 
           return Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+                         child: SingleChildScrollView(
+               padding: EdgeInsets.zero,
+               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
@@ -377,55 +401,108 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  if (meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                        ),
-                      ),
-                                               child: Column(
-                           children: [
-                             // PDF Viewer Container
-                             _buildPdfViewer(meeting.agendaUrl!),
-                             
-                             const SizedBox(height: 16),
-                             
-                             // Load PDF Button (always visible)
-                             ElevatedButton.icon(
-                               onPressed: () => _loadPdfFromUrl(meeting.agendaUrl!),
-                               icon: const Icon(Icons.picture_as_pdf),
-                               label: const Text('Load Agenda'),
-                               style: ElevatedButton.styleFrom(
-                                 backgroundColor: Theme.of(context).colorScheme.primary,
-                                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                                 shape: RoundedRectangleBorder(
-                                   borderRadius: BorderRadius.circular(8),
-                                 ),
+                                     Container(
+                     padding: const EdgeInsets.all(8),
+                     decoration: BoxDecoration(
+                       color: Theme.of(context).colorScheme.primaryContainer,
+                       borderRadius: BorderRadius.circular(12),
+                       border: Border.all(
+                         color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                         width: 0.1,
+                       ),
+                     ),
+                     child: Column(
+                       children: [
+                         // PDF Viewer Container
+                         if (meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty) ...[
+                           // Auto-load PDF if not loaded and not currently loading
+                           Builder(
+                             builder: (context) {
+                               if (_pdfBytes == null && !_isPdfLoading && _pdfError == null && _loadAttempts < _maxLoadAttempts) {
+                                 WidgetsBinding.instance.addPostFrameCallback((_) {
+                                   _loadPdfFromUrl(meeting.agendaUrl!);
+                                 });
+                               }
+                               return _buildPdfViewer(meeting.agendaUrl!);
+                             },
+                           ),
+                         ] else
+                           Container(
+                             height: 700,
+                             decoration: BoxDecoration(
+                               color: Colors.grey[100],
+                               borderRadius: BorderRadius.circular(8),
+                               border: Border.all(color: Colors.grey[300]!, width: 0.1),
+                             ),
+                             child: Center(
+                               child: Column(
+                                 mainAxisAlignment: MainAxisAlignment.center,
+                                 children: [
+                                   Icon(
+                                     Icons.picture_as_pdf,
+                                     size: 48,
+                                     color: Colors.grey[400],
+                                   ),
+                                   const SizedBox(height: 16),
+                                   Text(
+                                     'No Agenda URL Available',
+                                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                       color: Colors.grey[700],
+                                       fontWeight: FontWeight.w600,
+                                     ),
+                                     textAlign: TextAlign.center,
+                                   ),
+                                   const SizedBox(height: 8),
+                                   Text(
+                                     'This meeting does not have an agenda file',
+                                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                       color: Colors.grey[600],
+                                     ),
+                                     textAlign: TextAlign.center,
+                                   ),
+                                 ],
                                ),
                              ),
-                           ],
-                         ),
-                    ),
-                  ] else ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceVariant,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'No agenda available for this meeting',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
+                           ),
+                         
+                         const SizedBox(height: 16),
+                         
+                         // Load PDF Button (always visible and enabled)
+                         if (meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty)
+                           ElevatedButton.icon(
+                             onPressed: _loadAttempts >= _maxLoadAttempts 
+                               ? null 
+                               : () => _loadPdfFromUrl(meeting.agendaUrl!),
+                             icon: const Icon(Icons.picture_as_pdf),
+                             label: Text(_loadAttempts >= _maxLoadAttempts 
+                               ? 'Max Attempts Reached' 
+                               : 'Load Agenda'),
+                             style: ElevatedButton.styleFrom(
+                               backgroundColor: _loadAttempts >= _maxLoadAttempts 
+                                 ? Colors.grey 
+                                 : Theme.of(context).colorScheme.primary,
+                               foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                               shape: RoundedRectangleBorder(
+                                 borderRadius: BorderRadius.circular(8),
+                               ),
+                             ),
+                           )
+                         else
+                           ElevatedButton.icon(
+                             onPressed: null,
+                             icon: const Icon(Icons.picture_as_pdf),
+                             label: const Text('No Agenda Available'),
+                             style: ElevatedButton.styleFrom(
+                               backgroundColor: Colors.grey,
+                               foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                               shape: RoundedRectangleBorder(
+                                 borderRadius: BorderRadius.circular(8),
+                               ),
+                             ),
+                           ),
+                       ],
+                     ),
+                   ),
                 ],
               ),
             ),
