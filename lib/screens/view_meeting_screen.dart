@@ -172,7 +172,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
     if (_isPdfLoading) {
       return Container(
         width: double.infinity,
-        height: 500,
+        height: 700,
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
@@ -194,7 +194,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
     if (_pdfError != null) {
       return Container(
         width: double.infinity,
-        height: 500,
+        height: 700,
         decoration: BoxDecoration(
           color: Colors.red[50],
           borderRadius: BorderRadius.circular(8),
@@ -235,7 +235,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
       print('Displaying PDF viewer with bytes, size: ${_pdfBytes!.length}');
       return Container(
         width: double.infinity,
-        height: 500,
+        height: 700,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -258,7 +258,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
     // Fallback if no document
     return Container(
       width: double.infinity,
-      height: 500,
+      height: 700,
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
@@ -272,6 +272,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
 
   Widget _buildMobilePdfPlaceholder(String url) {
     return Container(
+      height: 700,
       color: Colors.grey[100],
       child: Center(
         child: Column(
@@ -386,43 +387,28 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                           color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                         ),
                       ),
-                      child: Column(
-                        children: [
-                          Text(
-                            '📋 Meeting Agenda',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // PDF Viewer Container
-                          _buildPdfViewer(meeting.agendaUrl!),
-                          
-                          const SizedBox(height: 16),
-                          
-                          // Load PDF Button (for web)
-                          if (kIsWeb) ...[
-                            ElevatedButton.icon(
-                              onPressed: _pdfDocument == null 
-                                ? () => _loadPdfFromUrl(meeting.agendaUrl!)
-                                : null,
-                              icon: const Icon(Icons.picture_as_pdf),
-                              label: Text(_pdfDocument == null ? 'Load PDF' : 'PDF Loaded'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                        ],
-                      ),
+                                               child: Column(
+                           children: [
+                             // PDF Viewer Container
+                             _buildPdfViewer(meeting.agendaUrl!),
+                             
+                             const SizedBox(height: 16),
+                             
+                             // Load PDF Button (always visible)
+                             ElevatedButton.icon(
+                               onPressed: () => _loadPdfFromUrl(meeting.agendaUrl!),
+                               icon: const Icon(Icons.picture_as_pdf),
+                               label: const Text('Load Agenda'),
+                               style: ElevatedButton.styleFrom(
+                                 backgroundColor: Theme.of(context).colorScheme.primary,
+                                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                 shape: RoundedRectangleBorder(
+                                   borderRadius: BorderRadius.circular(8),
+                                 ),
+                               ),
+                             ),
+                           ],
+                         ),
                     ),
                   ] else ...[
                     Container(
