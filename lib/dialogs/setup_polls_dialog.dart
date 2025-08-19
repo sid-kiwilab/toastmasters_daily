@@ -173,14 +173,11 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                                   ),
                                   child: Column(
                                     children: [
-                                      ListTile(
-                                      title: Text(
-                                        poll.question,
-                                        style: const TextStyle(fontWeight: FontWeight.w600),
-                                      ),
-                                      subtitle: Text(
-                                        '${poll.options.length} options • ${poll.isActive ? 'Active' : 'Inactive'}',
-                                      ),
+                                                                             ListTile(
+                                       title: Text(
+                                         poll.question,
+                                         style: const TextStyle(fontWeight: FontWeight.w600),
+                                       ),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
