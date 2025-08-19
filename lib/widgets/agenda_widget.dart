@@ -163,7 +163,7 @@ class _AgendaWidgetState extends State<AgendaWidget> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Loading PDF...'),
+              Text('Loading agenda...'),
             ],
           ),
         ),
