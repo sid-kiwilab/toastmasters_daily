@@ -67,9 +67,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> _checkMeetingExists(String meetingId) async {
     try {
+      // Remove any spaces and ensure it's exactly 8 digits
+      final cleanMeetingId = meetingId.replaceAll(RegExp(r'[^0-9]'), '');
+      
+      if (cleanMeetingId.length != 8) {
+        return false;
+      }
+      
       final doc = await FirebaseFirestore.instance
           .collection('active_meetings')
-          .doc(meetingId)
+          .doc(cleanMeetingId)
           .get();
       return doc.exists;
     } catch (e) {
@@ -182,15 +189,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                _isJoining = true;
                              });
                              
-                             final meetingId = '${digitsOnly.substring(0, 4)} ${digitsOnly.substring(4)}';
-                             
-                             // Check if meeting exists first
-                             final meetingExists = await _checkMeetingExists(meetingId);
-                             
-                             if (meetingExists) {
-                               // Navigate to view meeting screen using URL navigation
-                               final urlMeetingId = meetingId.replaceAll(' ', '');
-                               await Navigator.pushNamed(context, '/meetings/$urlMeetingId');
+                                                           final meetingId = digitsOnly;
+                              
+                              // Check if meeting exists first
+                              final meetingExists = await _checkMeetingExists(meetingId);
+                              
+                              if (meetingExists) {
+                                // Navigate to view meeting screen using URL navigation
+                                await Navigator.pushNamed(context, '/meetings/$meetingId');
                              } else {
                                // Show error message on the same screen
                                setState(() {

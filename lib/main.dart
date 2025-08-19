@@ -181,19 +181,7 @@ class AuthWrapper extends StatelessWidget {
 
 // Helper function to convert URL meeting ID to actual meeting ID
 String _convertUrlToMeetingId(String urlMeetingId) {
-  // Remove any non-digit characters first
-  final digits = urlMeetingId.replaceAll(RegExp(r'[^0-9]'), '');
-  
-  // If it's 8 digits, add space in the middle for frontend display
-  if (digits.length == 8) {
-    return '${digits.substring(0, 4)} ${digits.substring(4)}';
-  }
-  
-  // If it's already in the correct format (with space), return as is
-  if (urlMeetingId.contains(' ')) {
-    return urlMeetingId;
-  }
-  
-  // Fallback: return original if conversion not possible
-  return urlMeetingId;
+  // Remove any non-digit characters and return the clean meeting ID
+  // This should match exactly what's stored in the active_meetings collection
+  return urlMeetingId.replaceAll(RegExp(r'[^0-9]'), '');
 }
