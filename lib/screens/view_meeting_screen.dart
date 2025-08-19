@@ -363,21 +363,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                    child: Column(
                      children: [
                        Text(
-                         meeting.title,
-                         style: Theme.of(context).textTheme.headlineMedium,
-                         textAlign: TextAlign.center,
-                       ),
-                       const SizedBox(height: 8),
-                       Text(
-                         'ID: ${meeting.id}',
-                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                           color: Theme.of(context).colorScheme.onSurfaceVariant,
-                         ),
-                         textAlign: TextAlign.center,
-                       ),
-                       const SizedBox(height: 24),
-                       Text(
-                         'Agenda',
+                         'Welcome Toastmaster!',
                          style: Theme.of(context).textTheme.titleLarge,
                          textAlign: TextAlign.center,
                        ),
