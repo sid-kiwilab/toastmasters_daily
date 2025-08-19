@@ -193,15 +193,14 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
       });
     }
 
-    if (_isPdfLoading) {
-      return Container(
-        width: double.infinity,
-        height: 700,
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!, width: 0.1),
-        ),
+         if (_isPdfLoading) {
+       return Container(
+         width: double.infinity,
+         height: 700,
+         decoration: BoxDecoration(
+           color: Colors.grey[100],
+           border: Border.all(color: Colors.grey[300]!, width: 0.1),
+         ),
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -215,15 +214,14 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
       );
     }
 
-    if (_pdfError != null) {
-      return Container(
-        width: double.infinity,
-        height: 700,
-        decoration: BoxDecoration(
-          color: Colors.red[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.red[300]!, width: 0.1),
-        ),
+         if (_pdfError != null) {
+       return Container(
+         width: double.infinity,
+         height: 700,
+         decoration: BoxDecoration(
+           color: Colors.red[50],
+           border: Border.all(color: Colors.red[300]!, width: 0.1),
+         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -255,39 +253,34 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
       );
     }
 
-    if (_pdfBytes != null) {
-      print('Displaying PDF viewer with bytes, size: ${_pdfBytes!.length}');
-      return Container(
-        width: double.infinity,
-        height: 700,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!, width: 0.1),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: PdfViewer.openData(
-            _pdfBytes!,
-            params: PdfViewerParams(
-              pageNumber: 1,
-              minScale: 0.5,
-              maxScale: 3.0,
-            ),
-          ),
-        ),
-      );
-    }
+         if (_pdfBytes != null) {
+       print('Displaying PDF viewer with bytes, size: ${_pdfBytes!.length}');
+       return Container(
+         width: double.infinity,
+         height: 700,
+         decoration: BoxDecoration(
+           color: Colors.white,
+           border: Border.all(color: Colors.grey[300]!, width: 0.1),
+         ),
+         child: PdfViewer.openData(
+           _pdfBytes!,
+           params: PdfViewerParams(
+             pageNumber: 1,
+             minScale: 0.5,
+             maxScale: 3.0,
+           ),
+         ),
+       );
+     }
 
-    // Fallback if no document
-    return Container(
-      width: double.infinity,
-      height: 700,
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!, width: 0.1),
-      ),
+         // Fallback if no document
+     return Container(
+       width: double.infinity,
+       height: 700,
+       decoration: BoxDecoration(
+         color: Colors.grey[100],
+         border: Border.all(color: Colors.grey[300]!, width: 0.1),
+       ),
       child: const Center(
         child: Text('No PDF loaded'),
       ),
@@ -402,10 +395,9 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                   const SizedBox(height: 24),
 
                                      Container(
-                     padding: const EdgeInsets.all(8),
+                     padding: const EdgeInsets.all(4),
                      decoration: BoxDecoration(
                        color: Theme.of(context).colorScheme.primaryContainer,
-                       borderRadius: BorderRadius.circular(12),
                        border: Border.all(
                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                          width: 0.1,
@@ -431,7 +423,6 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                              height: 700,
                              decoration: BoxDecoration(
                                color: Colors.grey[100],
-                               borderRadius: BorderRadius.circular(8),
                                border: Border.all(color: Colors.grey[300]!, width: 0.1),
                              ),
                              child: Center(
