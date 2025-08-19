@@ -34,9 +34,9 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
     
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+             shape: RoundedRectangleBorder(
+         borderRadius: BorderRadius.circular(16),
+       ),
              child: Container(
          constraints: const BoxConstraints(
            maxWidth: 800,
@@ -47,7 +47,7 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.only(top: 20, bottom: 20, left: 16, right: 16),
+              padding: const EdgeInsets.only(top: 8, bottom: 8, left: 16, right: 16),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary,
                 borderRadius: const BorderRadius.only(
@@ -60,7 +60,7 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                   Icon(
                     Icons.poll,
                     color: Colors.white,
-                    size: 24,
+                    size: 20,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -358,26 +358,7 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
               ),
             ),
             
-                         // Footer
-             Container(
-               padding: const EdgeInsets.only(top: 20, bottom: 20, left: 16, right: 16),
-               decoration: BoxDecoration(
-                 color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                 borderRadius: const BorderRadius.only(
-                   bottomLeft: Radius.circular(16),
-                   bottomRight: Radius.circular(16),
-                 ),
-               ),
-               child: Row(
-                 mainAxisAlignment: MainAxisAlignment.end,
-                 children: [
-                   ElevatedButton(
-                     onPressed: _savePolls,
-                     child: const Text('Close'),
-                   ),
-                 ],
-               ),
-             ),
+            
           ],
         ),
       ),
