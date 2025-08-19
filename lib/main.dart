@@ -184,7 +184,7 @@ String _convertUrlToMeetingId(String urlMeetingId) {
   // Remove any non-digit characters first
   final digits = urlMeetingId.replaceAll(RegExp(r'[^0-9]'), '');
   
-  // If it's 8 digits, add space in the middle
+  // If it's 8 digits, add space in the middle for frontend display
   if (digits.length == 8) {
     return '${digits.substring(0, 4)} ${digits.substring(4)}';
   }

@@ -19,9 +19,8 @@ exports.createMeeting = functions.https.onCall(async (data, context) => {
       return { success: false, error: 'Missing required fields' };
     }
     
-    // Generate random 8-digit meeting code with space in middle
-    const code = Math.floor(10000000 + Math.random() * 90000000).toString();
-    const meetingCode = code.slice(0, 4) + ' ' + code.slice(4);
+    // Generate random 8-digit meeting code
+    const meetingCode = Math.floor(10000000 + Math.random() * 90000000).toString();
     
     // Create meeting document with minimal required fields
     const meetingDoc = {
