@@ -332,6 +332,37 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
     );
   }
 
+  void _showExitConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Exit Meeting'),
+          content: const Text('Are you sure you want to exit the meeting?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/',
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Exit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
 
   @override
@@ -364,19 +395,32 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
              child: Column(
                crossAxisAlignment: CrossAxisAlignment.center,
                children: [
-                 // Header section
-                 Padding(
-                   padding: const EdgeInsets.all(16),
-                   child: Column(
-                     children: [
-                       Text(
-                         'Welcome Toastmaster!',
-                         style: Theme.of(context).textTheme.titleLarge,
-                         textAlign: TextAlign.center,
-                       ),
-                     ],
-                   ),
-                 ),
+                                   // Header section
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Welcome Toastmaster!',
+                            style: Theme.of(context).textTheme.titleLarge,
+                            textAlign: TextAlign.left,
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => _showExitConfirmationDialog(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red[600],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Exit'),
+                        ),
+                      ],
+                    ),
+                  ),
                  
                  // Agenda container that extends to bottom
                  Expanded(

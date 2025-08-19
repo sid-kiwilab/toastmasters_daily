@@ -33,6 +33,8 @@ class _AgendaWidgetState extends State<AgendaWidget> {
   }
 
   Future<void> _loadPdfFromUrl(String url) async {
+    if (!mounted) return;
+    
     setState(() {
       _isPdfLoading = true;
       _pdfError = null;
@@ -114,30 +116,36 @@ class _AgendaWidgetState extends State<AgendaWidget> {
       
     } catch (e) {
       print('PDF loading error: $e');
-      setState(() {
-        _pdfError = e.toString();
-        _isPdfLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _pdfError = e.toString();
+          _isPdfLoading = false;
+        });
+      }
     }
   }
 
   void _loadPdfFromBytes(Uint8List bytes) async {
     try {
       final document = await PdfDocument.openData(bytes);
-      setState(() {
-        _pdfDocument = document;
-        _pdfBytes = bytes;
-        _isPdfLoading = false;
-        _pdfError = null;
-      });
+      if (mounted) {
+        setState(() {
+          _pdfDocument = document;
+          _pdfBytes = bytes;
+          _isPdfLoading = false;
+          _pdfError = null;
+        });
+      }
       
       print('PDF loaded successfully into document, pages: ${document.pageCount}');
     } catch (e) {
       print('Error creating PDF document: $e');
-      setState(() {
-        _pdfError = 'Error creating PDF document: $e';
-        _isPdfLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _pdfError = 'Error creating PDF document: $e';
+          _isPdfLoading = false;
+        });
+      }
     }
   }
 
