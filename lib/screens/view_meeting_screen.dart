@@ -515,7 +515,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                           Expanded(
                             child: _selectedTabIndex == 0
                                 ? AgendaWidget(agendaUrl: meeting.agendaUrl)
-                                : const VotingWidget(),
+                                : VotingWidget(meetingId: widget.meetingId),
                           ),
                        ],
                      ),
