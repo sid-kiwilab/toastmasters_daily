@@ -86,7 +86,7 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
             // Content
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.only(top: 20, bottom: 20, left: 16, right: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

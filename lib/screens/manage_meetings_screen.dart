@@ -443,10 +443,10 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                  builder: (context, constraints) {
                                                    // Check if we have enough width for side-by-side layout
                                                    final hasViewAgenda = meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty;
-                                                   final buttonCount = hasViewAgenda ? 3 : 2;
-                                                   final minButtonWidth = 160.0; // Increased minimum button width for better mobile experience
+                                                   final buttonCount = hasViewAgenda ? 4 : 3; // Include Poll Results button in count
+                                                   final minButtonWidth = 200.0; // Increased minimum button width for better mobile experience
                                                    final totalMinWidth = (buttonCount * minButtonWidth) + ((buttonCount - 1) * 12);
-                                                   final useSideBySide = constraints.maxWidth >= totalMinWidth;
+                                                   final useSideBySide = constraints.maxWidth >= 800; // Switch to mobile view at 800px instead of calculating
                                                    
                                                    if (useSideBySide) {
                                                      // Side by side layout
