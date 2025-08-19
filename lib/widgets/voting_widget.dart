@@ -19,10 +19,12 @@ class VotingWidget extends StatefulWidget {
 
 class _VotingWidgetState extends State<VotingWidget> {
   Map<String, Poll> _polls = {};
+  List<String> _pollOrder = []; // Maintain stable poll order
   StreamSubscription<QuerySnapshot>? _pollsSubscription;
   int _selectedPollIndex = 0;
   String? _deviceId;
   Map<String, String?> _userVotes = {}; // pollId -> selectedOption
+  bool _isVoting = false; // Track if a vote is currently being processed
 
   @override
   Widget build(BuildContext context) {
@@ -71,12 +73,10 @@ class _VotingWidgetState extends State<VotingWidget> {
       );
     }
 
-    // Filter only active polls
-    final activePolls = _polls.entries
-        .where((entry) => entry.value.isActive)
-        .toList();
-
-    if (activePolls.isEmpty) {
+         // Get all polls in stable order (both active and inactive)
+     final allPolls = _pollOrder.map((pollId) => MapEntry(pollId, _polls[pollId]!)).toList();
+     
+     if (allPolls.isEmpty) {
       return Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -93,7 +93,7 @@ class _VotingWidgetState extends State<VotingWidget> {
               ),
               SizedBox(height: 16),
               Text(
-                'No active polls',
+                'No polls available',
                 style: TextStyle(
                   color: Colors.grey,
                   fontWeight: FontWeight.w600,
@@ -103,7 +103,7 @@ class _VotingWidgetState extends State<VotingWidget> {
               ),
               SizedBox(height: 8),
               Text(
-                'All polls are currently inactive',
+                'Polls will appear here when they are created',
                 style: TextStyle(
                   color: Colors.grey,
                   fontSize: 14,
@@ -117,57 +117,63 @@ class _VotingWidgetState extends State<VotingWidget> {
     }
 
     // Ensure selected index is valid
-    if (_selectedPollIndex >= activePolls.length) {
+    if (_selectedPollIndex >= allPolls.length) {
       _selectedPollIndex = 0;
     }
 
-    final selectedPoll = activePolls[_selectedPollIndex].value;
+    final selectedPoll = allPolls[_selectedPollIndex].value;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey[300]!, width: 0.1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey[300]!, width: 0.1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // Circular numbered pills at the top
           Container(
             padding: const EdgeInsets.all(20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: activePolls.asMap().entries.map((entry) {
+              children: allPolls.asMap().entries.map((entry) {
                 final index = entry.key;
                 final isSelected = index == _selectedPollIndex;
+                final poll = entry.value;
                 
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedPollIndex = index;
-                    });
-                  },
+                                 return GestureDetector(
+                   onTap: _isVoting ? null : () {
+                     setState(() {
+                       _selectedPollIndex = index;
+                     });
+                   },
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 6),
                     width: 36,
                     height: 36,
-                    decoration: BoxDecoration(
-                      color: isSelected ? theme.colorScheme.primary : Colors.grey[200],
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? theme.colorScheme.primary : Colors.grey[300]!,
-                        width: 2,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.grey[700],
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                                         decoration: BoxDecoration(
+                       color: isSelected ? theme.colorScheme.primary : 
+                              (poll.value.isActive ? Colors.grey[200] : Colors.grey[400]),
+                       shape: BoxShape.circle,
+                       border: Border.all(
+                         color: isSelected ? theme.colorScheme.primary : 
+                                (poll.value.isActive ? Colors.grey[300]! : Colors.grey[500]!),
+                         width: 2,
+                       ),
+                     ),
+                                          child: Center(
+                       child: Text(
+                         '${index + 1}',
+                         style: TextStyle(
+                           color: isSelected ? Colors.white : 
+                                  (poll.value.isActive ? Colors.grey[700] : Colors.grey[500]),
+                           fontSize: 16,
+                           fontWeight: FontWeight.bold,
+                         ),
+                       ),
+                     ),
                   ),
                 );
               }).toList(),
@@ -181,13 +187,35 @@ class _VotingWidgetState extends State<VotingWidget> {
                child: Column(
                  crossAxisAlignment: CrossAxisAlignment.start,
                  children: [
-                   // Question
-                   Text(
-                     selectedPoll.question,
-                     style: theme.textTheme.headlineSmall?.copyWith(
-                       fontWeight: FontWeight.bold,
-                       color: theme.colorScheme.primary,
-                     ),
+                   // Question with active/inactive status
+                   Row(
+                     children: [
+                       Expanded(
+                         child: Text(
+                           selectedPoll.question,
+                           style: theme.textTheme.headlineSmall?.copyWith(
+                             fontWeight: FontWeight.bold,
+                             color: selectedPoll.isActive ? theme.colorScheme.primary : Colors.grey[500],
+                           ),
+                         ),
+                       ),
+                       if (!selectedPoll.isActive)
+                         Container(
+                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                           decoration: BoxDecoration(
+                             color: Colors.grey[300],
+                             borderRadius: BorderRadius.circular(12),
+                           ),
+                           child: Text(
+                             'INACTIVE',
+                             style: TextStyle(
+                               color: Colors.grey[600],
+                               fontSize: 12,
+                               fontWeight: FontWeight.bold,
+                             ),
+                           ),
+                         ),
+                     ],
                    ),
                    
                    const SizedBox(height: 32),
@@ -196,26 +224,29 @@ class _VotingWidgetState extends State<VotingWidget> {
                     ...selectedPoll.options.asMap().entries.map((entry) {
                       final index = entry.key;
                       final option = entry.value;
-                      final pollId = activePolls[_selectedPollIndex].key;
+                      final pollId = allPolls[_selectedPollIndex].key;
                       final isSelected = _userVotes[pollId] == option;
                      
                                            return GestureDetector(
-                        onTap: () => _selectOption(pollId, option),
+                        onTap: (selectedPoll.isActive && !_isVoting) ? () => _selectOption(pollId, option) : null,
                         child: Container(
                           width: double.infinity,
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: selectedPoll.isActive 
+                                ? (_isVoting ? Colors.grey[50] : Colors.grey[100])
+                                : Colors.grey[50],
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isSelected ? theme.colorScheme.primary : Colors.grey[300]!,
+                              color: isSelected ? theme.colorScheme.primary : 
+                                     (selectedPoll.isActive ? Colors.grey[300]! : Colors.grey[400]!),
                               width: isSelected ? 2 : 1,
                             ),
                           ),
                           child: Row(
                          children: [
-                           // Circular check circle
+                           // Circular check circle with progress indicator
                            Container(
                              width: 24,
                              height: 24,
@@ -244,10 +275,13 @@ class _VotingWidgetState extends State<VotingWidget> {
                                option,
                                style: theme.textTheme.titleMedium?.copyWith(
                                  fontWeight: FontWeight.w500,
-                                 color: isSelected ? theme.colorScheme.primary : Colors.grey[800],
+                                 color: isSelected ? theme.colorScheme.primary : 
+                                        (selectedPoll.isActive ? Colors.grey[800] : Colors.grey[500]),
                                ),
                              ),
                            ),
+                           
+                           
                          ],
                        ),
                      ),
@@ -259,7 +293,36 @@ class _VotingWidgetState extends State<VotingWidget> {
            ),
         ],
       ),
-    );
+    ),
+    
+    // Loading overlay when voting is in progress
+    if (_isVoting)
+      Container(
+        color: Colors.black.withOpacity(0.3),
+        child: const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text(
+                    'Recording your vote...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+  ],
+);
   }
 
   @override
@@ -315,20 +378,44 @@ class _VotingWidgetState extends State<VotingWidget> {
         final pollsData = data['polls'] as Map<String, dynamic>?;
         print('Polls data: $pollsData');
         
-        if (pollsData != null && pollsData.isNotEmpty) {
-          print('Found ${pollsData.length} polls');
-          setState(() {
-            // Convert to Poll objects
-            _polls = pollsData.map((key, value) {
-              print('Processing poll $key: $value');
-              return MapEntry(key, Poll.fromMap(value));
-            });
-          });
-          print('Processed polls: ${_polls.keys.toList()}');
-          
-          // Check for existing votes from this device
-          _checkExistingVotes();
-        } else {
+                 if (pollsData != null && pollsData.isNotEmpty) {
+           print('Found ${pollsData.length} polls');
+           
+           setState(() {
+             // Convert to Poll objects
+             _polls = pollsData.map((key, value) {
+               print('Processing poll $key: $value');
+               return MapEntry(key, Poll.fromMap(value));
+             });
+           });
+           
+           // Always order by createdAt date for consistent ordering
+           _pollOrder = _polls.entries.toList()
+               .map((entry) => entry.key)
+               .toList()
+               ..sort((a, b) {
+                 final pollA = _polls[a]!;
+                 final pollB = _polls[b]!;
+                 
+                 // Sort by createdAt date (oldest first)
+                 if (pollA.createdAt != null && pollB.createdAt != null) {
+                   return pollA.createdAt!.compareTo(pollB.createdAt!);
+                 }
+                 
+                 // Fallback: if createdAt is null, put them at the end
+                 if (pollA.createdAt == null && pollB.createdAt != null) return 1;
+                 if (pollA.createdAt != null && pollB.createdAt == null) return -1;
+                 
+                 // If both are null, maintain some order
+                 return a.compareTo(b);
+               });
+           
+           print('Processed polls: ${_polls.keys.toList()}');
+           print('Poll order by createdAt: $_pollOrder');
+           
+           // Check for existing votes from this device
+           _checkExistingVotes();
+         } else {
           print('No polls data found');
           setState(() {
             _polls = {};
@@ -354,21 +441,21 @@ class _VotingWidgetState extends State<VotingWidget> {
     });
   }
 
-  void _checkExistingVotes() {
-    if (_deviceId == null) return;
-    
-    _userVotes.clear();
-    for (final entry in _polls.entries) {
-      final pollId = entry.key;
-      final poll = entry.value;
-      
-      // Check if this device has already voted in this poll
-      if (poll.deviceVotes != null && poll.deviceVotes!.containsKey(_deviceId)) {
-        _userVotes[pollId] = poll.deviceVotes![_deviceId];
-        print('Device $_deviceId already voted for poll $pollId: ${poll.deviceVotes![_deviceId]}');
-      }
-    }
-  }
+     void _checkExistingVotes() {
+     if (_deviceId == null) return;
+     
+     _userVotes.clear();
+     for (final pollId in _pollOrder) {
+       final poll = _polls[pollId];
+       if (poll != null) {
+         // Check if this device has already voted in this poll
+         if (poll.deviceVotes != null && poll.deviceVotes!.containsKey(_deviceId)) {
+           _userVotes[pollId] = poll.deviceVotes![_deviceId];
+           print('Device $_deviceId already voted for poll $pollId: ${poll.deviceVotes![_deviceId]}');
+         }
+       }
+     }
+   }
 
   Future<void> _selectOption(String pollId, String option) async {
     if (_deviceId == null) {
@@ -381,12 +468,18 @@ class _VotingWidgetState extends State<VotingWidget> {
       return;
     }
 
+    // Set voting state to prevent multiple clicks
+    setState(() {
+      _isVoting = true;
+    });
+
     try {
-      // Find the meeting document using the same approach as the listener
+      // Use Firestore transaction to prevent race conditions
+      // First, find the meeting document path
       final meetingDocs = await FirebaseFirestore.instance
           .collectionGroup('meetings')
           .get();
-
+      
       final meetingDoc = meetingDocs.docs.where((doc) => doc.id == widget.meetingId).firstOrNull;
       
       if (meetingDoc == null) {
@@ -399,61 +492,67 @@ class _VotingWidgetState extends State<VotingWidget> {
         return;
       }
 
-      final meetingData = meetingDoc.data();
-      final pollsData = meetingData['polls'] as Map<String, dynamic>?;
-
-      if (pollsData == null || !pollsData.containsKey(pollId)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Poll not found.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      final pollData = pollsData[pollId] as Map<String, dynamic>;
-      
-      // Check if device already voted
-      final deviceVotes = pollData['deviceVotes'] as Map<String, dynamic>? ?? {};
-      final hasVoted = deviceVotes.containsKey(_deviceId);
-      final previousVote = deviceVotes[_deviceId];
-      
-      // Update the poll with the new vote
-      final newTallies = Map<String, int>.from(pollData['tallies'] ?? {});
-      
-      if (hasVoted && previousVote != null) {
-        // If changing vote, decrement previous option and increment new option
-        if (previousVote != option) {
-          newTallies[previousVote] = (newTallies[previousVote] ?? 1) - 1;
-          newTallies[option] = (newTallies[option] ?? 0) + 1;
+      // Now use transaction with the specific document reference
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Get the latest data within the transaction
+        final meetingSnapshot = await transaction.get(meetingDoc.reference);
+        final meetingData = meetingSnapshot.data();
+        
+        if (meetingData == null) {
+          throw Exception('Meeting data not found');
         }
-        // If same option selected, no change needed
-      } else {
-        // First time voting, just increment the new option
-        newTallies[option] = (newTallies[option] ?? 0) + 1;
-      }
-      
-      final newDeviceVotes = Map<String, dynamic>.from(deviceVotes);
-      newDeviceVotes[_deviceId!] = option;
 
-      // Update Firestore
-      await meetingDoc.reference.update({
-        'polls.$pollId.tallies': newTallies,
-        'polls.$pollId.totalResponses': (pollData['totalResponses'] ?? 0) + 1,
-        'polls.$pollId.deviceVotes': newDeviceVotes,
+        final pollsData = meetingData['polls'] as Map<String, dynamic>?;
+
+        if (pollsData == null || !pollsData.containsKey(pollId)) {
+          throw Exception('Poll not found');
+        }
+
+        final pollData = pollsData[pollId] as Map<String, dynamic>;
+        
+        // Check if device already voted
+        final deviceVotes = pollData['deviceVotes'] as Map<String, dynamic>? ?? {};
+        final hasVoted = deviceVotes.containsKey(_deviceId);
+        final previousVote = deviceVotes[_deviceId];
+        
+        // Update the poll with the new vote
+        final newTallies = Map<String, int>.from(pollData['tallies'] ?? {});
+        int responseIncrement = 0;
+        
+        if (hasVoted && previousVote != null) {
+          // If changing vote, decrement previous option and increment new option
+          if (previousVote != option) {
+            newTallies[previousVote] = (newTallies[previousVote] ?? 1) - 1;
+            newTallies[option] = (newTallies[option] ?? 0) + 1;
+            // No increment to totalResponses for vote changes
+          }
+          // If same option selected, no change needed
+        } else {
+          // First time voting, just increment the new option
+          newTallies[option] = (newTallies[option] ?? 0) + 1;
+          responseIncrement = 1; // Only increment for new votes
+        }
+        
+        final newDeviceVotes = Map<String, dynamic>.from(deviceVotes);
+        newDeviceVotes[_deviceId!] = option;
+
+        // Update Firestore within transaction - only the necessary fields, createdAt remains unchanged
+        transaction.update(meetingDoc.reference, {
+          'polls.$pollId.tallies': newTallies,
+          'polls.$pollId.totalResponses': (pollData['totalResponses'] ?? 0) + responseIncrement,
+          'polls.$pollId.deviceVotes': newDeviceVotes,
+        });
       });
 
-      // Update local state
+      // Update local state after successful transaction
       setState(() {
         _userVotes[pollId] = option;
+        _isVoting = false; // Reset voting state
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(hasVoted && previousVote != option 
-              ? 'Vote changed to: $option' 
-              : 'Vote recorded for: $option'),
+          content: Text('Vote recorded successfully for: $option'),
           backgroundColor: Colors.green,
         ),
       );
@@ -466,6 +565,13 @@ class _VotingWidgetState extends State<VotingWidget> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      // Always reset voting state, even if there was an error
+      if (mounted) {
+        setState(() {
+          _isVoting = false;
+        });
+      }
     }
   }
 }
