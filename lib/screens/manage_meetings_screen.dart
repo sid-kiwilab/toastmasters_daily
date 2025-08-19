@@ -241,6 +241,22 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     );
   }
 
+  // Helper method to format meeting ID with space for display
+  String _formatMeetingId(String meetingId) {
+    if (meetingId == 'Unknown ID') return meetingId;
+    
+    // Remove any existing spaces and non-digit characters
+    final digits = meetingId.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // If it's 8 digits, add space in the middle
+    if (digits.length == 8) {
+      return '${digits.substring(0, 4)} ${digits.substring(4)}';
+    }
+    
+    // Return original if not 8 digits
+    return meetingId;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -368,7 +384,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                  children: [
                                                    // Meeting ID
                                                    Text(
-                                                     meeting.id ?? 'Unknown ID',
+                                                     _formatMeetingId(meeting.id ?? 'Unknown ID'),
                                                      style: theme.textTheme.headlineSmall?.copyWith(
                                                        fontWeight: FontWeight.bold,
                                                      ),
