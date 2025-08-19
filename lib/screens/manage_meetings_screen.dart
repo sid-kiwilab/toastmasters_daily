@@ -10,7 +10,7 @@ import '../widgets/footer_widget.dart';
 import '../providers/auth_provider.dart';
 import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
-import '../dialogs/setup_polls_dialog.dart';
+import '../screens/setup_polls_screen.dart';
 import '../dialogs/poll_results_dialog.dart';
 
 class ManageMeetingsScreen extends StatefulWidget {
@@ -222,11 +222,13 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   }
 
   void _showSetupPollsDialog(BuildContext context, Meeting meeting) {
-    showDialog(
-      context: context,
-      builder: (context) => SetupPollsDialog(
-        meetingId: meeting.id,
-        meetingTitle: meeting.title ?? 'Untitled Meeting',
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SetupPollsScreen(
+          meetingId: meeting.id,
+          meetingTitle: meeting.title ?? 'Untitled Meeting',
+        ),
       ),
     );
   }
