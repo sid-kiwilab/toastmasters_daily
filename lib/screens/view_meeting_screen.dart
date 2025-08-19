@@ -380,16 +380,46 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (provider.error != null) {
+          if (provider.error != null || provider.meeting == null) {
             return Center(
-              child: Text('Error: ${provider.error}'),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '👻',
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                      fontSize: 72,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Oops! Nothing lives here...',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                      '/',
+                      (route) => false,
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    child: const Text('Back to Home'),
+                  ),
+                ],
+              ),
             );
           }
 
-          final meeting = provider.meeting;
-          if (meeting == null) {
-            return const Center(child: Text('Meeting not found'));
-          }
+          final meeting = provider.meeting!;
 
                      return SafeArea(
              child: Column(
