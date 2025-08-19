@@ -53,21 +53,25 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
     final theme = Theme.of(context);
     
     return Dialog(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Container(
+        constraints: const BoxConstraints(
+          maxWidth: 800,
+          maxHeight: double.infinity,
+        ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-              ),
+              padding: const EdgeInsets.only(top: 8, bottom: 8, left: 16, right: 16),
+                             decoration: BoxDecoration(
+                 color: theme.colorScheme.primary,
+                 borderRadius: const BorderRadius.only(
+                   topLeft: Radius.circular(16),
+                   topRight: Radius.circular(16),
+                 ),
+               ),
               child: Row(
                 children: [
                   Icon(
@@ -95,7 +99,7 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
             ),
             
             // Content
-            Flexible(
+            Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
