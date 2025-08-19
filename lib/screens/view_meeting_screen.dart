@@ -401,11 +401,11 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                        children: [
                          // Refresh Button at the top
                          Padding(
-                           padding: const EdgeInsets.only(bottom: 8),
+                           padding: const EdgeInsets.only(bottom: 4),
                            child: Row(
                              mainAxisAlignment: MainAxisAlignment.end,
                              children: [
-                               ElevatedButton.icon(
+                               ElevatedButton(
                                  onPressed: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
                                    ? () {
                                        // Reset state and reload
@@ -419,15 +419,16 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                                        _loadPdfFromUrl(meeting.agendaUrl!);
                                      }
                                    : null,
-                                 icon: const Icon(Icons.refresh),
-                                 label: Text(meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
+                                 child: Text(meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
                                    ? 'Refresh'
                                    : 'No Agenda'),
                                  style: ElevatedButton.styleFrom(
                                    backgroundColor: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
-                                     ? Theme.of(context).colorScheme.primary
+                                     ? Theme.of(context).colorScheme.onPrimary
                                      : Colors.grey,
-                                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                   foregroundColor: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
+                                     ? Theme.of(context).colorScheme.primary
+                                     : Theme.of(context).colorScheme.onPrimary,
                                    shape: RoundedRectangleBorder(
                                      borderRadius: BorderRadius.circular(8),
                                    ),
