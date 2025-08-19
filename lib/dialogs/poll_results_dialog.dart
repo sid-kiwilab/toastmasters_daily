@@ -65,13 +65,13 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
             // Header
             Container(
               padding: const EdgeInsets.only(top: 8, bottom: 8, left: 16, right: 16),
-                             decoration: BoxDecoration(
-                 color: theme.colorScheme.primary,
-                 borderRadius: const BorderRadius.only(
-                   topLeft: Radius.circular(16),
-                   topRight: Radius.circular(16),
-                 ),
-               ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
               child: Row(
                 children: [
                   Icon(
@@ -244,7 +244,6 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
                                                       ),
                                                     ],
                                                   ),
-                                                  
                                                 ],
                                               ),
                                             );
@@ -285,6 +284,9 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
                               ),
                             ),
             ),
+            
+            // Bottom padding
+            const SizedBox(height: 16),
           ],
         ),
       ),
