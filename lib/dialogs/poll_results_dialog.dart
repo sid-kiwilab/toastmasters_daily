@@ -159,7 +159,7 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
                               ),
                             )
                           : SingleChildScrollView(
-                              padding: const EdgeInsets.all(20),
+                              padding: const EdgeInsets.all(16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: _polls.entries.map((entry) {
@@ -167,9 +167,9 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
                                   final poll = entry.value;
                                   
                                   return Card(
-                                    margin: const EdgeInsets.only(bottom: 16),
+                                    margin: const EdgeInsets.only(bottom: 12),
                                     child: Padding(
-                                      padding: const EdgeInsets.all(16),
+                                      padding: const EdgeInsets.all(12),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
@@ -209,16 +209,15 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
                                             ],
                                           ),
                                           
-                                          const SizedBox(height: 16),
+                                          const SizedBox(height: 12),
                                           
                                           // Poll options with results
                                           ...poll.options.map((option) {
                                             final votes = poll.tallies[option] ?? 0;
                                             final totalVotes = poll.totalResponses;
-                                            final percentage = totalVotes > 0 ? (votes / totalVotes) * 100 : 0.0;
                                             
                                             return Padding(
-                                              padding: const EdgeInsets.only(bottom: 12),
+                                              padding: const EdgeInsets.only(bottom: 8),
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
@@ -233,58 +232,39 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
                                                         ),
                                                       ),
                                                       Text(
-                                                        '$votes votes (${percentage.toStringAsFixed(1)}%)',
+                                                        '$votes votes',
                                                         style: theme.textTheme.bodySmall?.copyWith(
                                                           color: theme.colorScheme.onSurfaceVariant,
+                                                          fontWeight: FontWeight.w600,
                                                         ),
                                                       ),
                                                     ],
                                                   ),
-                                                  const SizedBox(height: 8),
                                                   
-                                                  // Horizontal bar chart
-                                                  Container(
-                                                    width: double.infinity,
-                                                    height: 20,
-                                                    decoration: BoxDecoration(
-                                                      color: theme.colorScheme.surfaceVariant,
-                                                      borderRadius: BorderRadius.circular(10),
-                                                    ),
-                                                    child: FractionallySizedBox(
-                                                      alignment: Alignment.centerLeft,
-                                                      widthFactor: totalVotes > 0 ? votes / totalVotes : 0.0,
-                                                      child: Container(
-                                                        decoration: BoxDecoration(
-                                                          color: theme.colorScheme.primary,
-                                                          borderRadius: BorderRadius.circular(10),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
                                                 ],
                                               ),
                                             );
                                           }),
                                           
                                           if (poll.totalResponses > 0) ...[
-                                            const SizedBox(height: 16),
+                                            const SizedBox(height: 12),
                                             Container(
-                                              padding: const EdgeInsets.all(12),
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                               decoration: BoxDecoration(
                                                 color: theme.colorScheme.primaryContainer.withOpacity(0.3),
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius: BorderRadius.circular(6),
                                               ),
                                               child: Row(
                                                 children: [
                                                   Icon(
                                                     Icons.people,
                                                     color: theme.colorScheme.primary,
-                                                    size: 16,
+                                                    size: 14,
                                                   ),
-                                                  const SizedBox(width: 8),
+                                                  const SizedBox(width: 6),
                                                   Text(
                                                     'Total Responses: ${poll.totalResponses}',
-                                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                                    style: theme.textTheme.bodySmall?.copyWith(
                                                       fontWeight: FontWeight.w600,
                                                       color: theme.colorScheme.primary,
                                                     ),
