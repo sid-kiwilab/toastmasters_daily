@@ -56,18 +56,9 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   static const int _maxLoadAttempts = 3;
 
   Future<void> _loadPdfFromUrl(String url) async {
-    if (_loadAttempts >= _maxLoadAttempts) {
-      setState(() {
-        _pdfError = 'Maximum load attempts reached. Please try again later.';
-        _isPdfLoading = false;
-      });
-      return;
-    }
-
     setState(() {
       _isPdfLoading = true;
       _pdfError = null;
-      _loadAttempts++;
     });
 
     try {
@@ -196,7 +187,6 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
          if (_isPdfLoading) {
        return Container(
          width: double.infinity,
-         height: 700,
          decoration: BoxDecoration(
            color: Colors.grey[100],
            border: Border.all(color: Colors.grey[300]!, width: 0.1),
@@ -217,7 +207,6 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
          if (_pdfError != null) {
        return Container(
          width: double.infinity,
-         height: 700,
          decoration: BoxDecoration(
            color: Colors.red[50],
            border: Border.all(color: Colors.red[300]!, width: 0.1),
@@ -257,7 +246,6 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
        print('Displaying PDF viewer with bytes, size: ${_pdfBytes!.length}');
        return Container(
          width: double.infinity,
-         height: 700,
          decoration: BoxDecoration(
            color: Colors.white,
            border: Border.all(color: Colors.grey[300]!, width: 0.1),
@@ -276,7 +264,6 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
          // Fallback if no document
      return Container(
        width: double.infinity,
-       height: 700,
        decoration: BoxDecoration(
          color: Colors.grey[100],
          border: Border.all(color: Colors.grey[300]!, width: 0.1),
@@ -287,10 +274,9 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
     );
   }
 
-  Widget _buildMobilePdfPlaceholder(String url) {
-    return Container(
-      height: 700,
-      color: Colors.grey[100],
+     Widget _buildMobilePdfPlaceholder(String url) {
+     return Container(
+       color: Colors.grey[100],
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -367,34 +353,42 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
             return const Center(child: Text('Meeting not found'));
           }
 
-          return Center(
-                         child: SingleChildScrollView(
-               padding: EdgeInsets.zero,
-               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    meeting.title,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'ID: ${meeting.id}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Agenda',
-                    style: Theme.of(context).textTheme.titleLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-
-                                     Container(
+                     return SafeArea(
+             child: Column(
+               crossAxisAlignment: CrossAxisAlignment.center,
+               children: [
+                 // Header section
+                 Padding(
+                   padding: const EdgeInsets.all(16),
+                   child: Column(
+                     children: [
+                       Text(
+                         meeting.title,
+                         style: Theme.of(context).textTheme.headlineMedium,
+                         textAlign: TextAlign.center,
+                       ),
+                       const SizedBox(height: 8),
+                       Text(
+                         'ID: ${meeting.id}',
+                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                           color: Theme.of(context).colorScheme.onSurfaceVariant,
+                         ),
+                         textAlign: TextAlign.center,
+                       ),
+                       const SizedBox(height: 24),
+                       Text(
+                         'Agenda',
+                         style: Theme.of(context).textTheme.titleLarge,
+                         textAlign: TextAlign.center,
+                       ),
+                     ],
+                   ),
+                 ),
+                 
+                 // Agenda container that extends to bottom
+                 Expanded(
+                   child: Container(
+                     width: double.infinity,
                      padding: const EdgeInsets.all(4),
                      decoration: BoxDecoration(
                        color: Theme.of(context).colorScheme.primaryContainer,
@@ -405,99 +399,104 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                      ),
                      child: Column(
                        children: [
-                         // PDF Viewer Container
-                         if (meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty) ...[
-                           // Auto-load PDF if not loaded and not currently loading
-                           Builder(
-                             builder: (context) {
-                               if (_pdfBytes == null && !_isPdfLoading && _pdfError == null && _loadAttempts < _maxLoadAttempts) {
-                                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                                   _loadPdfFromUrl(meeting.agendaUrl!);
-                                 });
-                               }
-                               return _buildPdfViewer(meeting.agendaUrl!);
-                             },
+                         // Refresh Button at the top
+                         Padding(
+                           padding: const EdgeInsets.only(bottom: 8),
+                           child: Row(
+                             mainAxisAlignment: MainAxisAlignment.end,
+                             children: [
+                               ElevatedButton.icon(
+                                 onPressed: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
+                                   ? () {
+                                       // Reset state and reload
+                                       setState(() {
+                                         _pdfBytes = null;
+                                         _pdfDocument = null;
+                                         _pdfError = null;
+                                         _isPdfLoading = false;
+                                         _loadAttempts = 0;
+                                       });
+                                       _loadPdfFromUrl(meeting.agendaUrl!);
+                                     }
+                                   : null,
+                                 icon: const Icon(Icons.refresh),
+                                 label: Text(meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
+                                   ? 'Refresh'
+                                   : 'No Agenda'),
+                                 style: ElevatedButton.styleFrom(
+                                   backgroundColor: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
+                                     ? Theme.of(context).colorScheme.primary
+                                     : Colors.grey,
+                                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                   shape: RoundedRectangleBorder(
+                                     borderRadius: BorderRadius.circular(8),
+                                   ),
+                                 ),
+                               ),
+                             ],
                            ),
-                         ] else
-                           Container(
-                             height: 700,
-                             decoration: BoxDecoration(
-                               color: Colors.grey[100],
-                               border: Border.all(color: Colors.grey[300]!, width: 0.1),
-                             ),
-                             child: Center(
-                               child: Column(
-                                 mainAxisAlignment: MainAxisAlignment.center,
-                                 children: [
-                                   Icon(
-                                     Icons.picture_as_pdf,
-                                     size: 48,
-                                     color: Colors.grey[400],
-                                   ),
-                                   const SizedBox(height: 16),
-                                   Text(
-                                     'No Agenda URL Available',
-                                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                       color: Colors.grey[700],
-                                       fontWeight: FontWeight.w600,
-                                     ),
-                                     textAlign: TextAlign.center,
-                                   ),
-                                   const SizedBox(height: 8),
-                                   Text(
-                                     'This meeting does not have an agenda file',
-                                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                       color: Colors.grey[600],
-                                     ),
-                                     textAlign: TextAlign.center,
-                                   ),
-                                 ],
+                         ),
+                         
+                                                    // PDF Viewer Container
+                           if (meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty) ...[
+                             // Auto-load PDF if not loaded and not currently loading
+                             Expanded(
+                               child: Builder(
+                                 builder: (context) {
+                                   if (_pdfBytes == null && !_isPdfLoading && _pdfError == null) {
+                                     WidgetsBinding.instance.addPostFrameCallback((_) {
+                                       _loadPdfFromUrl(meeting.agendaUrl!);
+                                     });
+                                   }
+                                   return _buildPdfViewer(meeting.agendaUrl!);
+                                 },
                                ),
                              ),
-                           ),
-                         
-                         const SizedBox(height: 16),
-                         
-                         // Load PDF Button (always visible and enabled)
-                         if (meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty)
-                           ElevatedButton.icon(
-                             onPressed: _loadAttempts >= _maxLoadAttempts 
-                               ? null 
-                               : () => _loadPdfFromUrl(meeting.agendaUrl!),
-                             icon: const Icon(Icons.picture_as_pdf),
-                             label: Text(_loadAttempts >= _maxLoadAttempts 
-                               ? 'Max Attempts Reached' 
-                               : 'Load Agenda'),
-                             style: ElevatedButton.styleFrom(
-                               backgroundColor: _loadAttempts >= _maxLoadAttempts 
-                                 ? Colors.grey 
-                                 : Theme.of(context).colorScheme.primary,
-                               foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                               shape: RoundedRectangleBorder(
-                                 borderRadius: BorderRadius.circular(8),
+                           ] else
+                           Expanded(
+                             child: Container(
+                               decoration: BoxDecoration(
+                                 color: Colors.grey[100],
+                                 border: Border.all(color: Colors.grey[300]!, width: 0.1),
                                ),
-                             ),
-                           )
-                         else
-                           ElevatedButton.icon(
-                             onPressed: null,
-                             icon: const Icon(Icons.picture_as_pdf),
-                             label: const Text('No Agenda Available'),
-                             style: ElevatedButton.styleFrom(
-                               backgroundColor: Colors.grey,
-                               foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                               shape: RoundedRectangleBorder(
-                                 borderRadius: BorderRadius.circular(8),
+                               child: Center(
+                                 child: Column(
+                                   mainAxisAlignment: MainAxisAlignment.center,
+                                   children: [
+                                     Icon(
+                                       Icons.picture_as_pdf,
+                                       size: 48,
+                                       color: Colors.grey[400],
+                                     ),
+                                     const SizedBox(height: 16),
+                                     Text(
+                                       'No Agenda URL Available',
+                                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                         color: Colors.grey[700],
+                                         fontWeight: FontWeight.w600,
+                                       ),
+                                       textAlign: TextAlign.center,
+                                     ),
+                                     const SizedBox(height: 8),
+                                     Text(
+                                       'This meeting does not have an agenda file',
+                                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                         color: Colors.grey[600],
+                                       ),
+                                       textAlign: TextAlign.center,
+                                     ),
+                                   ],
+                                 ),
                                ),
                              ),
                            ),
                        ],
                      ),
                    ),
-                ],
-              ),
-            ),
-          );
+                 ),
+               ],
+             ),
+           );
         },
       ),
     );
