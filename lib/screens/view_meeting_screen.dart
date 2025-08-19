@@ -8,6 +8,8 @@ import 'package:http/http.dart' as http;
 import '../providers/view_meeting_provider.dart';
 import '../providers/manage_meetings_provider.dart';
 import '../utils/theme.dart';
+import '../widgets/agenda_widget.dart';
+import '../widgets/voting_widget.dart';
 import 'dart:typed_data';
 
 class ViewMeetingScreen extends StatefulWidget {
@@ -27,6 +29,9 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   Uint8List? _pdfBytes; // Store the PDF bytes separately
   bool _isPdfLoading = false;
   String? _pdfError;
+  
+  // Tab selection state
+  int _selectedTabIndex = 0; // 0 for Agenda, 1 for Polls
 
   @override
   void initState() {
@@ -327,6 +332,8 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
     );
   }
 
+
+
   @override
   void dispose() {
     _pdfDocument?.dispose();
@@ -389,24 +396,13 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                          Padding(
                            padding: const EdgeInsets.only(bottom: 4),
                            child: Row(
-                             mainAxisAlignment: MainAxisAlignment.end,
+                             mainAxisAlignment: MainAxisAlignment.center,
                              children: [
-                               ElevatedButton(
-                                 onPressed: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
-                                   ? () {
-                                       // Reset state and reload
-                                       setState(() {
-                                         _pdfBytes = null;
-                                         _pdfDocument = null;
-                                         _pdfError = null;
-                                         _isPdfLoading = false;
-                                         _loadAttempts = 0;
-                                       });
-                                       _loadPdfFromUrl(meeting.agendaUrl!);
-                                     }
-                                   : null,
+                                                               // Agenda Button
+                                ElevatedButton(
+                                  onPressed: () => setState(() => _selectedTabIndex = 0),
                                  child: Text(meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
-                                   ? 'Refresh'
+                                   ? 'Agenda'
                                    : 'No Agenda'),
                                  style: ElevatedButton.styleFrom(
                                    backgroundColor: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
@@ -420,63 +416,33 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                                    ),
                                  ),
                                ),
+                               const SizedBox(width: 8),
+                               // Voting Button (renamed from Polls)
+                               ElevatedButton(
+                                 onPressed: () => setState(() => _selectedTabIndex = 1),
+                                 child: const Text('Voting'),
+                                 style: ElevatedButton.styleFrom(
+                                   backgroundColor: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
+                                       ? Theme.of(context).colorScheme.onPrimary
+                                       : Colors.grey,
+                                   foregroundColor: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
+                                       ? Theme.of(context).colorScheme.primary
+                                       : Theme.of(context).colorScheme.onPrimary,
+                                   shape: RoundedRectangleBorder(
+                                     borderRadius: BorderRadius.circular(8),
+                                   ),
+                                 ),
+                               ),
                              ],
                            ),
                          ),
                          
-                                                    // PDF Viewer Container
-                           if (meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty) ...[
-                             // Auto-load PDF if not loaded and not currently loading
-                             Expanded(
-                               child: Builder(
-                                 builder: (context) {
-                                   if (_pdfBytes == null && !_isPdfLoading && _pdfError == null) {
-                                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                                       _loadPdfFromUrl(meeting.agendaUrl!);
-                                     });
-                                   }
-                                   return _buildPdfViewer(meeting.agendaUrl!);
-                                 },
-                               ),
-                             ),
-                           ] else
-                           Expanded(
-                             child: Container(
-                               decoration: BoxDecoration(
-                                 color: Colors.grey[100],
-                                 border: Border.all(color: Colors.grey[300]!, width: 0.1),
-                               ),
-                               child: Center(
-                                 child: Column(
-                                   mainAxisAlignment: MainAxisAlignment.center,
-                                   children: [
-                                     Icon(
-                                       Icons.picture_as_pdf,
-                                       size: 48,
-                                       color: Colors.grey[400],
-                                     ),
-                                     const SizedBox(height: 16),
-                                     Text(
-                                       'No Agenda URL Available',
-                                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                         color: Colors.grey[700],
-                                         fontWeight: FontWeight.w600,
-                                       ),
-                                       textAlign: TextAlign.center,
-                                     ),
-                                     const SizedBox(height: 8),
-                                     Text(
-                                       'This meeting does not have an agenda file',
-                                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                         color: Colors.grey[600],
-                                       ),
-                                       textAlign: TextAlign.center,
-                                     ),
-                                   ],
-                                 ),
-                               ),
-                             ),
-                           ),
+                                                                              // Content area that changes based on selected tab
+                          Expanded(
+                            child: _selectedTabIndex == 0
+                                ? AgendaWidget(agendaUrl: meeting.agendaUrl)
+                                : const VotingWidget(),
+                          ),
                        ],
                      ),
                    ),
