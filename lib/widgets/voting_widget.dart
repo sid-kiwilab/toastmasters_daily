@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+import 'dart:math';
+import '../utils/web_device_identifier.dart';
 import '../providers/manage_meetings_provider.dart';
 
 class VotingWidget extends StatefulWidget {
@@ -19,6 +21,8 @@ class _VotingWidgetState extends State<VotingWidget> {
   Map<String, Poll> _polls = {};
   StreamSubscription<QuerySnapshot>? _pollsSubscription;
   int _selectedPollIndex = 0;
+  String? _deviceId;
+  Map<String, String?> _userVotes = {}; // pollId -> selectedOption
 
   @override
   Widget build(BuildContext context) {
@@ -188,25 +192,28 @@ class _VotingWidgetState extends State<VotingWidget> {
                    
                    const SizedBox(height: 32),
                    
-                   // Options
-                   ...selectedPoll.options.asMap().entries.map((entry) {
-                     final index = entry.key;
-                     final option = entry.value;
-                     final isSelected = false; // TODO: Add selection state when voting is implemented
+                                       // Options
+                    ...selectedPoll.options.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final option = entry.value;
+                      final pollId = activePolls[_selectedPollIndex].key;
+                      final isSelected = _userVotes[pollId] == option;
                      
-                     return Container(
-                       width: double.infinity,
-                       margin: const EdgeInsets.only(bottom: 12),
-                       padding: const EdgeInsets.all(16),
-                       decoration: BoxDecoration(
-                         color: Colors.grey[100],
-                         borderRadius: BorderRadius.circular(12),
-                         border: Border.all(
-                           color: isSelected ? theme.colorScheme.primary : Colors.grey[300]!,
-                           width: isSelected ? 2 : 1,
-                         ),
-                       ),
-                       child: Row(
+                                           return GestureDetector(
+                        onTap: () => _selectOption(pollId, option),
+                        child: Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? theme.colorScheme.primary : Colors.grey[300]!,
+                              width: isSelected ? 2 : 1,
+                            ),
+                          ),
+                          child: Row(
                          children: [
                            // Circular check circle
                            Container(
@@ -243,8 +250,9 @@ class _VotingWidgetState extends State<VotingWidget> {
                            ),
                          ],
                        ),
-                     );
-                   }),
+                     ),
+                   );
+                 }),
                  ],
                ),
              ),
@@ -258,7 +266,21 @@ class _VotingWidgetState extends State<VotingWidget> {
   void initState() {
     super.initState();
     print('VotingWidget initState called for meeting: ${widget.meetingId}');
-    _setupPollsListener();
+    _getDeviceId().then((_) {
+      _setupPollsListener();
+    });
+  }
+
+  Future<void> _getDeviceId() async {
+    try {
+      // Use web-specific device identifier that works even in incognito mode
+      _deviceId = await WebDeviceIdentifier.getDeviceId();
+      print('Web Device ID generated: $_deviceId');
+    } catch (e) {
+      // Fallback to timestamp-based ID
+      _deviceId = 'web_fallback_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1000000)}';
+      print('Fallback web device ID generated: $_deviceId');
+    }
   }
 
   @override
@@ -303,6 +325,9 @@ class _VotingWidgetState extends State<VotingWidget> {
             });
           });
           print('Processed polls: ${_polls.keys.toList()}');
+          
+          // Check for existing votes from this device
+          _checkExistingVotes();
         } else {
           print('No polls data found');
           setState(() {
@@ -327,5 +352,120 @@ class _VotingWidgetState extends State<VotingWidget> {
         );
       }
     });
+  }
+
+  void _checkExistingVotes() {
+    if (_deviceId == null) return;
+    
+    _userVotes.clear();
+    for (final entry in _polls.entries) {
+      final pollId = entry.key;
+      final poll = entry.value;
+      
+      // Check if this device has already voted in this poll
+      if (poll.deviceVotes != null && poll.deviceVotes!.containsKey(_deviceId)) {
+        _userVotes[pollId] = poll.deviceVotes![_deviceId];
+        print('Device $_deviceId already voted for poll $pollId: ${poll.deviceVotes![_deviceId]}');
+      }
+    }
+  }
+
+  Future<void> _selectOption(String pollId, String option) async {
+    if (_deviceId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Device ID not available. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Find the meeting document using the same approach as the listener
+      final meetingDocs = await FirebaseFirestore.instance
+          .collectionGroup('meetings')
+          .get();
+
+      final meetingDoc = meetingDocs.docs.where((doc) => doc.id == widget.meetingId).firstOrNull;
+      
+      if (meetingDoc == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Meeting not found.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final meetingData = meetingDoc.data();
+      final pollsData = meetingData['polls'] as Map<String, dynamic>?;
+
+      if (pollsData == null || !pollsData.containsKey(pollId)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Poll not found.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final pollData = pollsData[pollId] as Map<String, dynamic>;
+      
+      // Check if device already voted
+      final deviceVotes = pollData['deviceVotes'] as Map<String, dynamic>? ?? {};
+      final hasVoted = deviceVotes.containsKey(_deviceId);
+      final previousVote = deviceVotes[_deviceId];
+      
+      // Update the poll with the new vote
+      final newTallies = Map<String, int>.from(pollData['tallies'] ?? {});
+      
+      if (hasVoted && previousVote != null) {
+        // If changing vote, decrement previous option and increment new option
+        if (previousVote != option) {
+          newTallies[previousVote] = (newTallies[previousVote] ?? 1) - 1;
+          newTallies[option] = (newTallies[option] ?? 0) + 1;
+        }
+        // If same option selected, no change needed
+      } else {
+        // First time voting, just increment the new option
+        newTallies[option] = (newTallies[option] ?? 0) + 1;
+      }
+      
+      final newDeviceVotes = Map<String, dynamic>.from(deviceVotes);
+      newDeviceVotes[_deviceId!] = option;
+
+      // Update Firestore
+      await meetingDoc.reference.update({
+        'polls.$pollId.tallies': newTallies,
+        'polls.$pollId.totalResponses': (pollData['totalResponses'] ?? 0) + 1,
+        'polls.$pollId.deviceVotes': newDeviceVotes,
+      });
+
+      // Update local state
+      setState(() {
+        _userVotes[pollId] = option;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(hasVoted && previousVote != option 
+              ? 'Vote changed to: $option' 
+              : 'Vote recorded for: $option'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+    } catch (e) {
+      print('Error recording vote: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error recording vote: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

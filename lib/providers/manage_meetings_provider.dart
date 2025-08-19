@@ -41,6 +41,7 @@ class Poll {
   final Map<String, int> tallies;
   final int totalResponses;
   final DateTime createdAt;
+  final Map<String, String>? deviceVotes; // deviceId -> selectedOption
 
   Poll({
     required this.question,
@@ -49,6 +50,7 @@ class Poll {
     Map<String, int>? tallies,
     this.totalResponses = 0,
     DateTime? createdAt,
+    this.deviceVotes,
   }) : 
     tallies = tallies ?? Map.fromIterable(options, value: (_) => 0),
     createdAt = createdAt ?? DateTime.now();
@@ -61,6 +63,7 @@ class Poll {
       'tallies': tallies,
       'totalResponses': totalResponses,
       'createdAt': createdAt,
+      'deviceVotes': deviceVotes,
     };
   }
 
@@ -72,6 +75,9 @@ class Poll {
       tallies: Map<String, int>.from(map['tallies'] ?? {}),
       totalResponses: map['totalResponses'] ?? 0,
       createdAt: map['createdAt']?.toDate() ?? DateTime.now(),
+      deviceVotes: map['deviceVotes'] != null 
+          ? Map<String, String>.from(map['deviceVotes'])
+          : null,
     );
   }
 }
