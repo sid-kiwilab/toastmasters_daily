@@ -33,12 +33,13 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
     final theme = Theme.of(context);
     
     return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
              child: Container(
          constraints: const BoxConstraints(
-           maxWidth: 600,
+           maxWidth: 800,
            maxHeight: double.infinity,
          ),
                  child: Column(
@@ -46,7 +47,7 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.only(top: 20, bottom: 20, left: 16, right: 16),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary,
                 borderRadius: const BorderRadius.only(
@@ -83,10 +84,10 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
               ),
             ),
             
-            // Content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 20, bottom: 20, left: 16, right: 16),
+                         // Content
+             Expanded(
+               child: Padding(
+                 padding: const EdgeInsets.only(top: 20, bottom: 20, left: 16, right: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -219,7 +220,7 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
                                     // Expandable edit section
                                     if (isExpanded)
                                       Container(
-                                        padding: const EdgeInsets.all(16),
+                                        padding: const EdgeInsets.only(top: 16, bottom: 16, left: 8, right: 8),
                                         decoration: BoxDecoration(
                                           color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
                                           borderRadius: const BorderRadius.only(
@@ -359,7 +360,7 @@ class _SetupPollsDialogState extends State<SetupPollsDialog> {
             
                          // Footer
              Container(
-               padding: const EdgeInsets.all(20),
+               padding: const EdgeInsets.only(top: 20, bottom: 20, left: 16, right: 16),
                decoration: BoxDecoration(
                  color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
                  borderRadius: const BorderRadius.only(
