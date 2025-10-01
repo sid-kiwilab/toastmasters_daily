@@ -12,6 +12,7 @@ import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
 import '../screens/setup_polls_screen.dart';
 import '../dialogs/poll_results_dialog.dart';
+import '../dialogs/qr_code_dialog.dart';
 
 class ManageMeetingsScreen extends StatefulWidget {
   const ManageMeetingsScreen({super.key});
@@ -227,7 +228,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       MaterialPageRoute(
         builder: (context) => SetupPollsScreen(
           meetingId: meeting.id,
-          meetingTitle: meeting.title ?? 'Untitled Meeting',
+          meetingTitle: meeting.title,
         ),
       ),
     );
@@ -238,7 +239,17 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       context: context,
       builder: (context) => PollResultsDialog(
         meetingId: meeting.id,
-        meetingTitle: meeting.title ?? 'Untitled Meeting',
+        meetingTitle: meeting.title,
+      ),
+    );
+  }
+
+  void _showQRCodeDialog(BuildContext context, Meeting meeting) {
+    showDialog(
+      context: context,
+      builder: (context) => QRCodeDialog(
+        meetingId: meeting.id,
+        meetingTitle: meeting.title,
       ),
     );
   }
@@ -386,7 +397,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                  children: [
                                                    // Meeting ID
                                                    Text(
-                                                     _formatMeetingId(meeting.id ?? 'Unknown ID'),
+                                                     _formatMeetingId(meeting.id),
                                                      style: theme.textTheme.headlineSmall?.copyWith(
                                                        fontWeight: FontWeight.bold,
                                                      ),
@@ -402,7 +413,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                          Navigator.pushNamed(context, '/meetings/$urlMeetingId');
                                                        },
                                                        child: Text(
-                                                         meeting.title ?? 'Untitled Meeting',
+                                                         meeting.title,
                                                          style: theme.textTheme.titleMedium?.copyWith(
                                                            color: theme.colorScheme.primary,
                                                            decoration: TextDecoration.underline,
@@ -415,7 +426,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                    IconButton(
                                                      onPressed: () {
                                                        // Copy meeting ID to clipboard
-                                                       final meetingId = meeting.id ?? 'Unknown ID';
+                                                       final meetingId = meeting.id;
                                                        Clipboard.setData(ClipboardData(text: meetingId));
                                                        ScaffoldMessenger.of(context).showSnackBar(
                                                          SnackBar(
@@ -445,9 +456,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                  builder: (context, constraints) {
                                                    // Check if we have enough width for side-by-side layout
                                                    final hasViewAgenda = meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty;
-                                                   final buttonCount = hasViewAgenda ? 4 : 3; // Include Poll Results button in count
-                                                   final minButtonWidth = 200.0; // Increased minimum button width for better mobile experience
-                                                   final totalMinWidth = (buttonCount * minButtonWidth) + ((buttonCount - 1) * 12);
                                                    final useSideBySide = constraints.maxWidth >= 800; // Switch to mobile view at 800px instead of calculating
                                                    
                                                    if (useSideBySide) {
@@ -460,7 +468,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                              onPressed: _uploadingAgendas[meeting.id] == true
                                                                  ? null
                                                                  : () {
-                                                                     _uploadAgenda(context, meeting.id ?? '');
+                                                                     _uploadAgenda(context, meeting.id);
                                                                    },
                                                              icon: _uploadingAgendas[meeting.id] == true
                                                                  ? const SizedBox(
@@ -537,6 +545,25 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                              ),
                                                            ),
                                                          ),
+                                                         
+                                                         const SizedBox(width: 12),
+                                                         
+                                                         // QR Code button
+                                                         Expanded(
+                                                           child: ElevatedButton.icon(
+                                                             onPressed: () {
+                                                               _showQRCodeDialog(context, meeting);
+                                                             },
+                                                             icon: const Icon(Icons.qr_code, size: 18),
+                                                             label: const Text('QR Code'),
+                                                             style: ElevatedButton.styleFrom(
+                                                               backgroundColor: theme.colorScheme.tertiary,
+                                                               foregroundColor: Colors.white,
+                                                               padding: const EdgeInsets.symmetric(vertical: 8),
+                                                               elevation: 2,
+                                                             ),
+                                                           ),
+                                                         ),
                                                        ],
                                                      );
                                                    } else {
@@ -550,7 +577,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                              onPressed: _uploadingAgendas[meeting.id] == true
                                                                  ? null
                                                                  : () {
-                                                                     _uploadAgenda(context, meeting.id ?? '');
+                                                                     _uploadAgenda(context, meeting.id);
                                                                    },
                                                              icon: _uploadingAgendas[meeting.id] == true
                                                                  ? const SizedBox(
@@ -626,6 +653,26 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                                              label: const Text('Poll Results'),
                                                              style: ElevatedButton.styleFrom(
                                                                backgroundColor: theme.colorScheme.secondary,
+                                                               foregroundColor: Colors.white,
+                                                               padding: const EdgeInsets.symmetric(vertical: 8),
+                                                               elevation: 2,
+                                                             ),
+                                                           ),
+                                                         ),
+                                                         
+                                                         const SizedBox(height: 12),
+                                                         
+                                                         // QR Code button
+                                                         SizedBox(
+                                                           width: double.infinity,
+                                                           child: ElevatedButton.icon(
+                                                             onPressed: () {
+                                                               _showQRCodeDialog(context, meeting);
+                                                             },
+                                                             icon: const Icon(Icons.qr_code, size: 18),
+                                                             label: const Text('QR Code'),
+                                                             style: ElevatedButton.styleFrom(
+                                                               backgroundColor: theme.colorScheme.tertiary,
                                                                foregroundColor: Colors.white,
                                                                padding: const EdgeInsets.symmetric(vertical: 8),
                                                                elevation: 2,
