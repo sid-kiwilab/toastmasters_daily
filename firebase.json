@@ -25,10 +25,6 @@
     ],
     "rewrites": [
       {
-        "source": "/login",
-        "destination": "/login/index.html"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }

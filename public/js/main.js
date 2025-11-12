@@ -7,10 +7,217 @@ const joinButton = document.getElementById('joinButton');
 const joinButtonText = document.getElementById('joinButtonText');
 const loginButton = document.getElementById('loginButton');
 
-// Login button click handler
+// Login overlay elements
+const loginOverlay = document.getElementById('loginOverlay');
+const closeLoginOverlay = document.getElementById('closeLoginOverlay');
+const loginOverlayForm = document.getElementById('loginOverlayForm');
+
+// Login button click handler - show overlay
 if (loginButton) {
   loginButton.addEventListener('click', function() {
-    window.location.href = '/login';
+    if (loginOverlay) {
+      loginOverlay.classList.add('show');
+      // Focus on email input when overlay opens
+      const emailInput = document.getElementById('loginEmailInput');
+      if (emailInput) {
+        setTimeout(() => emailInput.focus(), 100);
+      }
+    }
+  });
+}
+
+// Close overlay handlers
+if (closeLoginOverlay) {
+  closeLoginOverlay.addEventListener('click', function() {
+    if (loginOverlay) {
+      loginOverlay.classList.remove('show');
+    }
+  });
+}
+
+// Close overlay on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && loginOverlay && loginOverlay.classList.contains('show')) {
+    loginOverlay.classList.remove('show');
+  }
+});
+
+// Tab switching
+const authTabs = document.querySelectorAll('.auth-tab');
+const authTabContents = document.querySelectorAll('.auth-tab-content');
+
+authTabs.forEach(tab => {
+  tab.addEventListener('click', function() {
+    const targetTab = this.getAttribute('data-tab');
+    
+    // Remove active class from all tabs and contents
+    authTabs.forEach(t => t.classList.remove('active'));
+    authTabContents.forEach(c => c.classList.remove('active'));
+    
+    // Add active class to clicked tab and corresponding content
+    this.classList.add('active');
+    const targetContent = document.getElementById(targetTab + 'Tab');
+    if (targetContent) {
+      targetContent.classList.add('active');
+    }
+  });
+});
+
+// Password visibility toggle
+function setupPasswordToggle(toggleId, inputId) {
+  const toggle = document.getElementById(toggleId);
+  const input = document.getElementById(inputId);
+  
+  if (toggle && input) {
+    toggle.addEventListener('click', function() {
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      
+      const eyeIcon = toggle.querySelector('.eye-icon');
+      const eyeOffIcon = toggle.querySelector('.eye-off-icon');
+      
+      if (eyeIcon && eyeOffIcon) {
+        if (isPassword) {
+          eyeIcon.style.display = 'none';
+          eyeOffIcon.style.display = 'block';
+        } else {
+          eyeIcon.style.display = 'block';
+          eyeOffIcon.style.display = 'none';
+        }
+      }
+    });
+  }
+}
+
+// Setup all password toggles
+setupPasswordToggle('loginPasswordToggle', 'loginPasswordInput');
+setupPasswordToggle('signupPasswordToggle', 'signupPasswordInput');
+setupPasswordToggle('signupConfirmPasswordToggle', 'signupConfirmPasswordInput');
+
+// Login form submission handler
+if (loginOverlayForm) {
+  loginOverlayForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const emailInput = document.getElementById('loginEmailInput');
+    const passwordInput = document.getElementById('loginPasswordInput');
+    const loginSubmitButton = document.getElementById('loginSubmitButton');
+    const loginButtonText = document.getElementById('loginButtonText');
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    
+    // Validation
+    if (!email) {
+      showNotification('Please enter your email', 'error');
+      return;
+    }
+    
+    if (!password) {
+      showNotification('Please enter your password', 'error');
+      return;
+    }
+    
+    // Show loading state
+    loginSubmitButton.disabled = true;
+    loginButtonText.innerHTML = '<span class="spinner"></span>';
+    
+    // Handle login
+    const success = await handleLogin(email, password);
+    
+    if (!success) {
+      loginSubmitButton.disabled = false;
+      loginButtonText.textContent = 'Login';
+    }
+  });
+}
+
+// Sign up form submission handler
+const signupOverlayForm = document.getElementById('signupOverlayForm');
+if (signupOverlayForm) {
+  signupOverlayForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const emailInput = document.getElementById('signupEmailInput');
+    const passwordInput = document.getElementById('signupPasswordInput');
+    const confirmPasswordInput = document.getElementById('signupConfirmPasswordInput');
+    const signupSubmitButton = document.getElementById('signupSubmitButton');
+    const signupButtonText = document.getElementById('signupButtonText');
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    // Validation
+    if (!email) {
+      showNotification('Please enter your email', 'error');
+      return;
+    }
+    
+    if (!password) {
+      showNotification('Please enter a password', 'error');
+      return;
+    }
+    
+    if (password.length < 6) {
+      showNotification('Password must be at least 6 characters', 'error');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      showNotification('Passwords do not match', 'error');
+      return;
+    }
+    
+    // Show loading state
+    signupSubmitButton.disabled = true;
+    signupButtonText.innerHTML = '<span class="spinner"></span>';
+    
+    // Handle sign up
+    const success = await handleSignUp(email, password);
+    
+    if (!success) {
+      signupSubmitButton.disabled = false;
+      signupButtonText.textContent = 'Sign Up';
+    }
+  });
+}
+
+// Reset password form submission handler
+const resetOverlayForm = document.getElementById('resetOverlayForm');
+if (resetOverlayForm) {
+  resetOverlayForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const emailInput = document.getElementById('resetEmailInput');
+    const resetSubmitButton = document.getElementById('resetSubmitButton');
+    const resetButtonText = document.getElementById('resetButtonText');
+    
+    const email = emailInput.value.trim();
+    
+    // Validation
+    if (!email) {
+      showNotification('Please enter your email', 'error');
+      return;
+    }
+    
+    // Show loading state
+    resetSubmitButton.disabled = true;
+    resetButtonText.innerHTML = '<span class="spinner"></span>';
+    
+    // Handle reset password
+    const success = await handleResetPassword(email);
+    
+    if (!success) {
+      resetSubmitButton.disabled = false;
+      resetButtonText.textContent = 'Send Reset Link';
+    } else {
+      // Reset button state on success
+      resetSubmitButton.disabled = false;
+      resetButtonText.textContent = 'Send Reset Link';
+      // Clear the form on success
+      emailInput.value = '';
+    }
   });
 }
 
