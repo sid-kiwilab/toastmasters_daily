@@ -1,32 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Toastmasters Daily</title>
     <link rel="icon" type="image/png" href="/assets/favicon.png">
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        font-family: Arial, Helvetica, sans-serif;
-        background: #f5f5f5;
-      }
-      h1 {
-        font-size: 3rem;
-        color: #333;
-        text-align: center;
-      }
-    </style>
+    <link rel="preload" href="/assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <script>
+      // Master version - change this to invalidate cache for all assets
+      const APP_VERSION = '1.0.1';
+      
+      // Load CSS with version (fonts first for immediate loading)
+      document.write('<link rel="stylesheet" href="/css/fonts.css?v=' + APP_VERSION + '">');
+      document.write('<link rel="stylesheet" href="/css/styles.css?v=' + APP_VERSION + '">');
+    </script>
   </head>
   <body>
-    <h1>toastmasters daily</h1>
+    <div class="content-wrapper">
+      <h1>Enter the code to join</h1>
+      <p class="subtitle">Best speeches coming your way!</p>
+
+      <div class="code-input-container">
+        <input
+          type="text"
+          id="codeInput"
+          class="code-input"
+          placeholder="1234 5678"
+          maxlength="9"
+          autocomplete="off"
+        />
+      </div>
+
+      <button class="join-button" id="joinButton">Join</button>
+    </div>
+
+    <script>
+      // Load JS with version
+      const script = document.createElement('script');
+      script.src = '/js/main.js?v=' + APP_VERSION;
+      document.body.appendChild(script);
+    </script>
   </body>
 </html>
