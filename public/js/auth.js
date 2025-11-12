@@ -44,12 +44,7 @@ function loadFirebaseAuth() {
 
 // Initialize Firebase with Auth
 async function initializeFirebaseAuth() {
-  let attempts = 0;
-  while (typeof firebase === 'undefined' && attempts < 10) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    attempts++;
-  }
-  
+  // Check if Firebase is already loaded, if not load it immediately
   if (typeof firebase === 'undefined') {
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
@@ -104,14 +99,14 @@ async function handleLogin(email, password) {
     if (userCredential.user) {
       showNotification('Login successful!', 'success');
       
-      // Close overlay and redirect after a short delay
+      // Close overlay and redirect to base after a short delay
       setTimeout(() => {
         const loginOverlay = document.getElementById('loginOverlay');
         if (loginOverlay) {
           loginOverlay.classList.remove('show');
         }
-        // Redirect to home (which will check auth and redirect to my-meetings if needed)
-        window.location.href = '/';
+        // Redirect to base screen
+        window.location.href = '/base/';
       }, 1000);
       
       return true;
@@ -142,13 +137,14 @@ async function handleSignUp(email, password) {
       
       showNotification('Account created successfully! Please check your email to verify your account.', 'success');
       
-      // Close overlay after a short delay
+      // Close overlay and redirect to base after a short delay
       setTimeout(() => {
         const loginOverlay = document.getElementById('loginOverlay');
         if (loginOverlay) {
           loginOverlay.classList.remove('show');
         }
-        window.location.href = '/';
+        // Redirect to base screen
+        window.location.href = '/base/';
       }, 2000);
       
       return true;

@@ -2,6 +2,72 @@
  * Main page functionality
  */
 
+// Initialize Firebase Auth on page load to check auth status
+// Since scripts load sequentially, initializeFirebaseAuth should be available
+(function initAuth() {
+  if (typeof initializeFirebaseAuth !== 'undefined') {
+    initializeFirebaseAuth().then(() => {
+      const indicator = document.getElementById('authStatusIndicator');
+      if (indicator) {
+        indicator.classList.add('loaded');
+      }
+      
+      // Check if user is authenticated and update UI
+      updateBannerForAuthStatus();
+    }).catch((error) => {
+      console.error('Error initializing Firebase Auth:', error);
+    });
+  } else {
+    // If not available yet, wait a tiny bit (max 100ms) for it to load
+    let attempts = 0;
+    const checkInterval = setInterval(() => {
+      attempts++;
+      if (typeof initializeFirebaseAuth !== 'undefined') {
+        clearInterval(checkInterval);
+        initAuth();
+      } else if (attempts >= 10) {
+        // After 100ms, give up
+        clearInterval(checkInterval);
+        console.error('initializeFirebaseAuth not available after 100ms - script loading issue!');
+      }
+    }, 10);
+  }
+})();
+
+// Update banner based on authentication status
+function updateBannerForAuthStatus() {
+  try {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      const auth = firebase.auth();
+      const currentUser = auth.currentUser;
+      
+      const bannerMessage = document.querySelector('.banner-message');
+      const loginButton = document.getElementById('loginButton');
+      
+      if (currentUser) {
+        // User is authenticated - show "You are logged in" message and "Go to Base" button
+        if (bannerMessage) {
+          bannerMessage.textContent = 'You are logged in';
+        }
+        if (loginButton) {
+          loginButton.textContent = 'Go to Base';
+          // The click handler will check the button text and redirect
+        }
+      } else {
+        // User is not authenticated - show login button (default state)
+        // Listen for auth state changes
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            updateBannerForAuthStatus();
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error updating banner for auth status:', error);
+  }
+}
+
 const codeInput = document.getElementById('codeInput');
 const joinButton = document.getElementById('joinButton');
 const joinButtonText = document.getElementById('joinButtonText');
@@ -12,9 +78,17 @@ const loginOverlay = document.getElementById('loginOverlay');
 const closeLoginOverlay = document.getElementById('closeLoginOverlay');
 const loginOverlayForm = document.getElementById('loginOverlayForm');
 
-// Login button click handler - show overlay
+// Login button click handler - show overlay (only if not authenticated)
+// This will be overridden by updateBannerForAuthStatus if user is authenticated
 if (loginButton) {
   loginButton.addEventListener('click', function() {
+    // Check if this is the "Go to Base" button (user is authenticated)
+    if (this.textContent === 'Go to Base') {
+      window.location.href = '/base/';
+      return;
+    }
+    
+    // Otherwise, show login overlay
     if (loginOverlay) {
       loginOverlay.classList.add('show');
       // Focus on email input when overlay opens

@@ -17,7 +17,17 @@ let firebaseInitialized = false;
 async function initializeFirebase() {
   if (firebaseInitialized) return;
   
-  // Load Firebase SDK dynamically
+  // Check if Firebase is already loaded (from auth.js)
+  if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+    // Firebase App is already initialized, just need to ensure Firestore is loaded
+    if (!firebase.firestore) {
+      await loadFirestoreSDK();
+    }
+    firebaseInitialized = true;
+    return;
+  }
+  
+  // Firebase not loaded yet, load it (shouldn't happen if auth.js loaded first)
   if (typeof firebase === 'undefined' || !firebase.firestore) {
     await loadFirebaseSDK();
   }
@@ -29,6 +39,22 @@ async function initializeFirebase() {
   firebaseInitialized = true;
 }
 
+function loadFirestoreSDK() {
+  return new Promise((resolve, reject) => {
+    if (typeof firebase !== 'undefined' && firebase.firestore) {
+      resolve();
+      return;
+    }
+    
+    // Only load Firestore, Firebase App should already be loaded
+    const firestoreScript = document.createElement('script');
+    firestoreScript.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js';
+    firestoreScript.onload = resolve;
+    firestoreScript.onerror = reject;
+    document.head.appendChild(firestoreScript);
+  });
+}
+
 function loadFirebaseSDK() {
   return new Promise((resolve, reject) => {
     if (typeof firebase !== 'undefined' && firebase.firestore) {
@@ -36,17 +62,23 @@ function loadFirebaseSDK() {
       return;
     }
     
-    const script = document.createElement('script');
-    script.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js';
-    script.onload = () => {
-      const firestoreScript = document.createElement('script');
-      firestoreScript.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js';
-      firestoreScript.onload = resolve;
-      firestoreScript.onerror = reject;
-      document.head.appendChild(firestoreScript);
-    };
-    script.onerror = reject;
-    document.head.appendChild(script);
+    // Only load if Firebase App is not already loaded
+    if (typeof firebase === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js';
+      script.onload = () => {
+        const firestoreScript = document.createElement('script');
+        firestoreScript.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js';
+        firestoreScript.onload = resolve;
+        firestoreScript.onerror = reject;
+        document.head.appendChild(firestoreScript);
+      };
+      script.onerror = reject;
+      document.head.appendChild(script);
+    } else {
+      // Firebase App is loaded, just load Firestore
+      loadFirestoreSDK().then(resolve).catch(reject);
+    }
   });
 }
 

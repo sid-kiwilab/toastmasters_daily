@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Toastmasters Daily - Base</title>
+    <link rel="icon" type="image/png" href="/assets/favicon.png">
+    <link rel="preload" href="/assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <script src="/js/version.js"></script>
+    <script>
+      // Load CSS with version (fonts first for immediate loading)
+      document.write('<link rel="stylesheet" href="/css/fonts.css?v=' + APP_VERSION + '">');
+      document.write('<link rel="stylesheet" href="/css/styles.css?v=' + APP_VERSION + '">');
+      document.write('<link rel="stylesheet" href="/css/notification.css?v=' + APP_VERSION + '">');
+    </script>
+  </head>
+  <body>
+    <div class="top-banner">
+      <span class="banner-message">Base Page</span>
+      <button class="join-button" id="logoutButton">Logout</button>
+    </div>
+    <div class="content-wrapper">
+      <h1>Base Page</h1>
+      <p class="subtitle">You are authenticated!</p>
+    </div>
+
+    <script>
+      // Load JS with version - sequential loading to ensure order
+      const script1 = document.createElement('script');
+      script1.src = '/js/notification.js?v=' + APP_VERSION;
+      script1.onload = function() {
+        const script2 = document.createElement('script');
+        script2.src = '/js/firebase-config.js?v=' + APP_VERSION;
+        script2.onload = function() {
+          const script3 = document.createElement('script');
+          script3.src = '/js/auth.js?v=' + APP_VERSION;
+          script3.onload = function() {
+            // auth.js is loaded, now load base.js
+            const script4 = document.createElement('script');
+            script4.src = '/js/base.js?v=' + APP_VERSION;
+            document.body.appendChild(script4);
+          };
+          document.body.appendChild(script3);
+        };
+        document.body.appendChild(script2);
+      };
+      document.body.appendChild(script1);
+    </script>
+  </body>
+</html>
+
