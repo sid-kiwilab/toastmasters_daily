@@ -8,11 +8,12 @@
     <link rel="preload" href="/assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin="anonymous">
     <script>
       // Master version - change this to invalidate cache for all assets
-      const APP_VERSION = '1.0.1';
+      const APP_VERSION = '1.0.2';
       
       // Load CSS with version (fonts first for immediate loading)
       document.write('<link rel="stylesheet" href="/css/fonts.css?v=' + APP_VERSION + '">');
       document.write('<link rel="stylesheet" href="/css/styles.css?v=' + APP_VERSION + '">');
+      document.write('<link rel="stylesheet" href="/css/notification.css?v=' + APP_VERSION + '">');
     </script>
   </head>
   <body>
@@ -31,14 +32,24 @@
         />
       </div>
 
-      <button class="join-button" id="joinButton">Join</button>
+      <button class="join-button" id="joinButton">
+        <span id="joinButtonText">Join</span>
+      </button>
     </div>
 
     <script>
       // Load JS with version
-      const script = document.createElement('script');
-      script.src = '/js/main.js?v=' + APP_VERSION;
-      document.body.appendChild(script);
+      const script1 = document.createElement('script');
+      script1.src = '/js/notification.js?v=' + APP_VERSION;
+      document.body.appendChild(script1);
+      
+      const script2 = document.createElement('script');
+      script2.src = '/js/firebase-config.js?v=' + APP_VERSION;
+      document.body.appendChild(script2);
+      
+      const script3 = document.createElement('script');
+      script3.src = '/js/main.js?v=' + APP_VERSION;
+      document.body.appendChild(script3);
     </script>
   </body>
 </html>
