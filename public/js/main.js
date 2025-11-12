@@ -208,13 +208,11 @@ if (resetOverlayForm) {
     // Handle reset password
     const success = await handleResetPassword(email);
     
-    if (!success) {
-      resetSubmitButton.disabled = false;
-      resetButtonText.textContent = 'Send Reset Link';
-    } else {
-      // Reset button state on success
-      resetSubmitButton.disabled = false;
-      resetButtonText.textContent = 'Send Reset Link';
+    // Reset button state (same for success or failure)
+    resetSubmitButton.disabled = false;
+    resetButtonText.textContent = 'Send Link';
+    
+    if (success) {
       // Clear the form on success
       emailInput.value = '';
     }
