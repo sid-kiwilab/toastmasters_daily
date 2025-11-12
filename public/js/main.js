@@ -5,6 +5,14 @@
 const codeInput = document.getElementById('codeInput');
 const joinButton = document.getElementById('joinButton');
 const joinButtonText = document.getElementById('joinButtonText');
+const loginButton = document.getElementById('loginButton');
+
+// Login button click handler
+if (loginButton) {
+  loginButton.addEventListener('click', function() {
+    window.location.href = '/login';
+  });
+}
 
 // Format input to "1234 5678" - strictly limit to 8 digits
 codeInput.addEventListener('input', function(e) {

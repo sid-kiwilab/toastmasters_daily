@@ -1,27 +1,28 @@
+/* Notification styles using theme colors from THEME.md */
 .notification {
   position: fixed;
   top: 20px;
   right: 20px;
-  background: white;
-  padding: 16px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: #ffffff; /* Theme: White */
+  padding: 16px 20px; /* Theme: Notification Padding */
+  border-radius: 8px; /* Theme: Medium Border Radius */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Theme: Notification Shadow */
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-width: 280px;
-  max-width: 400px;
-  z-index: 1000;
-  animation: slideIn 0.3s ease-out;
-  border-left: 3px solid #d32f2f;
+  gap: 12px; /* Theme: Notification Gap */
+  min-width: 280px; /* Theme: Notification Min Width */
+  max-width: 400px; /* Theme: Notification Max Width */
+  z-index: 1000; /* Theme: Notification Z-Index */
+  animation: slideIn 0.3s ease-out; /* Theme: Medium Duration, Default Easing */
+  border-left: 3px solid #d32f2f; /* Theme: Error Color */
 }
 
 .notification.success {
-  border-left-color: #2e7d32;
+  border-left-color: #2e7d32; /* Theme: Success Color */
 }
 
 .notification.info {
-  border-left-color: #1976d2;
+  border-left-color: #1976d2; /* Theme: Info Color */
 }
 
 .notification.hide {
@@ -48,27 +49,27 @@
 
 .notification-message {
   flex: 1;
-  font-size: 14px;
-  font-weight: 500;
-  color: #212121;
+  font-size: 14px; /* Theme: Notification Message Font Size */
+  font-weight: 500; /* Theme: Medium Font Weight */
+  color: #212121; /* Theme: Primary Text */
 }
 
 .notification-close {
   background: none;
   border: none;
   cursor: pointer;
-  color: #757575;
+  color: #757575; /* Theme: Secondary Text */
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
+  border-radius: 4px; /* Theme: Small Border Radius */
+  transition: all 0.2s; /* Theme: Fast Duration */
 }
 
 .notification-close:hover {
-  background: #f5f5f5;
-  color: #212121;
+  background: #f5f5f5; /* Theme: Hover Background */
+  color: #212121; /* Theme: Primary Text */
 }
 
 @media (max-width: 600px) {
