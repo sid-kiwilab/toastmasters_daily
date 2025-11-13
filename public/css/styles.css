@@ -539,7 +539,6 @@ h1 {
   z-index: 2000;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.2s ease-out;
 }
 
 .logout-dialog-overlay.show {
@@ -553,7 +552,6 @@ h1 {
   width: 90%;
   max-width: 400px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .logout-dialog-title {

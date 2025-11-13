@@ -30,6 +30,7 @@ async function checkAuthAndSetup() {
         // User is authenticated, set up page
         setupLogoutButton();
         populateUserEmail(user);
+        populateAppVersion();
       } else {
         // Subsequent changes (e.g., logout)
         if (!user) {
@@ -116,6 +117,20 @@ function populateUserEmail(user) {
   const userEmailElement = document.getElementById('userEmail');
   if (userEmailElement && user && user.email) {
     userEmailElement.textContent = user.email;
+  }
+}
+
+// Populate app version
+function populateAppVersion() {
+  const appVersionElement = document.getElementById('appVersion');
+  if (appVersionElement) {
+    // APP_VERSION is loaded synchronously in <head>, so it should always be available
+    if (typeof APP_VERSION !== 'undefined') {
+      appVersionElement.textContent = APP_VERSION;
+    } else {
+      // This should never happen, but fallback just in case
+      appVersionElement.textContent = 'Unknown';
+    }
   }
 }
 
