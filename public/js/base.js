@@ -27,8 +27,9 @@ async function checkAuthAndSetup() {
           return;
         }
         
-        // User is authenticated, set up logout button
+        // User is authenticated, set up page
         setupLogoutButton();
+        populateUserEmail(user);
       } else {
         // Subsequent changes (e.g., logout)
         if (!user) {
@@ -58,21 +59,63 @@ async function checkAuthAndSetup() {
 // Setup logout button
 function setupLogoutButton() {
   const logoutButton = document.getElementById('logoutButton');
+  const logoutDialogOverlay = document.getElementById('logoutDialogOverlay');
+  const logoutCancelButton = document.getElementById('logoutCancelButton');
+  const logoutConfirmButton = document.getElementById('logoutConfirmButton');
   
-  if (logoutButton) {
-    logoutButton.addEventListener('click', async function() {
-      try {
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-          const auth = firebase.auth();
-          await auth.signOut();
-          showNotification('Logged out successfully', 'success');
-          // Redirect will happen via auth state change listener
-        }
-      } catch (error) {
-        console.error('Error logging out:', error);
-        showNotification('Error logging out. Please try again.', 'error');
+  if (logoutButton && logoutDialogOverlay) {
+    // Show dialog on logout button click
+    logoutButton.addEventListener('click', function() {
+      logoutDialogOverlay.classList.add('show');
+    });
+    
+    // Close dialog on cancel
+    if (logoutCancelButton) {
+      logoutCancelButton.addEventListener('click', function() {
+        logoutDialogOverlay.classList.remove('show');
+      });
+    }
+    
+    // Close dialog on overlay click
+    logoutDialogOverlay.addEventListener('click', function(e) {
+      if (e.target === logoutDialogOverlay) {
+        logoutDialogOverlay.classList.remove('show');
       }
     });
+    
+    // Close dialog on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && logoutDialogOverlay.classList.contains('show')) {
+        logoutDialogOverlay.classList.remove('show');
+      }
+    });
+    
+    // Handle logout confirmation
+    if (logoutConfirmButton) {
+      logoutConfirmButton.addEventListener('click', async function() {
+        try {
+          if (typeof firebase !== 'undefined' && firebase.auth) {
+            const auth = firebase.auth();
+            await auth.signOut();
+            logoutDialogOverlay.classList.remove('show');
+            showNotification('Logged out successfully', 'success');
+            // Redirect will happen via auth state change listener
+          }
+        } catch (error) {
+          console.error('Error logging out:', error);
+          logoutDialogOverlay.classList.remove('show');
+          showNotification('Error logging out. Please try again.', 'error');
+        }
+      });
+    }
+  }
+}
+
+// Populate user email
+function populateUserEmail(user) {
+  const userEmailElement = document.getElementById('userEmail');
+  if (userEmailElement && user && user.email) {
+    userEmailElement.textContent = user.email;
   }
 }
 
