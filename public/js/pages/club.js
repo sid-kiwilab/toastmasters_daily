@@ -29,8 +29,7 @@ async function load() {
     const d = userDoc.data();
     show('content', null, {
       name: d.club_name || 'Unnamed Club',
-      code: code,
-      email: d.email || 'Email not available'
+      info: d.club_info || null
     });
   } catch (e) {
     console.error(e);
@@ -52,6 +51,13 @@ function show(type, msg, data) {
   }
   if (type === 'content') {
     document.getElementById('name').textContent = data.name;
+    const clubInfoEl = document.getElementById('clubInfo');
+    if (data.info) {
+      clubInfoEl.textContent = data.info;
+      clubInfoEl.style.display = 'block';
+    } else {
+      clubInfoEl.style.display = 'none';
+    }
   }
 }
 

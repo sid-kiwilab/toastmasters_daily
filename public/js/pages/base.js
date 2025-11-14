@@ -41,10 +41,12 @@ async function checkAuthAndSetup() {
         // User is authenticated, set up logout button and update user info
         updateUserInfo(user);
         loadClubName(user.uid);
+        loadClubInfo(user.uid);
         loadOrGenerateClubCode(user.uid);
         setupClubCodeRegenerate(user.uid);
         setupLogoutButton();
         setupClubNameEdit(user.uid);
+        setupClubInfoDialog(user.uid);
       } else {
         // Subsequent changes (e.g., logout)
         if (!user) {
@@ -200,6 +202,105 @@ function setupClubNameEdit(userId) {
     } else if (e.key === 'Escape') {
       e.preventDefault();
       cancelButton.click();
+    }
+  });
+}
+
+// Load club info from Firestore
+async function loadClubInfo(userId) {
+  try {
+    const db = getFirestore(window.firebaseApp || undefined);
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef);
+    
+    const clubInfoPreview = document.getElementById('clubInfoPreview');
+    if (clubInfoPreview) {
+      if (userDocSnap.exists() && userDocSnap.data().club_info) {
+        const info = userDocSnap.data().club_info;
+        clubInfoPreview.textContent = info.length > 50 ? info.substring(0, 50) + '...' : info;
+      } else {
+        clubInfoPreview.textContent = 'Not set';
+      }
+    }
+  } catch (error) {
+    console.error('Error loading club info:', error);
+  }
+}
+
+// Setup club info dialog
+function setupClubInfoDialog(userId) {
+  const editButton = document.getElementById('editClubInfoButton');
+  const dialogOverlay = document.getElementById('clubInfoDialogOverlay');
+  const closeButton = document.getElementById('closeClubInfoDialog');
+  const cancelButton = document.getElementById('clubInfoCancelButton');
+  const saveButton = document.getElementById('clubInfoSaveButton');
+  const textarea = document.getElementById('clubInfoTextarea');
+  
+  if (!editButton || !dialogOverlay || !textarea) return;
+  
+  function openDialog() {
+    // Load current club info
+    const db = getFirestore(window.firebaseApp || undefined);
+    const userDocRef = doc(db, 'users', userId);
+    getDoc(userDocRef).then((docSnap) => {
+      if (docSnap.exists() && docSnap.data().club_info) {
+        textarea.value = docSnap.data().club_info;
+      } else {
+        textarea.value = '';
+      }
+    });
+    dialogOverlay.style.display = 'flex';
+    setTimeout(() => textarea.focus(), 100);
+  }
+  
+  function closeDialog() {
+    dialogOverlay.style.display = 'none';
+  }
+  
+  editButton.addEventListener('click', openDialog);
+  if (closeButton) closeButton.addEventListener('click', closeDialog);
+  if (cancelButton) cancelButton.addEventListener('click', closeDialog);
+  
+  if (saveButton) {
+    saveButton.addEventListener('click', async function() {
+      const newClubInfo = textarea.value.trim();
+      saveButton.disabled = true;
+      saveButton.textContent = 'Saving...';
+      
+      try {
+        const db = getFirestore(window.firebaseApp || undefined);
+        const userDocRef = doc(db, 'users', userId);
+        await setDoc(userDocRef, { club_info: newClubInfo || null }, { merge: true });
+        
+        // Update preview
+        const clubInfoPreview = document.getElementById('clubInfoPreview');
+        if (clubInfoPreview) {
+          clubInfoPreview.textContent = newClubInfo.length > 50 ? newClubInfo.substring(0, 50) + '...' : (newClubInfo || 'Not set');
+        }
+        
+        closeDialog();
+        showNotification('Club info saved successfully', 'success');
+      } catch (error) {
+        console.error('Error saving club info:', error);
+        showNotification('Error saving club info', 'error');
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save';
+      }
+    });
+  }
+  
+  // Close on overlay click
+  dialogOverlay.addEventListener('click', function(e) {
+    if (e.target === dialogOverlay) {
+      closeDialog();
+    }
+  });
+  
+  // Close on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && dialogOverlay.style.display === 'flex') {
+      closeDialog();
     }
   });
 }
