@@ -320,9 +320,12 @@ function setupClubCodeRegenerate(userId) {
         document.body.appendChild(tempContainer);
         
         // Generate QR code using qrcodejs library
+        // Encode the base URL + club code
+        const baseUrl = window.location.origin;
+        const qrCodeData = `${baseUrl}/${code}`;
         const qrCodeSize = 600;
         const qrCode = new QRCode(tempContainer, {
-          text: code,
+          text: qrCodeData,
           width: qrCodeSize,
           height: qrCodeSize,
           colorDark: '#000000',
