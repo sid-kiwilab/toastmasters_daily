@@ -32,10 +32,10 @@
         <div class="settings-content">
           <!-- Upcoming Meetings Section -->
           <section class="settings-section" id="meetingsSection" style="display: none;">
-            <div class="settings-section-header">
-              <h2 class="settings-section-title">Upcoming Meetings</h2>
-              <p class="settings-section-description">Your active meetings</p>
-            </div>
+              <div class="settings-section-header">
+                <h2 class="settings-section-title">Upcoming Meetings</h2>
+                <p class="settings-section-description">You can only have one active meeting at a time</p>
+              </div>
             <div class="settings-card" id="meetingsList" style="margin-top: 12px;">
               <!-- Meetings will be dynamically inserted here -->
             </div>
@@ -279,6 +279,31 @@
         <div class="logout-dialog-actions">
           <button class="logout-dialog-button cancel" id="createMeetingCancelButton">Cancel</button>
           <button class="logout-dialog-button confirm" id="createMeetingConfirmButton">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Meeting Confirmation Dialog -->
+    <div class="logout-dialog-overlay" id="deleteMeetingDialogOverlay">
+      <div class="logout-dialog" style="max-width: 400px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h3 class="logout-dialog-title" style="margin: 0;">Delete Meeting</h3>
+          <button id="closeDeleteMeetingDialog" style="background: none; border: none; cursor: pointer; padding: 4px; color: #757575; display: flex; align-items: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div style="margin-bottom: 24px;">
+          <p class="logout-dialog-message" id="deleteMeetingMessage">Are you sure you want to delete this meeting? This action cannot be undone.</p>
+        </div>
+        <div class="logout-dialog-actions">
+          <button class="logout-dialog-button cancel" id="deleteMeetingCancelButton">Cancel</button>
+          <button class="logout-dialog-button confirm" id="deleteMeetingConfirmButton" style="background: #d32f2f;">
+            <span id="deleteMeetingButtonText">Delete</span>
+            <span id="deleteMeetingButtonLoading" style="display: none;">Deleting...</span>
+          </button>
         </div>
       </div>
     </div>

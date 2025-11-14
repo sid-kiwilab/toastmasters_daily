@@ -319,7 +319,18 @@ function setupCreateMeetingDialog(userId) {
   
   if (!createButton || !dialogOverlay || !nameInput) return;
   
+  // Disable button by default
+  createButton.style.opacity = '0.5';
+  createButton.style.pointerEvents = 'none';
+  createButton.style.cursor = 'not-allowed';
+  
   function openDialog() {
+    // Check if button is disabled
+    if (createButton.style.pointerEvents === 'none') {
+      showNotification('You can only have one meeting at a time. Please finish your current meeting first.', 'error');
+      return;
+    }
+    
     nameInput.value = '';
     dialogOverlay.style.display = 'flex';
     setTimeout(() => nameInput.focus(), 100);
@@ -408,11 +419,27 @@ function setupMeetingsListener(userId) {
     
     const meetingsSection = document.getElementById('meetingsSection');
     const meetingsList = document.getElementById('meetingsList');
+    const createMeetingButton = document.getElementById('createMeetingButton');
     
     if (!meetingsSection || !meetingsList) return;
     
     const unsubscribe = onSnapshot(meetingsQuery, (snapshot) => {
       meetingsList.innerHTML = '';
+      
+      // Enable/disable create meeting button based on whether user has meetings
+      if (createMeetingButton) {
+        if (snapshot.empty) {
+          // No meetings - enable create meeting button
+          createMeetingButton.style.opacity = '1';
+          createMeetingButton.style.pointerEvents = 'auto';
+          createMeetingButton.style.cursor = 'pointer';
+        } else {
+          // Has meetings - disable create meeting button
+          createMeetingButton.style.opacity = '0.5';
+          createMeetingButton.style.pointerEvents = 'none';
+          createMeetingButton.style.cursor = 'not-allowed';
+        }
+      }
       
       if (snapshot.empty) {
         meetingsSection.style.display = 'none';
@@ -452,6 +479,12 @@ function setupMeetingsListener(userId) {
               <div class="settings-item-label">${meetingTitle}</div>
               <div class="settings-item-value" style="font-family: 'Courier New', monospace; letter-spacing: 2px;">${formattedCode}</div>
             </div>
+            <button class="delete-meeting-button" data-meeting-id="${meetingId}" data-meeting-title="${meetingTitle}" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; align-items: center; color: #757575; transition: color 0.2s; margin-right: 8px;" title="Delete meeting">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
             <div class="settings-item-arrow">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M6 4l4 4-4 4"/>
@@ -459,6 +492,17 @@ function setupMeetingsListener(userId) {
             </div>
           </div>
         `;
+        
+        // Add delete button click handler
+        const deleteButton = meetingItem.querySelector('.delete-meeting-button');
+        if (deleteButton) {
+          deleteButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const meetingId = deleteButton.getAttribute('data-meeting-id');
+            const meetingTitle = deleteButton.getAttribute('data-meeting-title');
+            showDeleteMeetingConfirmation(meetingId, meetingTitle, userId);
+          });
+        }
         
         meetingsList.appendChild(meetingItem);
       });
@@ -472,6 +516,80 @@ function setupMeetingsListener(userId) {
   } catch (error) {
     console.error('Error setting up meetings listener:', error);
   }
+}
+
+// Show delete meeting confirmation dialog
+function showDeleteMeetingConfirmation(meetingId, meetingTitle, userId) {
+  const dialogOverlay = document.getElementById('deleteMeetingDialogOverlay');
+  const closeButton = document.getElementById('closeDeleteMeetingDialog');
+  const cancelButton = document.getElementById('deleteMeetingCancelButton');
+  const confirmButton = document.getElementById('deleteMeetingConfirmButton');
+  const messageEl = document.getElementById('deleteMeetingMessage');
+  const buttonText = document.getElementById('deleteMeetingButtonText');
+  const buttonLoading = document.getElementById('deleteMeetingButtonLoading');
+  
+  if (!dialogOverlay || !confirmButton || !messageEl) return;
+  
+  messageEl.textContent = `Are you sure you want to delete "${meetingTitle}"? This action cannot be undone.`;
+  
+  dialogOverlay.style.display = 'flex';
+  
+  function closeDialog() {
+    dialogOverlay.style.display = 'none';
+    confirmButton.disabled = false;
+    buttonText.style.display = 'inline';
+    buttonLoading.style.display = 'none';
+  }
+  
+  if (closeButton) closeButton.onclick = closeDialog;
+  if (cancelButton) cancelButton.onclick = closeDialog;
+  
+  confirmButton.onclick = async function() {
+    confirmButton.disabled = true;
+    buttonText.style.display = 'none';
+    buttonLoading.style.display = 'inline';
+    
+    try {
+      const functions = getFunctions(window.firebaseApp || undefined);
+      const deleteMeeting = httpsCallable(functions, 'deleteMeeting');
+      
+      const result = await deleteMeeting({
+        meeting_id: meetingId,
+        creator_id: userId
+      });
+      
+      const data = result.data;
+      
+      if (data.success) {
+        showNotification('Meeting deleted successfully', 'success');
+        closeDialog();
+      } else {
+        showNotification(data.error || 'Failed to delete meeting', 'error');
+        confirmButton.disabled = false;
+        buttonText.style.display = 'inline';
+        buttonLoading.style.display = 'none';
+      }
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+      showNotification('Error deleting meeting. Please try again.', 'error');
+      confirmButton.disabled = false;
+      buttonText.style.display = 'inline';
+      buttonLoading.style.display = 'none';
+    }
+  };
+  
+  dialogOverlay.onclick = function(e) {
+    if (e.target === dialogOverlay && !confirmButton.disabled) {
+      closeDialog();
+    }
+  };
+  
+  document.addEventListener('keydown', function handleEscape(e) {
+    if (e.key === 'Escape' && dialogOverlay.style.display === 'flex' && !confirmButton.disabled) {
+      closeDialog();
+      document.removeEventListener('keydown', handleEscape);
+    }
+  });
 }
 
 // Show meeting info dialog

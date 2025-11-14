@@ -95,13 +95,22 @@ function setupMeetingsListener(userId, clubData) {
           
           const meetingItem = document.createElement('div');
           meetingItem.className = 'meeting-item';
-          meetingItem.addEventListener('click', () => {
-            showMeetingInfo(meetingId, meetingTitle);
+          meetingItem.addEventListener('click', (e) => {
+            // Don't navigate if clicking the button
+            if (e.target.closest('.join-meeting-button')) {
+              return;
+            }
+            window.location.href = `/meetings/${meetingId}`;
           });
           
           meetingItem.innerHTML = `
-            <div class="meeting-item-title">${meetingTitle}</div>
-            <div class="meeting-item-code">${formattedCode}</div>
+            <div style="flex: 1;">
+              <div class="meeting-item-title">${meetingTitle}</div>
+              <div class="meeting-item-code">${formattedCode}</div>
+            </div>
+            <button class="join-meeting-button" onclick="event.stopPropagation(); window.location.href='/meetings/${meetingId}'">
+              Join Meeting
+            </button>
           `;
           
           meetingsList.appendChild(meetingItem);
@@ -152,7 +161,11 @@ function show(type, msg, data) {
     }
   }
   if (type === 'content') {
-    document.getElementById('name').textContent = data.name;
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    if (welcomeMessage) {
+      welcomeMessage.textContent = `Welcome to ${data.name}!`;
+    }
+    
     const clubInfoEl = document.getElementById('clubInfo');
     if (data.info) {
       clubInfoEl.textContent = data.info;
