@@ -4,7 +4,7 @@
  */
 
 import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Check auth and setup base page
 async function checkAuthAndSetup() {
@@ -41,6 +41,8 @@ async function checkAuthAndSetup() {
         // User is authenticated, set up logout button and update user info
         updateUserInfo(user);
         loadClubName(user.uid);
+        loadOrGenerateClubCode(user.uid);
+        setupClubCodeRegenerate(user.uid);
         setupLogoutButton();
         setupClubNameEdit(user.uid);
       } else {
@@ -198,6 +200,155 @@ function setupClubNameEdit(userId) {
     } else if (e.key === 'Escape') {
       e.preventDefault();
       cancelButton.click();
+    }
+  });
+}
+
+// Load or generate club code
+async function loadOrGenerateClubCode(userId) {
+  try {
+    const db = getFirestore(window.firebaseApp || undefined);
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef);
+    
+    const clubCodeDisplay = document.getElementById('clubCodeDisplay');
+    if (!clubCodeDisplay) return;
+    
+    let clubCode = '';
+    
+    // Check if user already has a club_code stored
+    if (userDocSnap.exists() && userDocSnap.data().club_code) {
+      clubCode = userDocSnap.data().club_code;
+    } else {
+      // Check if a club_codes document already exists for this user
+      const clubCodesRef = collection(db, 'club_codes');
+      const q = query(clubCodesRef, where('uid', '==', userId));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        // Use existing document ID
+        clubCode = querySnapshot.docs[0].id;
+        // Save to user document
+        await setDoc(userDocRef, { club_code: clubCode }, { merge: true });
+      } else {
+        // Use transaction to create club_codes document and update user document atomically
+        await runTransaction(db, async (transaction) => {
+          // Create new document reference in club_codes collection
+          const newClubCodeRef = doc(collection(db, 'club_codes'));
+          clubCode = newClubCodeRef.id;
+          
+          // Set both documents in the transaction
+          transaction.set(newClubCodeRef, {
+            uid: userId
+          });
+          transaction.set(userDocRef, {
+            club_code: clubCode
+          }, { merge: true });
+        });
+      }
+    }
+    
+    clubCodeDisplay.textContent = clubCode;
+    
+    // Show regenerate button when code is loaded
+    const regenerateButton = document.getElementById('regenerateClubCodeButton');
+    if (regenerateButton && clubCode) {
+      regenerateButton.style.display = 'flex';
+    }
+  } catch (error) {
+    console.error('Error loading/generating club code:', error);
+    const clubCodeDisplay = document.getElementById('clubCodeDisplay');
+    if (clubCodeDisplay) {
+      clubCodeDisplay.textContent = 'Error loading code';
+    }
+  }
+}
+
+// Setup club code regenerate functionality
+function setupClubCodeRegenerate(userId) {
+  const regenerateButton = document.getElementById('regenerateClubCodeButton');
+  const regenerateDialogOverlay = document.getElementById('regenerateCodeDialogOverlay');
+  const regenerateCancelButton = document.getElementById('regenerateCodeCancelButton');
+  const regenerateConfirmButton = document.getElementById('regenerateCodeConfirmButton');
+  const clubCodeSpinner = document.getElementById('clubCodeSpinner');
+  
+  if (!regenerateButton || !regenerateDialogOverlay || !regenerateCancelButton || !regenerateConfirmButton || !clubCodeSpinner) {
+    return;
+  }
+  
+  let isRegenerating = false;
+  
+  // Show confirmation dialog when regenerate button is clicked
+  regenerateButton.addEventListener('click', function() {
+    if (isRegenerating) return;
+    regenerateDialogOverlay.style.display = 'flex';
+  });
+  
+  // Cancel button
+  regenerateCancelButton.addEventListener('click', function() {
+    regenerateDialogOverlay.style.display = 'none';
+  });
+  
+  // Close dialog when clicking overlay
+  regenerateDialogOverlay.addEventListener('click', function(e) {
+    if (e.target === regenerateDialogOverlay) {
+      regenerateDialogOverlay.style.display = 'none';
+    }
+  });
+  
+  // Confirm regeneration
+  regenerateConfirmButton.addEventListener('click', async function() {
+    if (isRegenerating) return;
+    
+    isRegenerating = true;
+    regenerateDialogOverlay.style.display = 'none';
+    regenerateButton.style.display = 'none';
+    clubCodeSpinner.style.display = 'block';
+    
+    try {
+      const db = getFirestore(window.firebaseApp || undefined);
+      const userDocRef = doc(db, 'users', userId);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      let oldClubCode = '';
+      if (userDocSnap.exists() && userDocSnap.data().club_code) {
+        oldClubCode = userDocSnap.data().club_code;
+      }
+      
+      // Use transaction to delete old code, create new code, and update user document atomically
+      await runTransaction(db, async (transaction) => {
+        // Delete old club_codes document if it exists
+        if (oldClubCode) {
+          const oldClubCodeRef = doc(db, 'club_codes', oldClubCode);
+          const oldDocSnap = await transaction.get(oldClubCodeRef);
+          if (oldDocSnap.exists()) {
+            transaction.delete(oldClubCodeRef);
+          }
+        }
+        
+        // Create new document reference in club_codes collection
+        const newClubCodeRef = doc(collection(db, 'club_codes'));
+        const newClubCode = newClubCodeRef.id;
+        
+        // Set both documents in the transaction
+        transaction.set(newClubCodeRef, {
+          uid: userId
+        });
+        transaction.set(userDocRef, {
+          club_code: newClubCode
+        }, { merge: true });
+      });
+      
+      // Reload the code
+      await loadOrGenerateClubCode(userId);
+      showNotification('Club code regenerated successfully', 'success');
+    } catch (error) {
+      console.error('Error regenerating club code:', error);
+      showNotification('Error regenerating club code. Please try again.', 'error');
+    } finally {
+      isRegenerating = false;
+      regenerateButton.style.display = 'flex';
+      clubCodeSpinner.style.display = 'none';
     }
   });
 }

@@ -87,6 +87,31 @@
                   </div>
                 </div>
               </div>
+              <div class="settings-item">
+                <div class="settings-item-content">
+                  <div class="settings-item-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <rect x="7" y="7" width="3" height="3"/>
+                      <rect x="14" y="7" width="3" height="3"/>
+                      <rect x="7" y="14" width="3" height="3"/>
+                      <rect x="14" y="14" width="3" height="3"/>
+                    </svg>
+                  </div>
+                  <div class="settings-item-text" style="flex: 1;">
+                    <div class="settings-item-label">Club Code</div>
+                    <div class="settings-item-value" id="clubCodeDisplay">Loading...</div>
+                  </div>
+                  <button class="settings-regenerate-button" id="regenerateClubCodeButton" style="background: none; border: none; cursor: pointer; padding: 4px; display: none; align-items: center; color: #757575; transition: color 0.2s;" title="Generate new code">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="23 4 23 10 17 10"/>
+                      <polyline points="1 20 1 14 7 14"/>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/>
+                    </svg>
+                  </button>
+                  <div id="clubCodeSpinner" class="club-name-spinner" style="display: none; width: 16px; height: 16px; border: 2px solid rgba(66, 66, 66, 0.3); border-top-color: #424242; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -181,6 +206,18 @@
         <div class="logout-dialog-actions">
           <button class="logout-dialog-button cancel" id="logoutCancelButton">Cancel</button>
           <button class="logout-dialog-button confirm" id="logoutConfirmButton">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Regenerate Code Confirmation Dialog -->
+    <div class="logout-dialog-overlay" id="regenerateCodeDialogOverlay">
+      <div class="logout-dialog">
+        <h3 class="logout-dialog-title">Regenerate Club Code</h3>
+        <p class="logout-dialog-message">Are you sure? You will need to change all your QR codes.</p>
+        <div class="logout-dialog-actions">
+          <button class="logout-dialog-button cancel" id="regenerateCodeCancelButton">Cancel</button>
+          <button class="logout-dialog-button confirm" id="regenerateCodeConfirmButton">Regenerate</button>
         </div>
       </div>
     </div>
