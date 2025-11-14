@@ -1,7 +1,15 @@
 /* Settings Page Styles - Modern & Stylish */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 .settings-container {
-  min-height: 100vh;
+  height: 100vh;
   background: #f5f5f5; /* Theme: Page Background */
+  overflow-y: auto;
 }
 
 .settings-header {
