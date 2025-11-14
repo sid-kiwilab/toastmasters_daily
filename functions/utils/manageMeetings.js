@@ -5,7 +5,7 @@ const functions = require('firebase-functions');
  * Creates a new live meeting in Firestore
  * @param {Object} data - The request data object
  * @param {string} data.title - Meeting title
- * @param {string} data.creatorId - ID of the user creating the meeting
+ * @param {string} data.creator_id - ID of the user creating the meeting
  * @param {Object} context - Firebase Functions context
  * @returns {Promise<Object>} The created meeting document
  */
@@ -14,35 +14,35 @@ exports.createMeeting = functions.https.onCall(async (data, context) => {
     const db = admin.firestore();
     
     // Validate required fields
-    if (!data.title || !data.creatorId) {
-      console.error('Missing required fields: title and creatorId are required');
+    if (!data.title || !data.creator_id) {
+      console.error('Missing required fields: title and creator_id are required');
       return { success: false, error: 'Missing required fields' };
     }
     
     // Generate random 8-digit meeting code
-    const meetingCode = Math.floor(10000000 + Math.random() * 90000000).toString();
+    const meeting_code = Math.floor(10000000 + Math.random() * 90000000).toString();
     
     // Create meeting document with minimal required fields
-    const meetingDoc = {
+    const meeting_doc = {
       title: data.title,
-      creatorId: data.creatorId,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      creator_id: data.creator_id,
+      created_at: admin.firestore.FieldValue.serverTimestamp()
     };
     
     // Use batch write to ensure both operations happen atomically
     const batch = db.batch();
     
     // Add meeting to active_meetings collection
-    const activeMeetingRef = db.collection('active_meetings').doc(meetingCode);
-    batch.set(activeMeetingRef, meetingDoc);
+    const active_meeting_ref = db.collection('active_meetings').doc(meeting_code);
+    batch.set(active_meeting_ref, meeting_doc);
     
     // Add meeting to user's meetings collection
-    const userMeetingRef = db
+    const user_meeting_ref = db
       .collection('users')
-      .doc(data.creatorId)
+      .doc(data.creator_id)
       .collection('meetings')
-      .doc(meetingCode);
-    batch.set(userMeetingRef, meetingDoc);
+      .doc(meeting_code);
+    batch.set(user_meeting_ref, meeting_doc);
     
     // Commit the batch - both operations succeed or both fail
     await batch.commit();
@@ -51,8 +51,8 @@ exports.createMeeting = functions.https.onCall(async (data, context) => {
     return {
       success: true,
       meeting: {
-        id: meetingCode,
-        ...meetingDoc
+        id: meeting_code,
+        ...meeting_doc
       }
     };
     
@@ -75,20 +75,20 @@ exports.cleanUpMeetings = functions.pubsub.schedule('every 24 hours').onRun(asyn
     
     console.error('Starting cleanup of meetings older than:', oneWeekAgo.toISOString());
     
-    let totalDeletedCount = 0;
-    let batchCount = 0;
-    let lastDoc = null;
+    let total_deleted_count = 0;
+    let batch_count = 0;
+    let last_doc = null;
     const MAX_MEETINGS_PER_RUN = 10000; // Prevent infinite loops
     
     // Process meetings in batches to handle large collections safely
-    while (totalDeletedCount < MAX_MEETINGS_PER_RUN) {
+    while (total_deleted_count < MAX_MEETINGS_PER_RUN) {
       let query = db.collection('active_meetings')
-        .orderBy('createdAt', 'asc') // Process oldest first
+        .orderBy('created_at', 'asc') // Process oldest first
         .limit(1000); // Process 1000 at a time
       
       // Add pagination if we have a last document
-      if (lastDoc) {
-        query = query.startAfter(lastDoc);
+      if (last_doc) {
+        query = query.startAfter(last_doc);
       }
       
       const snapshot = await query.get();
@@ -99,77 +99,77 @@ exports.cleanUpMeetings = functions.pubsub.schedule('every 24 hours').onRun(asyn
       }
       
       const batch = db.batch();
-      let batchDeletedCount = 0;
-      let hasOldMeetings = false;
+      let batch_deleted_count = 0;
+      let has_old_meetings = false;
       
       // Process each meeting in this batch
-      for (const meetingDoc of snapshot.docs) {
-        const meetingData = meetingDoc.data();
-        const createdAt = meetingData.createdAt;
+      for (const meeting_doc of snapshot.docs) {
+        const meeting_data = meeting_doc.data();
+        const created_at = meeting_data.created_at;
         
         // Check if meeting is older than 1 week
-        if (createdAt && createdAt.toDate() < oneWeekAgo) {
-          const meetingId = meetingDoc.id;
-          const creatorId = meetingData.creatorId;
+        if (created_at && created_at.toDate() < oneWeekAgo) {
+          const meeting_id = meeting_doc.id;
+          const creator_id = meeting_data.creator_id;
           
           // Delete from active_meetings collection
-          batch.delete(meetingDoc.ref);
+          batch.delete(meeting_doc.ref);
           
-          // Delete from user's meetings subcollection if creatorId exists
-          if (creatorId) {
-            const userMeetingRef = db
+          // Delete from user's meetings subcollection if creator_id exists
+          if (creator_id) {
+            const user_meeting_ref = db
               .collection('users')
-              .doc(creatorId)
+              .doc(creator_id)
               .collection('meetings')
-              .doc(meetingId);
-            batch.delete(userMeetingRef);
+              .doc(meeting_id);
+            batch.delete(user_meeting_ref);
           }
           
           // Delete agenda file from Firebase Storage if it exists
           try {
             const bucket = admin.storage().bucket();
-            const agendaFilePath = `agendas/${meetingId}.pdf`;
-            const agendaFile = bucket.file(agendaFilePath);
+            const agenda_file_path = `agendas/${meeting_id}.pdf`;
+            const agenda_file = bucket.file(agenda_file_path);
             
             // Check if file exists before attempting to delete
-            const [exists] = await agendaFile.exists();
+            const [exists] = await agenda_file.exists();
             if (exists) {
-              await agendaFile.delete();
-              console.error(`Deleted agenda file: ${agendaFilePath}`);
+              await agenda_file.delete();
+              console.error(`Deleted agenda file: ${agenda_file_path}`);
             }
-          } catch (storageError) {
-            console.error(`Error deleting agenda file for meeting ${meetingId}:`, storageError);
+          } catch (storage_error) {
+            console.error(`Error deleting agenda file for meeting ${meeting_id}:`, storage_error);
             // Continue with cleanup even if storage deletion fails
           }
           
-          batchDeletedCount++;
-          hasOldMeetings = true;
+          batch_deleted_count++;
+          has_old_meetings = true;
           
           // Log every 100 deletions to avoid spam
-          if (batchDeletedCount % 100 === 0) {
-            console.error(`Marked ${batchDeletedCount} meetings for deletion in current batch`);
+          if (batch_deleted_count % 100 === 0) {
+            console.error(`Marked ${batch_deleted_count} meetings for deletion in current batch`);
           }
         }
         
-        // Update lastDoc for pagination
-        lastDoc = meetingDoc;
+        // Update last_doc for pagination
+        last_doc = meeting_doc;
       }
       
       // Commit this batch if we have deletions
-      if (batchDeletedCount > 0) {
+      if (batch_deleted_count > 0) {
         try {
           await batch.commit();
-          totalDeletedCount += batchDeletedCount;
-          batchCount++;
-          console.error(`Batch ${batchCount}: Successfully deleted ${batchDeletedCount} old meetings. Total: ${totalDeletedCount}`);
-        } catch (batchError) {
-          console.error(`Batch ${batchCount} failed:`, batchError);
+          total_deleted_count += batch_deleted_count;
+          batch_count++;
+          console.error(`Batch ${batch_count}: Successfully deleted ${batch_deleted_count} old meetings. Total: ${total_deleted_count}`);
+        } catch (batch_error) {
+          console.error(`Batch ${batch_count} failed:`, batch_error);
           // Continue with next batch instead of failing completely
         }
       }
       
       // If no old meetings found in this batch, we're done
-      if (!hasOldMeetings) {
+      if (!has_old_meetings) {
         console.error('No more old meetings found, cleanup complete');
         break;
       }
@@ -181,16 +181,16 @@ exports.cleanUpMeetings = functions.pubsub.schedule('every 24 hours').onRun(asyn
       }
     }
     
-    console.error(`Cleanup completed. Total batches: ${batchCount}, Total meetings deleted: ${totalDeletedCount}`);
+    console.error(`Cleanup completed. Total batches: ${batch_count}, Total meetings deleted: ${total_deleted_count}`);
     
-    if (totalDeletedCount >= MAX_MEETINGS_PER_RUN) {
+    if (total_deleted_count >= MAX_MEETINGS_PER_RUN) {
       console.error('Warning: Reached maximum meetings per run limit. More meetings may need cleanup in next run.');
     }
     
     return { 
       success: true, 
-      deletedCount: totalDeletedCount,
-      batchCount: batchCount
+      deleted_count: total_deleted_count,
+      batch_count: batch_count
     };
     
   } catch (error) {

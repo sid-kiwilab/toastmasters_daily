@@ -4,7 +4,8 @@
  */
 
 import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, runTransaction, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
 // Check auth and setup base page
 async function checkAuthAndSetup() {
@@ -47,6 +48,8 @@ async function checkAuthAndSetup() {
         setupLogoutButton();
         setupClubNameEdit(user.uid);
         setupClubInfoDialog(user.uid);
+        setupCreateMeetingDialog(user.uid);
+        setupMeetingsListener(user.uid);
       } else {
         // Subsequent changes (e.g., logout)
         if (!user) {
@@ -303,6 +306,220 @@ function setupClubInfoDialog(userId) {
       closeDialog();
     }
   });
+}
+
+// Setup create meeting dialog
+function setupCreateMeetingDialog(userId) {
+  const createButton = document.getElementById('createMeetingButton');
+  const dialogOverlay = document.getElementById('createMeetingDialogOverlay');
+  const closeButton = document.getElementById('closeCreateMeetingDialog');
+  const cancelButton = document.getElementById('createMeetingCancelButton');
+  const confirmButton = document.getElementById('createMeetingConfirmButton');
+  const nameInput = document.getElementById('meetingNameInput');
+  
+  if (!createButton || !dialogOverlay || !nameInput) return;
+  
+  function openDialog() {
+    nameInput.value = '';
+    dialogOverlay.style.display = 'flex';
+    setTimeout(() => nameInput.focus(), 100);
+  }
+  
+  function closeDialog() {
+    dialogOverlay.style.display = 'none';
+    nameInput.value = '';
+  }
+  
+  createButton.addEventListener('click', openDialog);
+  if (closeButton) closeButton.addEventListener('click', closeDialog);
+  if (cancelButton) cancelButton.addEventListener('click', closeDialog);
+  
+  if (confirmButton) {
+    confirmButton.addEventListener('click', async function() {
+      const meetingName = nameInput.value.trim();
+      
+      if (!meetingName) {
+        showNotification('Please enter a meeting name', 'error');
+        return;
+      }
+      
+      confirmButton.disabled = true;
+      confirmButton.textContent = 'Creating...';
+      
+      try {
+        const functions = getFunctions(window.firebaseApp || undefined);
+        const createMeeting = httpsCallable(functions, 'createMeeting');
+        
+        const result = await createMeeting({
+          title: meetingName,
+          creator_id: userId
+        });
+        
+        const data = result.data;
+        
+        if (data.success && data.meeting) {
+          showNotification('Meeting created successfully!', 'success');
+          closeDialog();
+        } else {
+          showNotification(data.error || 'Failed to create meeting', 'error');
+          confirmButton.disabled = false;
+          confirmButton.textContent = 'Create';
+        }
+      } catch (error) {
+        console.error('Error creating meeting:', error);
+        showNotification('Error creating meeting. Please try again.', 'error');
+        confirmButton.disabled = false;
+        confirmButton.textContent = 'Create';
+      }
+    });
+  }
+  
+  // Close on overlay click
+  dialogOverlay.addEventListener('click', function(e) {
+    if (e.target === dialogOverlay) {
+      closeDialog();
+    }
+  });
+  
+  // Close on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && dialogOverlay.style.display === 'flex') {
+      closeDialog();
+    }
+  });
+  
+  // Allow Enter to create
+  if (nameInput) {
+    nameInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !confirmButton.disabled) {
+        e.preventDefault();
+        confirmButton.click();
+      }
+    });
+  }
+}
+
+// Setup real-time meetings listener
+function setupMeetingsListener(userId) {
+  try {
+    const db = getFirestore(window.firebaseApp || undefined);
+    const meetingsRef = collection(db, 'users', userId, 'meetings');
+    const meetingsQuery = query(meetingsRef, orderBy('created_at', 'desc'));
+    
+    const meetingsSection = document.getElementById('meetingsSection');
+    const meetingsList = document.getElementById('meetingsList');
+    
+    if (!meetingsSection || !meetingsList) return;
+    
+    const unsubscribe = onSnapshot(meetingsQuery, (snapshot) => {
+      meetingsList.innerHTML = '';
+      
+      if (snapshot.empty) {
+        meetingsSection.style.display = 'none';
+        return;
+      }
+      
+      meetingsSection.style.display = 'block';
+      
+      snapshot.docs.forEach((meetingDoc) => {
+        const meetingData = meetingDoc.data();
+        const meetingId = meetingDoc.id;
+        const meetingTitle = meetingData.title || 'Untitled Meeting';
+        
+        // Format meeting code with space in the middle (e.g., "1234 5678")
+        const formattedCode = meetingId.length === 8 
+          ? `${meetingId.substring(0, 4)} ${meetingId.substring(4)}`
+          : meetingId;
+        
+        const meetingItem = document.createElement('div');
+        meetingItem.className = 'settings-item clickable';
+        meetingItem.style.cursor = 'pointer';
+        meetingItem.addEventListener('click', () => {
+          showMeetingInfo(meetingId, meetingTitle);
+        });
+        
+        meetingItem.innerHTML = `
+          <div class="settings-item-content">
+            <div class="settings-item-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <div class="settings-item-text" style="flex: 1;">
+              <div class="settings-item-label">${meetingTitle}</div>
+              <div class="settings-item-value" style="font-family: 'Courier New', monospace; letter-spacing: 2px;">${formattedCode}</div>
+            </div>
+            <div class="settings-item-arrow">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+            </div>
+          </div>
+        `;
+        
+        meetingsList.appendChild(meetingItem);
+      });
+    }, (error) => {
+      console.error('Error listening to meetings:', error);
+    });
+    
+    // Store unsubscribe function for cleanup if needed
+    window.meetingsUnsubscribe = unsubscribe;
+    
+  } catch (error) {
+    console.error('Error setting up meetings listener:', error);
+  }
+}
+
+// Show meeting info dialog
+function showMeetingInfo(meetingId, meetingTitle) {
+  const dialogOverlay = document.getElementById('meetingInfoDialogOverlay');
+  const closeButton = document.getElementById('closeMeetingInfoDialog');
+  const closeButton2 = document.getElementById('meetingInfoCloseButton');
+  const titleEl = document.getElementById('meetingInfoTitle');
+  const codeEl = document.getElementById('meetingInfoCode');
+  
+  if (!dialogOverlay || !titleEl || !codeEl) return;
+  
+  // Format meeting code with space in the middle
+  const formattedCode = meetingId.length === 8 
+    ? `${meetingId.substring(0, 4)} ${meetingId.substring(4)}`
+    : meetingId;
+  
+  titleEl.textContent = meetingTitle;
+  codeEl.textContent = formattedCode;
+  
+  dialogOverlay.style.display = 'flex';
+  
+  function closeDialog() {
+    dialogOverlay.style.display = 'none';
+  }
+  
+  if (closeButton) {
+    closeButton.onclick = closeDialog;
+  }
+  if (closeButton2) {
+    closeButton2.onclick = closeDialog;
+  }
+  
+  // Close on overlay click
+  dialogOverlay.onclick = function(e) {
+    if (e.target === dialogOverlay) {
+      closeDialog();
+    }
+  };
+  
+  // Close on Escape key
+  const handleEscape = function(e) {
+    if (e.key === 'Escape' && dialogOverlay.style.display === 'flex') {
+      closeDialog();
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
 }
 
 // Load or generate club code
