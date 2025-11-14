@@ -250,10 +250,14 @@ async function loadOrGenerateClubCode(userId) {
     
     clubCodeDisplay.textContent = clubCode;
     
-    // Show regenerate button when code is loaded
+    // Show buttons when code is loaded
     const regenerateButton = document.getElementById('regenerateClubCodeButton');
+    const downloadQRButton = document.getElementById('downloadQRCodeButton');
     if (regenerateButton && clubCode) {
       regenerateButton.style.display = 'flex';
+    }
+    if (downloadQRButton && clubCode && typeof QRCode !== 'undefined') {
+      downloadQRButton.style.display = 'flex';
     }
   } catch (error) {
     console.error('Error loading/generating club code:', error);
@@ -267,16 +271,132 @@ async function loadOrGenerateClubCode(userId) {
 // Setup club code regenerate functionality
 function setupClubCodeRegenerate(userId) {
   const regenerateButton = document.getElementById('regenerateClubCodeButton');
+  const downloadQRButton = document.getElementById('downloadQRCodeButton');
   const regenerateDialogOverlay = document.getElementById('regenerateCodeDialogOverlay');
   const regenerateCancelButton = document.getElementById('regenerateCodeCancelButton');
   const regenerateConfirmButton = document.getElementById('regenerateCodeConfirmButton');
   const clubCodeSpinner = document.getElementById('clubCodeSpinner');
+  const clubCodeDisplay = document.getElementById('clubCodeDisplay');
   
   if (!regenerateButton || !regenerateDialogOverlay || !regenerateCancelButton || !regenerateConfirmButton || !clubCodeSpinner) {
     return;
   }
   
   let isRegenerating = false;
+  
+  // Download QR code
+  if (downloadQRButton && clubCodeDisplay) {
+    downloadQRButton.addEventListener('click', async function() {
+      const code = clubCodeDisplay.textContent;
+      if (!code || code === 'Loading...' || code === 'Error loading code') {
+        return;
+      }
+      
+      try {
+        // Check if QRCode library is available
+        if (typeof QRCode === 'undefined') {
+          showNotification('QR code library not loaded. Please refresh the page.', 'error');
+          return;
+        }
+        
+        // Get club name from Firestore
+        const db = getFirestore(window.firebaseApp || undefined);
+        const userDocRef = doc(db, 'users', userId);
+        const userDocSnap = await getDoc(userDocRef);
+        let clubName = '';
+        if (userDocSnap.exists() && userDocSnap.data().club_name) {
+          clubName = userDocSnap.data().club_name;
+        }
+        
+        // A4 dimensions in pixels at 150 DPI (good print quality)
+        // A4: 210mm x 297mm = 8.27" x 11.69"
+        const a4Width = 1240; // 210mm at 150 DPI
+        const a4Height = 1754; // 297mm at 150 DPI
+        
+        // Create a temporary container for QR code generation
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.left = '-9999px';
+        document.body.appendChild(tempContainer);
+        
+        // Generate QR code using qrcodejs library
+        const qrCodeSize = 600;
+        const qrCode = new QRCode(tempContainer, {
+          text: code,
+          width: qrCodeSize,
+          height: qrCodeSize,
+          colorDark: '#000000',
+          colorLight: '#FFFFFF',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        // Wait for QR code to be generated
+        await new Promise((resolve) => {
+          const checkQR = setInterval(() => {
+            const img = tempContainer.querySelector('img');
+            if (img && img.complete) {
+              clearInterval(checkQR);
+              resolve();
+            }
+          }, 50);
+          // Timeout after 2 seconds
+          setTimeout(() => {
+            clearInterval(checkQR);
+            resolve();
+          }, 2000);
+        });
+        
+        // Get the QR code image
+        const qrImg = tempContainer.querySelector('img');
+        if (!qrImg) {
+          throw new Error('Failed to generate QR code');
+        }
+        
+        // Create canvas for A4 sheet
+        const canvas = document.createElement('canvas');
+        canvas.width = a4Width;
+        canvas.height = a4Height;
+        const ctx = canvas.getContext('2d');
+        
+        // Fill white background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, a4Width, a4Height);
+        
+        // Center QR code on A4 sheet
+        const qrX = (a4Width - qrCodeSize) / 2;
+        const qrY = (a4Height - qrCodeSize) / 2 - 100; // Slightly above center to make room for text
+        ctx.drawImage(qrImg, qrX, qrY);
+        
+        // Add club name below QR code
+        if (clubName) {
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 54px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          const textY = qrY + qrCodeSize + 60;
+          ctx.fillText(clubName, a4Width / 2, textY);
+        }
+        
+        // Clean up temporary container
+        document.body.removeChild(tempContainer);
+        
+        // Convert canvas to blob and download
+        const fileName = clubName ? `club-code-${clubName.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.png` : `club-code-${code}.png`;
+        canvas.toBlob(function(blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+          showNotification('QR code downloaded', 'success');
+        }, 'image/png');
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+        showNotification('Error generating QR code. Please try again.', 'error');
+      }
+    });
+  }
   
   // Show confirmation dialog when regenerate button is clicked
   regenerateButton.addEventListener('click', function() {
