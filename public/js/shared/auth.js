@@ -2,7 +2,7 @@
  * Authentication functionality
  */
 
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // Get Firebase Auth error message
 function getAuthErrorMessage(errorCode) {
@@ -48,7 +48,7 @@ async function handleSignUp(email, password) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     
     if (userCredential.user) {
-      await userCredential.user.sendEmailVerification();
+      await sendEmailVerification(userCredential.user);
       return { success: true };
     }
     return { success: false, error: 'Sign up failed' };

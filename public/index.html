@@ -260,23 +260,65 @@
       }
 
       // Function to close overlay and clear forms
-      function closeLoginOverlayAndClear() {
+      async function closeLoginOverlayAndClear() {
         if (loginOverlay) {
           loginOverlay.classList.remove('show');
           clearAllForms();
         }
       }
 
-      // Show login overlay
+      // Update banner based on authentication status
+      function updateBannerForAuthStatus() {
+        if (!window.auth) return;
+        
+        const bannerMessage = document.querySelector('.banner-message');
+        const loginButton = document.getElementById('loginButton');
+        
+        window.auth.onAuthStateChanged((user) => {
+          if (user) {
+            if (bannerMessage) {
+              bannerMessage.textContent = 'You are logged in';
+            }
+            if (loginButton) {
+              loginButton.textContent = 'Go to Base';
+            }
+          } else {
+            if (bannerMessage) {
+              bannerMessage.textContent = 'Create a meeting?';
+            }
+            if (loginButton) {
+              loginButton.textContent = 'Login';
+            }
+          }
+        });
+      }
+
+      // Show login overlay or navigate to base
       const loginButton = document.getElementById('loginButton');
       const loginOverlay = document.getElementById('loginOverlay');
       const closeLoginOverlay = document.getElementById('closeLoginOverlay');
 
       if (loginButton && loginOverlay) {
         loginButton.addEventListener('click', function() {
+          // If button says "Go to Base", navigate to base
+          if (this.textContent === 'Go to Base') {
+            window.location.href = '/base/';
+            return;
+          }
+          // Otherwise show login overlay
           loginOverlay.classList.add('show');
         });
       }
+
+      // Initialize banner update when auth is available
+      function initBannerUpdate() {
+        if (window.auth) {
+          updateBannerForAuthStatus();
+        } else {
+          setTimeout(initBannerUpdate, 100);
+        }
+      }
+      initBannerUpdate();
 
       // Close login overlay
       if (closeLoginOverlay && loginOverlay) {
@@ -391,7 +433,11 @@
             
             if (result.success) {
               showNotification('Login successful!', 'success');
-              closeLoginOverlayAndClear();
+              // Wait a bit to show notification, then navigate to base
+              setTimeout(() => {
+                closeLoginOverlayAndClear();
+                window.location.href = '/base/';
+              }, 1500);
             } else {
               showNotification(result.error || 'Login failed. Please try again.', 'error');
             }
@@ -435,7 +481,11 @@
             
             if (result.success) {
               showNotification('Account created successfully! Please check your email to verify your account.', 'success');
-              closeLoginOverlayAndClear();
+              // Wait a bit to show notification, then navigate to base
+              setTimeout(() => {
+                closeLoginOverlayAndClear();
+                window.location.href = '/base/';
+              }, 1500);
             } else {
               showNotification(result.error || 'Sign up failed. Please try again.', 'error');
             }
