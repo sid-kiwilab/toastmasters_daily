@@ -155,6 +155,39 @@
   white-space: nowrap;
 }
 
+.club-name-input {
+  font-size: 14px; /* Match settings-item-value */
+  color: #212121; /* Primary text color */
+  padding: 0;
+  border: none;
+  border-bottom: 2px solid #424242;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.club-name-input:focus {
+  border-bottom-color: #616161;
+}
+
+.settings-edit-button:hover {
+  color: #424242;
+}
+
+.settings-save-button:hover {
+  color: #212121;
+}
+
+.settings-cancel-button:hover {
+  color: #424242;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .settings-item-arrow {
   display: flex;
   align-items: center;

@@ -22,6 +22,7 @@ const firebaseConfig = {
 console.log('[Firebase] Initializing...');
 const startTime = performance.now();
 const app = initializeApp(firebaseConfig);
+window.firebaseApp = app; // Make app available globally
 const initTime = performance.now() - startTime;
 console.log(`[Firebase] Initialized in ${initTime.toFixed(2)}ms`);
 

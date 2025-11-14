@@ -4,9 +4,9 @@ const admin = require('firebase-admin');
 // Cloud Function that triggers when a user is created
 exports.createUserDocument = functions.auth.user().onCreate(async (user) => {
   try {
-    // Create a user document in Firestore with only createdAt
+    // Create a user document in Firestore with only created_at
     const userDoc = {
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      created_at: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     // Store the user document in the 'users' collection

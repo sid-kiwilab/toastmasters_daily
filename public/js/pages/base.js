@@ -4,6 +4,7 @@
  */
 
 import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // Check auth and setup base page
 async function checkAuthAndSetup() {
@@ -39,7 +40,9 @@ async function checkAuthAndSetup() {
         
         // User is authenticated, set up logout button and update user info
         updateUserInfo(user);
+        loadClubName(user.uid);
         setupLogoutButton();
+        setupClubNameEdit(user.uid);
       } else {
         // Subsequent changes (e.g., logout)
         if (!user) {
@@ -72,6 +75,131 @@ function updateUserInfo(user) {
   if (userEmailElement && user && user.email) {
     userEmailElement.textContent = user.email;
   }
+}
+
+// Load club name from Firestore
+async function loadClubName(userId) {
+  try {
+    const db = getFirestore(window.firebaseApp || undefined);
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef);
+    
+    const clubNameDisplay = document.getElementById('clubNameDisplay');
+    if (clubNameDisplay) {
+      if (userDocSnap.exists() && userDocSnap.data().club_name) {
+        clubNameDisplay.textContent = userDocSnap.data().club_name;
+      } else {
+        clubNameDisplay.textContent = 'Not set';
+      }
+    }
+  } catch (error) {
+    console.error('Error loading club name:', error);
+  }
+}
+
+// Setup club name edit functionality
+function setupClubNameEdit(userId) {
+  const editButton = document.getElementById('editClubNameButton');
+  const saveButton = document.getElementById('saveClubNameButton');
+  const cancelButton = document.getElementById('cancelClubNameButton');
+  const clubNameDisplay = document.getElementById('clubNameDisplay');
+  const clubNameInput = document.getElementById('clubNameInput');
+  const clubNameSpinner = document.getElementById('clubNameSpinner');
+  
+  if (!editButton || !saveButton || !cancelButton || !clubNameDisplay || !clubNameInput || !clubNameSpinner) {
+    return;
+  }
+  
+  let originalValue = '';
+  let isSaving = false;
+  
+  function enterEditMode() {
+    originalValue = clubNameDisplay.textContent === 'Not set' ? '' : clubNameDisplay.textContent;
+    clubNameInput.value = originalValue;
+    clubNameDisplay.style.display = 'none';
+    clubNameInput.style.display = 'block';
+    editButton.style.display = 'none';
+    saveButton.style.display = 'flex';
+    cancelButton.style.display = 'flex';
+    clubNameSpinner.style.display = 'none';
+    clubNameInput.focus();
+    clubNameInput.select();
+  }
+  
+  function exitEditMode() {
+    clubNameDisplay.style.display = '';
+    clubNameInput.style.display = 'none';
+    editButton.style.display = 'flex';
+    saveButton.style.display = 'none';
+    cancelButton.style.display = 'none';
+    clubNameSpinner.style.display = 'none';
+    clubNameInput.value = '';
+    isSaving = false;
+  }
+  
+  editButton.addEventListener('click', function() {
+    if (!isSaving) {
+      enterEditMode();
+    }
+  });
+  
+  cancelButton.addEventListener('click', function() {
+    if (!isSaving) {
+      exitEditMode();
+    }
+  });
+  
+  saveButton.addEventListener('click', async function() {
+    if (isSaving) return;
+    
+    const newValue = clubNameInput.value.trim();
+    
+    // Show spinner and disable buttons
+    isSaving = true;
+    saveButton.style.display = 'none';
+    cancelButton.style.display = 'none';
+    clubNameSpinner.style.display = 'block';
+    clubNameInput.disabled = true;
+    
+    try {
+      const db = getFirestore(window.firebaseApp || undefined);
+      const userDocRef = doc(db, 'users', userId);
+      
+      if (newValue) {
+        await setDoc(userDocRef, { club_name: newValue }, { merge: true });
+        clubNameDisplay.textContent = newValue;
+        showNotification('Club name saved successfully', 'success');
+      } else {
+        await setDoc(userDocRef, { club_name: '' }, { merge: true });
+        clubNameDisplay.textContent = 'Not set';
+        showNotification('Club name cleared', 'success');
+      }
+      
+      exitEditMode();
+    } catch (error) {
+      console.error('Error saving club name:', error);
+      showNotification('Error saving club name. Please try again.', 'error');
+      // Re-enable editing on error
+      isSaving = false;
+      saveButton.style.display = 'flex';
+      cancelButton.style.display = 'flex';
+      clubNameSpinner.style.display = 'none';
+      clubNameInput.disabled = false;
+    }
+  });
+  
+  // Allow Enter key to save
+  clubNameInput.addEventListener('keydown', function(e) {
+    if (isSaving) return;
+    
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveButton.click();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelButton.click();
+    }
+  });
 }
 
 // Setup logout button
