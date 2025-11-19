@@ -76,8 +76,11 @@ class _VotingWidgetState extends State<VotingWidget> {
       );
     }
 
-         // Get all polls in stable order (both active and inactive)
-     final allPolls = _pollOrder.map((pollId) => MapEntry(pollId, _polls[pollId]!)).toList();
+         // Get only active polls in stable order
+     final allPolls = _pollOrder
+         .map((pollId) => MapEntry(pollId, _polls[pollId]!))
+         .where((entry) => entry.value.isActive) // Filter out inactive polls
+         .toList();
      
      if (allPolls.isEmpty) {
       return Container(
@@ -119,8 +122,8 @@ class _VotingWidgetState extends State<VotingWidget> {
       );
     }
 
-    // Ensure selected index is valid
-    if (_selectedPollIndex >= allPolls.length) {
+    // Ensure selected index is valid (reset if filtered polls make index invalid)
+    if (_selectedPollIndex >= allPolls.length || allPolls.isEmpty) {
       _selectedPollIndex = 0;
     }
 
