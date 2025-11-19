@@ -18,7 +18,7 @@ import '../providers/auth_provider.dart';
 import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
 import '../screens/setup_polls_screen.dart';
-import '../dialogs/poll_results_dialog.dart';
+import '../screens/poll_results_screen.dart';
 import '../widgets/footer_widget.dart';
 import '../widgets/meetings_list_widget.dart';
 
@@ -787,11 +787,13 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   }
 
   void _showPollResultsDialog(BuildContext context, Meeting meeting) {
-    showDialog(
-      context: context,
-      builder: (context) => PollResultsDialog(
-        meetingId: meeting.id,
-        meetingTitle: meeting.title,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PollResultsScreen(
+          meetingId: meeting.id,
+          meetingTitle: meeting.title,
+        ),
       ),
     );
   }

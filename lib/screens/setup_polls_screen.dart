@@ -54,7 +54,11 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
+            },
             icon: const Icon(Icons.close),
             tooltip: 'Close',
           ),
