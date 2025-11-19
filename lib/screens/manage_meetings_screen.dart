@@ -923,10 +923,12 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                           ),
                         ),
                         TextButton.icon(
-                          onPressed: _showLogoutDialog,
-                          icon: const Icon(Icons.logout, size: 18),
+                          onPressed: () {
+                            Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                          },
+                          icon: const Icon(Icons.home, size: 18),
                           label: const Text(
-                            'Logout',
+                            'Home',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -1016,6 +1018,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                             _buildCard(
                               children: [
                                 _buildVersionItem(),
+                                _buildLogoutItem(),
                               ],
                             ),
                           ],
@@ -1228,6 +1231,66 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                       ),
               ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutItem() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: const Color(0xFFF5F5F5),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _showLogoutDialog,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.logout,
+                    size: 22,
+                    color: Color(0xFF424242),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Logout',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF212121),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: Color(0xFF9E9E9E),
+                ),
+              ],
+            ),
           ),
         ),
       ),
