@@ -19,6 +19,7 @@ import '../dialogs/create_meeting_dialog.dart';
 import '../screens/setup_polls_screen.dart';
 import '../dialogs/poll_results_dialog.dart';
 import '../widgets/footer_widget.dart';
+import '../widgets/meetings_list_widget.dart';
 
 // Web-specific imports
 import 'dart:html' as html if (dart.library.html) 'dart:html';
@@ -794,6 +795,55 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     );
   }
 
+  Future<void> _deleteMeeting(BuildContext context, Meeting meeting, String meetingId) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser == null) return;
+
+    try {
+      // Call the Cloud Function
+      final functions = FirebaseFunctions.instance;
+      final result = await functions.httpsCallable('delete_meeting').call({
+        'meeting_id': meetingId,
+        'creator_id': authProvider.currentUser!.uid,
+      });
+
+      // Check result
+      if (result.data['success']) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Meeting deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
+        // Refresh the meetings list
+        final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+        meetingsProvider.initialize();
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete meeting: ${result.data['error']}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting meeting: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      rethrow; // Re-throw so dialog can handle it
+    }
+  }
+
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -823,22 +873,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
         ],
       ),
     );
-  }
-
-  // Helper method to format meeting ID with space for display
-  String _formatMeetingId(String meetingId) {
-    if (meetingId == 'Unknown ID') return meetingId;
-    
-    // Remove any existing spaces and non-digit characters
-    final digits = meetingId.replaceAll(RegExp(r'[^0-9]'), '');
-    
-    // If it's 8 digits, add space in the middle
-    if (digits.length == 8) {
-      return '${digits.substring(0, 4)} ${digits.substring(4)}';
-    }
-    
-    // Return original if not 8 digits
-    return meetingId;
   }
 
   @override
@@ -951,14 +985,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                             const SizedBox(height: 32),
                             
                             // Meetings Section
-                            _buildSectionHeader(
-                              'Meetings',
-                              'Create and manage your meetings',
-                            ),
-                            const SizedBox(height: 12),
-                            // Create Meeting button - simple style like logout
-                            TextButton.icon(
-                              onPressed: _isCreatingMeeting ? null : () {
+                            MeetingsListWidget(
+                              meetings: meetingsProvider.meetings,
+                              isCreatingMeeting: _isCreatingMeeting,
+                              uploadingAgendas: _uploadingAgendas,
+                              onCreateMeeting: () {
                                 showDialog(
                                   context: context,
                                   builder: (context) => CreateMeetingDialog(
@@ -968,43 +999,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                   ),
                                 );
                               },
-                              icon: _isCreatingMeeting
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    )
-                                  : const Icon(Icons.add, size: 18),
-                              label: const Text(
-                                'Create Meeting',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              style: TextButton.styleFrom(
-                                backgroundColor: Colors.grey[800],
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                minimumSize: const Size(double.infinity, 40),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
+                              onUploadAgenda: _uploadAgenda,
+                              onSetupPolls: _showSetupPollsDialog,
+                              onPollResults: _showPollResultsDialog,
+                              onDeleteMeeting: _deleteMeeting,
                             ),
-                            // Existing meetings - separate card
-                            if (meetingsProvider.meetings.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              ...meetingsProvider.meetings.asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final meeting = entry.value;
-                                final isLast = index == meetingsProvider.meetings.length - 1;
-                                return _buildMeetingItem(meeting, isLast: isLast);
-                              }),
-                            ],
                           ],
                         );
                       },
@@ -1246,198 +1245,4 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     );
   }
 
-  Widget _buildMeetingItem(Meeting meeting, {bool isLast = false}) {
-    final hasAgenda = meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty;
-    
-    return Container(
-      margin: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Main meeting info row
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                Navigator.pushNamed(context, '/meetings/${meeting.id}');
-              },
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.event,
-                        size: 22,
-                        color: Color(0xFF424242),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            meeting.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF212121),
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _formatMeetingId(meeting.id),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF757575),
-                              fontFamily: 'monospace',
-                              letterSpacing: 2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(
-                      Icons.chevron_right,
-                      size: 16,
-                      color: Color(0xFF9E9E9E),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Action buttons row
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFAFAFA),
-              border: Border(
-                top: BorderSide(
-                  color: const Color(0xFFF5F5F5),
-                  width: 1,
-                ),
-              ),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-            ),
-            child: Row(
-              children: [
-                // Upload Agenda button
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _uploadingAgendas[meeting.id] == true
-                        ? null
-                        : () => _uploadAgenda(context, meeting.id),
-                    icon: _uploadingAgendas[meeting.id] == true
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.upload_file, size: 16),
-                    label: Text(
-                      _uploadingAgendas[meeting.id] == true ? 'Uploading...' : 'Upload Agenda',
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF424242),
-                      side: const BorderSide(color: Color(0xFFE0E0E0)),
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-                if (hasAgenda) ...[
-                  const SizedBox(width: 8),
-                  // View Agenda button
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
-                        meetingsProvider.viewAgenda(context, meeting.agendaUrl!);
-                      },
-                      icon: const Icon(Icons.visibility, size: 16),
-                      label: const Text(
-                        'View Agenda',
-                        style: TextStyle(fontSize: 13),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF424242),
-                        side: const BorderSide(color: Color(0xFFE0E0E0)),
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(width: 8),
-                // Setup Polls button
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _showSetupPollsDialog(context, meeting),
-                    icon: const Icon(Icons.poll, size: 16),
-                    label: const Text(
-                      'Setup Polls',
-                      style: TextStyle(fontSize: 13),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF424242),
-                      side: const BorderSide(color: Color(0xFFE0E0E0)),
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Poll Results button
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _showPollResultsDialog(context, meeting),
-                    icon: const Icon(Icons.analytics, size: 16),
-                    label: const Text(
-                      'Poll Results',
-                      style: TextStyle(fontSize: 13),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF424242),
-                      side: const BorderSide(color: Color(0xFFE0E0E0)),
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
