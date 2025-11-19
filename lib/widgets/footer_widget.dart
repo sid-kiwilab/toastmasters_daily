@@ -151,17 +151,17 @@ class FooterWidget extends StatelessWidget {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '© ${DateTime.now().year} Kiwi Lab. All rights reserved.',
-                        style: const TextStyle(
+                      const Text(
+                        'Made with ❤️ for Toastmasters',
+                        style: TextStyle(
                           fontSize: 12,
                           color: Color(0xFF9E9E9E),
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Made with ❤️ for Toastmasters',
-                        style: TextStyle(
+                      Text(
+                        '© ${DateTime.now().year} Kiwi Lab. All rights reserved.',
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF9E9E9E),
                         ),
