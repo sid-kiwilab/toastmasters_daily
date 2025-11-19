@@ -2,7 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
 // Cloud Function that triggers when a user is created
-exports.createUserDocument = functions.auth.user().onCreate(async (user) => {
+exports.create_user_document = functions.auth.user().onCreate(async (user) => {
   try {
     // Create a user document in Firestore with only created_at
     const userDoc = {
@@ -21,7 +21,7 @@ exports.createUserDocument = functions.auth.user().onCreate(async (user) => {
 });
 
 // Cloud Function that triggers when a user is deleted
-exports.deleteUserDocument = functions.auth.user().onDelete(async (user) => {
+exports.delete_user_document = functions.auth.user().onDelete(async (user) => {
   try {
     const userRef = admin.firestore().collection('users').doc(user.uid);
     

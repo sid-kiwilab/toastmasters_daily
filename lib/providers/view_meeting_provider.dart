@@ -40,8 +40,8 @@ class ViewMeetingProvider extends ChangeNotifier {
 
       if (doc.exists) {
         _meeting = Meeting.fromFirestore(doc);
-        // Get creatorId from the meeting document to fetch polls
-        _creatorId = doc.data()?['creatorId'] as String?;
+        // Get creator_id from the meeting document to fetch polls
+        _creatorId = doc.data()?['creator_id'] as String? ?? doc.data()?['creatorId'] as String?;
         if (_creatorId != null) {
           await _fetchPolls(_creatorId!, meetingId);
         }

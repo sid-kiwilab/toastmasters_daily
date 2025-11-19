@@ -46,7 +46,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
 
       // Call the Cloud Function
       final functions = FirebaseFunctions.instance;
-      final result = await functions.httpsCallable('createMeeting').call({
+      final result = await functions.httpsCallable('create_meeting').call({
         'title': title,
         'creator_id': userId,
       });
@@ -174,7 +174,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
 
       // Call the Cloud Function to upload agenda
       final functions = FirebaseFunctions.instance;
-      final result2 = await functions.httpsCallable('uploadAgenda').call({
+      final result2 = await functions.httpsCallable('upload_agenda').call({
         'meetingId': meetingId,
         'fileData': base64Data,
         'fileName': file.name,
@@ -192,7 +192,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
           );
         }
         
-        print('Agenda uploaded: ${agenda['downloadUrl']}');
+        print('Agenda uploaded: ${agenda['download_url'] ?? agenda['downloadUrl']}');
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

@@ -359,7 +359,7 @@ function setupCreateMeetingDialog(userId) {
       
       try {
         const functions = getFunctions(window.firebaseApp || undefined);
-        const createMeeting = httpsCallable(functions, 'createMeeting');
+        const createMeeting = httpsCallable(functions, 'create_meeting');
         
         const result = await createMeeting({
           title: meetingName,
@@ -551,7 +551,7 @@ function showDeleteMeetingConfirmation(meetingId, meetingTitle, userId) {
     
     try {
       const functions = getFunctions(window.firebaseApp || undefined);
-      const deleteMeeting = httpsCallable(functions, 'deleteMeeting');
+      const deleteMeeting = httpsCallable(functions, 'delete_meeting');
       
       const result = await deleteMeeting({
         meeting_id: meetingId,

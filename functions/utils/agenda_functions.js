@@ -10,7 +10,7 @@ const functions = require('firebase-functions');
  * @param {Object} context - Firebase Functions context
  * @returns {Promise<Object>} Upload result with download URL
  */
-exports.uploadAgenda = functions.https.onCall(async (data, context) => {
+exports.upload_agenda = functions.https.onCall(async (data, context) => {
   try {
     // Validate required fields
     if (!data.meetingId || !data.fileData || !data.fileName) {
@@ -43,9 +43,9 @@ exports.uploadAgenda = functions.https.onCall(async (data, context) => {
       metadata: {
         contentType: 'application/pdf',
         metadata: {
-          meetingId: data.meetingId,
-          originalFileName: data.fileName,
-          uploadedAt: new Date().toISOString()
+          meeting_id: data.meetingId,
+          original_file_name: data.fileName,
+          uploaded_at: new Date().toISOString()
         }
       }
     });
@@ -71,26 +71,26 @@ exports.uploadAgenda = functions.https.onCall(async (data, context) => {
           return; // Exit transaction early if document doesn't exist
         }
         
-        // Read the user meeting document (if creatorId exists)
-        const creatorId = activeMeetingDoc.data().creatorId;
+        // Read the user meeting document (if creator_id exists)
+        const creator_id = activeMeetingDoc.data().creator_id;
         
         let userMeetingDoc = null;
-        if (creatorId) {
-          const userMeetingRef = db.collection('users').doc(creatorId).collection('meetings').doc(data.meetingId);
+        if (creator_id) {
+          const userMeetingRef = db.collection('users').doc(creator_id).collection('meetings').doc(data.meetingId);
           userMeetingDoc = await transaction.get(userMeetingRef);
         }
         
         // STEP 2: ALL WRITES AFTER ALL READS
         // Update the active meetings collection
         transaction.update(activeMeetingRef, {
-          agendaUrl: publicUrl
+          agenda_url: publicUrl
         });
         
         // Update the user's meetings subcollection if it exists
-        if (creatorId && userMeetingDoc && userMeetingDoc.exists) {
-          const userMeetingRef = db.collection('users').doc(creatorId).collection('meetings').doc(data.meetingId);
+        if (creator_id && userMeetingDoc && userMeetingDoc.exists) {
+          const userMeetingRef = db.collection('users').doc(creator_id).collection('meetings').doc(data.meetingId);
           transaction.update(userMeetingRef, {
-            agendaUrl: publicUrl
+            agenda_url: publicUrl
           });
         }
       });
@@ -102,10 +102,10 @@ exports.uploadAgenda = functions.https.onCall(async (data, context) => {
     return {
       success: true,
       agenda: {
-        meetingId: data.meetingId,
-        fileName: data.fileName,
-        downloadUrl: publicUrl,
-        fileSize: fileBuffer.length
+        meeting_id: data.meetingId,
+        file_name: data.fileName,
+        download_url: publicUrl,
+        file_size: fileBuffer.length
       }
     };
 

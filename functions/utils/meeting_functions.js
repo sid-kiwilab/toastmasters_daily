@@ -9,7 +9,7 @@ const functions = require('firebase-functions');
  * @param {Object} context - Firebase Functions context
  * @returns {Promise<Object>} The created meeting document
  */
-exports.createMeeting = functions.https.onCall(async (data, context) => {
+exports.create_meeting = functions.https.onCall(async (data, context) => {
   try {
     const db = admin.firestore();
     
@@ -70,7 +70,7 @@ exports.createMeeting = functions.https.onCall(async (data, context) => {
  * @param {Object} context - Firebase Functions context
  * @returns {Promise<Object>} Success status
  */
-exports.deleteMeeting = functions.https.onCall(async (data, context) => {
+exports.delete_meeting = functions.https.onCall(async (data, context) => {
   try {
     const db = admin.firestore();
     
