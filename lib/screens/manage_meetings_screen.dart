@@ -48,7 +48,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       final functions = FirebaseFunctions.instance;
       final result = await functions.httpsCallable('createMeeting').call({
         'title': title,
-        'creatorId': userId,
+        'creator_id': userId,
       });
 
       // Clear loading state

@@ -27,8 +27,8 @@ class Meeting {
       id: doc.id,
       title: data['title'] ?? 'Untitled Meeting',
       description: data['description'] ?? 'No description',
-      createdAt: data['createdAt']?.toDate(),
-      agendaUrl: data['agendaUrl'],
+      createdAt: data['created_at']?.toDate(),
+      agendaUrl: data['agendaUrl'] ?? data['agenda_url'],
       polls: data['polls'],
     );
   }
@@ -118,7 +118,7 @@ class ManageMeetingsProvider extends ChangeNotifier {
           .collection('users')
           .doc(userId)
           .collection('meetings')
-          .orderBy('createdAt', descending: true)
+          .orderBy('created_at', descending: true)
           .snapshots()
           .listen(
         (snapshot) {
@@ -130,7 +130,13 @@ class ManageMeetingsProvider extends ChangeNotifier {
         },
         onError: (error) {
           _isLoading = false;
-          _error = 'Error loading meetings: $error';
+          // Check if it's an index error
+          final errorString = error.toString();
+          if (errorString.contains('index') || errorString.contains('requires an index')) {
+            _error = 'Firestore index required. Please create the index as shown in the error message.';
+          } else {
+            _error = 'Error loading meetings: $error';
+          }
           notifyListeners();
         },
       );
