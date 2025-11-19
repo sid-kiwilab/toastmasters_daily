@@ -13,6 +13,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'dart:convert';
 import 'dart:io';
+import '../main.dart' show appVersion;
 import '../providers/auth_provider.dart';
 import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
@@ -1004,6 +1005,19 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                               onPollResults: _showPollResultsDialog,
                               onDeleteMeeting: _deleteMeeting,
                             ),
+                            const SizedBox(height: 32),
+                            
+                            // App Info Section
+                            _buildSectionHeader(
+                              'App Info',
+                              'Application information',
+                            ),
+                            const SizedBox(height: 12),
+                            _buildCard(
+                              children: [
+                                _buildVersionItem(),
+                              ],
+                            ),
                           ],
                         );
                       },
@@ -1061,8 +1075,62 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: children,
+      ),
+    );
+  }
+
+  Widget _buildVersionItem() {
+    return Container(
+      child: Material(
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.info_outline,
+                  size: 22,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Version',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF212121),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      appVersion,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF757575),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
