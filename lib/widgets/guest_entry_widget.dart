@@ -187,9 +187,16 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
           const SnackBar(
             content: Text('Thank you! Your information has been saved.'),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 1),
           ),
         );
+        
+        // Close the widget after 1 second
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        });
       }
     } catch (e) {
       print('Error saving guest info: $e');
@@ -208,27 +215,6 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
       body: SafeArea(
         child: Column(
           children: [
-            // Close button at top
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                      padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             // Content
             Expanded(
               child: Align(
@@ -441,39 +427,71 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                               ),
                             ),
                           
-                          // Save Button
-                          SizedBox(
-                            width: 140,
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: (_isSaving || _hasExistingEntry || !_hasCheckedDevice) 
-                                  ? null 
-                                  : _saveGuestInfo,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey[800],
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: _isSaving
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Save',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                          // Buttons Row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Close Button
+                              SizedBox(
+                                width: 140,
+                                height: 48,
+                                child: OutlinedButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF424242),
+                                    side: const BorderSide(
+                                      color: Color(0xFFE0E0E0),
+                                      width: 1,
                                     ),
-                            ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Close',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              // Save Button
+                              SizedBox(
+                                width: 140,
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: (_isSaving || _hasExistingEntry || !_hasCheckedDevice) 
+                                      ? null 
+                                      : _saveGuestInfo,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey[800],
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: _isSaving
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          ),
+                                        )
+                                      : const Text(
+                                          'Save',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

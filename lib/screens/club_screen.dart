@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'dart:html' as html;
 import '../providers/manage_meetings_provider.dart';
+import '../widgets/guest_entry_widget.dart';
 
 class ClubScreen extends StatefulWidget {
   final String clubCode;
@@ -71,16 +72,38 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
     }
   }
 
-  void _handleWelcomeContinue() {
+  void _handleWelcomeContinue({bool isGuest = false}) {
     if (kIsWeb) {
       // Mark welcome as shown in sessionStorage
       final welcomeKey = 'club_welcome_shown_${widget.clubCode}';
       html.window.sessionStorage[welcomeKey] = 'true';
     }
-    setState(() {
-      _showWelcomeDialog = false;
-      _shouldShowWelcome = false; // Allow club content to show
-    });
+    
+    if (isGuest && _meetings.isNotEmpty) {
+      // Show guest entry widget for the first (latest) meeting
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GuestEntryWidget(
+            meetingId: _meetings.first.id,
+          ),
+        ),
+      ).then((_) {
+        // After guest entry is closed, show club content
+        if (mounted) {
+          setState(() {
+            _showWelcomeDialog = false;
+            _shouldShowWelcome = false;
+          });
+        }
+      });
+    } else {
+      // Member or no meetings - just show club content
+      setState(() {
+        _showWelcomeDialog = false;
+        _shouldShowWelcome = false; // Allow club content to show
+      });
+    }
   }
 
   Future<void> _loadClubData() async {
@@ -402,7 +425,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                               width: buttonWidth,
                               height: isMobile ? 56 : 60,
                               child: OutlinedButton(
-                                onPressed: _handleWelcomeContinue,
+                                onPressed: () => _handleWelcomeContinue(isGuest: true),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: const Color(0xFF424242),
                                   side: const BorderSide(
