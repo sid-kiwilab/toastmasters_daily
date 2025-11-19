@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/header_widget.dart';
+import '../widgets/footer_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -78,20 +79,27 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header at the top
-            const HeaderWidget(),
-            
-            // Expanded middle section - centers the enter code area vertically
-            Expanded(
-              child: Align(
-                alignment: const Alignment(0, -0.15),
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final availableHeight = constraints.maxHeight;
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: availableHeight + 200, // Extra space to push footer below
+                ),
+                child: Column(
+                  children: [
+                    // Header at the top
+                    const HeaderWidget(),
+                    
+                    // Middle section - centers the enter code area vertically
+                    SizedBox(
+                      height: availableHeight * 0.9,
+                      child: Align(
+                        alignment: const Alignment(0, -0.15),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
                       // Main content
                       Text(
                         'Enter the code to join',
@@ -244,11 +252,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ],
-                  ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    const FooterWidget(),
+                  ],
                 ),
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
