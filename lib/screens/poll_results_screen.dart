@@ -474,18 +474,23 @@ class _PollResultsScreenState extends State<PollResultsScreen> {
                             )
                           : SingleChildScrollView(
                               padding: const EdgeInsets.all(20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildSectionHeader(
-                                    'Results',
-                                    'Live poll results',
+                              child: Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 800),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildSectionHeader(
+                                        'Results',
+                                        'Live poll results',
+                                      ),
+                                      const SizedBox(height: 12),
+                                      ..._polls.entries.map((entry) {
+                                        return _buildPollCard(entry.value);
+                                      }).toList(),
+                                    ],
                                   ),
-                                  const SizedBox(height: 12),
-                                  ..._polls.entries.map((entry) {
-                                    return _buildPollCard(entry.value);
-                                  }).toList(),
-                                ],
+                                ),
                               ),
                             ),
             ),
