@@ -50,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         if (success) {
           Navigator.of(context).pop();
+          Navigator.of(context).pushReplacementNamed('/base');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Logged in successfully!')),
           );

@@ -52,6 +52,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (mounted) {
         if (success) {
           Navigator.of(context).pop();
+          Navigator.of(context).pushReplacementNamed('/base');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Account created successfully!')),
           );

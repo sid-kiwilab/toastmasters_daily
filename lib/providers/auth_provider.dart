@@ -8,6 +8,7 @@ class AuthProvider extends ChangeNotifier {
   String? _userEmail;
   String? _userName;
   bool _isEmailVerified = false;
+  bool _authStateResolved = false; // Flag to track if auth state has been determined
 
   // Getters
   bool get isLoggedIn => _isLoggedIn;
@@ -16,9 +17,23 @@ class AuthProvider extends ChangeNotifier {
   String? get userName => _userName;
   bool get isEmailVerified => _isEmailVerified;
   User? get currentUser => _auth.currentUser;
+  bool get authStateResolved => _authStateResolved; // Whether auth state has been checked
 
   // Constructor - check auth status on initialization
   AuthProvider() {
+    // Check initial auth state synchronously
+    final initialUser = _auth.currentUser;
+    if (initialUser != null) {
+      _isLoggedIn = true;
+      _userId = initialUser.uid;
+      _userEmail = initialUser.email;
+      _userName = initialUser.displayName ?? initialUser.email?.split('@')[0] ?? 'User';
+      _isEmailVerified = initialUser.emailVerified;
+    }
+    _authStateResolved = true; // Mark as resolved after initial check
+    notifyListeners();
+    
+    // Listen for auth state changes
     _auth.authStateChanges().listen((User? user) {
       if (user != null) {
         _isLoggedIn = true;
@@ -33,6 +48,7 @@ class AuthProvider extends ChangeNotifier {
         _userName = null;
         _isEmailVerified = false;
       }
+      _authStateResolved = true; // Mark as resolved when state changes
       notifyListeners();
     });
   }

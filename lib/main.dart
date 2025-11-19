@@ -143,6 +143,7 @@ class MainApp extends StatelessWidget {
         initialRoute: '/',
         routes: {
           '/': (context) => const AuthWrapper(),
+          '/base': (context) => const ManageMeetingsScreen(),
         },
         onGenerateRoute: (settings) {
           final name = settings.name ?? '';
@@ -166,16 +167,8 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        // Show ManageMeetingsScreen if logged in, otherwise show HomeScreen
-        if (authProvider.isLoggedIn) {
-          return const ManageMeetingsScreen();
-        } else {
-          return const HomeScreen();
-        }
-      },
-    );
+    // Always show HomeScreen - no gating
+    return const HomeScreen();
   }
 }
 

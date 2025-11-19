@@ -5,8 +5,6 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'dart:io';
-import '../widgets/header_widget.dart';
-import '../widgets/footer_widget.dart';
 import '../providers/auth_provider.dart';
 import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
@@ -254,6 +252,37 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     );
   }
 
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              await authProvider.logout();
+              if (mounted) {
+                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Helper method to format meeting ID with space for display
   String _formatMeetingId(String meetingId) {
     if (meetingId == 'Unknown ID') return meetingId;
@@ -274,23 +303,90 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-         return Scaffold(
-       body: SafeArea(
-         child: Column(
-           children: [
-             // Header at the top
-             const HeaderWidget(),
-             
-             // Main content
-             Expanded(
-               child: Consumer<AuthProvider>(
-                 builder: (context, authProvider, child) {
-                   if (authProvider.currentUser == null) {
-                     return const SizedBox.shrink();
-                   }
-                   
-                   return Center(
-                     child: SingleChildScrollView(
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Wait for auth state to be resolved before checking
+        if (!authProvider.authStateResolved) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        // Auth gate: redirect to home if not authenticated
+        if (!authProvider.isLoggedIn || authProvider.currentUser == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+            }
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        return Scaffold(
+          backgroundColor: const Color(0xFFF5F5F5),
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Header with Base title and logout button - full width
+                Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x0A000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Row(
+                      children: [
+                        const Text(
+                          'Base',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF212121),
+                          ),
+                        ),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: _showLogoutDialog,
+                          icon: const Icon(Icons.logout, size: 18),
+                          label: const Text(
+                            'Logout',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            backgroundColor: const Color(0xFFF5F5F5),
+                            foregroundColor: const Color(0xFF212121),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Main content
+                Expanded(
+                  child: SingleChildScrollView(
                        padding: const EdgeInsets.all(24),
                        child: Column(
                          mainAxisAlignment: MainAxisAlignment.center,
@@ -697,16 +793,12 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                          ],
                        ),
                      ),
-                   );
-                 },
-               ),
+                   ),
+               ],
              ),
-             
-             // Footer at the bottom
-             const FooterWidget(),
-           ],
-         ),
-       ),
+           ),
+         );
+       },
      );
-  }
+   }
 }

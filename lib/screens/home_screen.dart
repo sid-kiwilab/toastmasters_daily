@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/header_widget.dart';
-import '../widgets/footer_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -249,9 +248,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            
-            // Footer at the bottom
-            const FooterWidget(),
           ],
         ),
       ),
