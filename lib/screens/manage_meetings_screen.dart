@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -21,6 +22,16 @@ class ManageMeetingsScreen extends StatefulWidget {
 class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   bool _isCreatingMeeting = false;
   Map<String, bool> _uploadingAgendas = {}; // Track upload state for each meeting
+  
+  // Club name state
+  String? _clubName;
+  final TextEditingController _clubNameController = TextEditingController();
+  bool _isSavingClubName = false;
+  
+  // Club info state
+  String? _clubInfo;
+  final TextEditingController _clubInfoController = TextEditingController();
+  bool _isSavingClubInfo = false;
 
   @override
   void initState() {
@@ -29,6 +40,264 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
       meetingsProvider.initialize();
+      _loadProfileData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _clubNameController.dispose();
+    _clubInfoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadProfileData() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser == null) return;
+    
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authProvider.currentUser!.uid)
+          .get();
+      
+      if (mounted && userDoc.exists) {
+        final data = userDoc.data()!;
+        setState(() {
+          _clubName = data['club_name'] as String?;
+          _clubInfo = data['club_info'] as String?;
+        });
+      }
+    } catch (e) {
+      print('Error loading profile data: $e');
+    }
+  }
+
+  Future<void> _saveClubName(String newValue) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser == null) return;
+    
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authProvider.currentUser!.uid)
+          .set({
+        'club_name': newValue.isEmpty ? '' : newValue,
+      }, SetOptions(merge: true));
+      
+      if (mounted) {
+        setState(() {
+          _clubName = newValue.isEmpty ? null : newValue;
+          _isSavingClubName = false;
+        });
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(newValue.isEmpty ? 'Club name cleared' : 'Club name saved successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSavingClubName = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving club name. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showClubNameDialog() {
+    _clubNameController.text = _clubName ?? '';
+    _isSavingClubName = false;
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Toastmasters Club Name'),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: _isSavingClubName ? null : () => Navigator.of(dialogContext).pop(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: TextField(
+                controller: _clubNameController,
+                autofocus: true,
+                enabled: !_isSavingClubName,
+                decoration: const InputDecoration(
+                  hintText: 'Enter club name...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: _isSavingClubName ? null : () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: _isSavingClubName ? null : () async {
+                  setState(() {
+                    _isSavingClubName = true;
+                  });
+                  setDialogState(() {});
+                  
+                  final newValue = _clubNameController.text.trim();
+                  await _saveClubName(newValue);
+                },
+                child: _isSavingClubName
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    ).then((_) {
+      // Reset state when dialog closes
+      if (mounted && _isSavingClubName) {
+        setState(() {
+          _isSavingClubName = false;
+        });
+      }
+    });
+  }
+
+  Future<void> _saveClubInfo(String newValue) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser == null) return;
+    
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authProvider.currentUser!.uid)
+          .set({
+        'club_info': newValue.isEmpty ? '' : newValue,
+      }, SetOptions(merge: true));
+      
+      if (mounted) {
+        setState(() {
+          _clubInfo = newValue.isEmpty ? null : newValue;
+          _isSavingClubInfo = false;
+        });
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(newValue.isEmpty ? 'Club info cleared' : 'Club info saved successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSavingClubInfo = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving club info. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showClubInfoDialog() {
+    _clubInfoController.text = _clubInfo ?? '';
+    _isSavingClubInfo = false;
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Club Info'),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: _isSavingClubInfo ? null : () => Navigator.of(dialogContext).pop(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: TextField(
+                controller: _clubInfoController,
+                autofocus: true,
+                enabled: !_isSavingClubInfo,
+                maxLines: 10,
+                minLines: 5,
+                decoration: const InputDecoration(
+                  hintText: 'Add information about your club...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: _isSavingClubInfo ? null : () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: _isSavingClubInfo ? null : () async {
+                  setState(() {
+                    _isSavingClubInfo = true;
+                  });
+                  setDialogState(() {});
+                  
+                  final newValue = _clubInfoController.text.trim();
+                  await _saveClubInfo(newValue);
+                },
+                child: _isSavingClubInfo
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    ).then((_) {
+      // Reset state when dialog closes
+      if (mounted && _isSavingClubInfo) {
+        setState(() {
+          _isSavingClubInfo = false;
+        });
+      }
     });
   }
 
@@ -358,8 +627,8 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                             ),
                           ),
                           style: TextButton.styleFrom(
-                            backgroundColor: const Color(0xFFF5F5F5),
-                            foregroundColor: const Color(0xFF212121),
+                            backgroundColor: Colors.grey[800],
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -383,6 +652,34 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Profile Section - Club Name
+                              _buildSectionHeader(
+                                'Profile',
+                                'Manage your account information',
+                              ),
+                              const SizedBox(height: 12),
+                              _buildCard(
+                                children: [
+                                  _buildItem(
+                                    icon: Icons.groups,
+                                    label: 'Toastmasters Club Name',
+                                    value: _clubName ?? 'Not set',
+                                    onTap: _showClubNameDialog,
+                                  ),
+                                  _buildItem(
+                                    icon: Icons.info_outline,
+                                    label: 'Club Info',
+                                    value: _clubInfo != null && _clubInfo!.isNotEmpty
+                                        ? (_clubInfo!.length > 50 
+                                            ? '${_clubInfo!.substring(0, 50)}...' 
+                                            : _clubInfo!)
+                                        : 'Not set',
+                                    onTap: _showClubInfoDialog,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+                              
                               // Upcoming Meetings Section
                               if (meetingsProvider.meetings.isNotEmpty) ...[
                                 _buildSectionHeader(
