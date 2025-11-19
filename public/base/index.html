@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Toastmasters Daily</title>
+    <link rel="icon" type="image/png" href="/assets/favicon.png">
+    <link rel="preload" href="/assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/notification.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@gh-pages/qrcode.min.js"></script>
+  </head>
+  <body>
+    <div class="settings-container">
+      <!-- Header -->
+      <header class="settings-header">
+        <div class="settings-header-content">
+          <h1 class="settings-title">Base</h1>
+          <button class="settings-logout-button" id="logoutButton">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2M11 13l4-4-4-4M15 9H7"/>
+            </svg>
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="settings-main">
+        <div class="settings-content">
+          <!-- Upcoming Meetings Section -->
+          <section class="settings-section" id="meetingsSection" style="display: none;">
+              <div class="settings-section-header">
+                <h2 class="settings-section-title">Upcoming Meetings</h2>
+                <p class="settings-section-description">You can only have one active meeting at a time</p>
+              </div>
+            <div class="settings-card" id="meetingsList" style="margin-top: 12px;">
+              <!-- Meetings will be dynamically inserted here -->
+            </div>
+          </section>
+
+          <!-- Profile Section -->
+          <section class="settings-section">
+            <div class="settings-section-header">
+              <h2 class="settings-section-title">Profile</h2>
+              <p class="settings-section-description">Manage your account information</p>
+            </div>
+            <div class="settings-card">
+              <div class="settings-item">
+                <div class="settings-item-content">
+                  <div class="settings-item-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                  </div>
+                  <div class="settings-item-text">
+                    <div class="settings-item-label">Email</div>
+                    <div class="settings-item-value" id="userEmail">Loading...</div>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-item">
+                <div class="settings-item-content">
+                  <div class="settings-item-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  </div>
+                  <div class="settings-item-text" style="flex: 1;">
+                    <div class="settings-item-label">Toastmasters Club Name</div>
+                    <div class="settings-item-value" id="clubNameDisplay">Not set</div>
+                    <input type="text" id="clubNameInput" class="club-name-input" style="display: none;" />
+                  </div>
+                  <div class="club-name-actions" style="display: flex; align-items: center; gap: 4px;">
+                    <button class="settings-edit-button" id="editClubNameButton" style="background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; color: #757575; transition: color 0.2s;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                    <button class="settings-save-button" id="saveClubNameButton" style="display: none; background: none; border: none; cursor: pointer; padding: 4px; align-items: center; color: #424242; transition: color 0.2s;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </button>
+                    <button class="settings-cancel-button" id="cancelClubNameButton" style="display: none; background: none; border: none; cursor: pointer; padding: 4px; align-items: center; color: #757575; transition: color 0.2s;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                    <div id="clubNameSpinner" class="club-name-spinner" style="display: none; width: 16px; height: 16px; border: 2px solid rgba(66, 66, 66, 0.3); border-top-color: #424242; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-item">
+                <div class="settings-item-content">
+                  <div class="settings-item-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="currentColor"/>
+                    </svg>
+                  </div>
+                  <div class="settings-item-text" style="flex: 1;">
+                    <div class="settings-item-label">Club QR Code</div>
+                    <div class="settings-item-value" id="clubCodeDisplay">Loading...</div>
+                  </div>
+                  <button class="settings-qr-button" id="downloadQRCodeButton" style="background: none; border: none; cursor: pointer; padding: 4px; display: none; align-items: center; color: #757575; transition: color 0.2s;" title="Download QR code">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </button>
+                  <button class="settings-regenerate-button" id="regenerateClubCodeButton" style="background: none; border: none; cursor: pointer; padding: 4px; display: none; align-items: center; color: #757575; transition: color 0.2s;" title="Generate new code">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="23 4 23 10 17 10"/>
+                      <polyline points="1 20 1 14 7 14"/>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/>
+                    </svg>
+                  </button>
+                  <div id="clubCodeSpinner" class="club-name-spinner" style="display: none; width: 16px; height: 16px; border: 2px solid rgba(66, 66, 66, 0.3); border-top-color: #424242; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                </div>
+              </div>
+              <div class="settings-item clickable" id="editClubInfoButton">
+                <div class="settings-item-content">
+                  <div class="settings-item-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                  </div>
+                  <div class="settings-item-text">
+                    <div class="settings-item-label">Club Info</div>
+                    <div class="settings-item-value" id="clubInfoPreview">Not set</div>
+                  </div>
+                  <div class="settings-item-arrow">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M6 4l4 4-4 4"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Meetings Section -->
+          <section class="settings-section">
+            <div class="settings-section-header">
+              <h2 class="settings-section-title">Meetings</h2>
+              <p class="settings-section-description">Create and manage your meetings</p>
+            </div>
+            <div class="settings-card">
+              <div class="settings-item clickable" id="createMeetingButton">
+                <div class="settings-item-content">
+                  <div class="settings-item-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </div>
+                  <div class="settings-item-text">
+                    <div class="settings-item-label">Create Meeting</div>
+                    <div class="settings-item-value">Start a new meeting session</div>
+                  </div>
+                  <div class="settings-item-arrow">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M6 4l4 4-4 4"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- About Section -->
+          <section class="settings-section">
+            <div class="settings-section-header">
+              <h2 class="settings-section-title">About</h2>
+              <p class="settings-section-description">App information and support</p>
+            </div>
+            <div class="settings-card">
+              <div class="settings-item clickable">
+                <div class="settings-item-content">
+                  <div class="settings-item-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="16" x2="12" y2="12"/>
+                      <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                  </div>
+                  <div class="settings-item-text">
+                    <div class="settings-item-label">Help & Support</div>
+                    <div class="settings-item-value">Get help and contact support</div>
+                  </div>
+                  <div class="settings-item-arrow">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M6 4l4 4-4 4"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Logout Confirmation Dialog -->
+    <div class="logout-dialog-overlay" id="logoutDialogOverlay">
+      <div class="logout-dialog">
+        <h3 class="logout-dialog-title">Logout</h3>
+        <p class="logout-dialog-message">Are you sure you want to logout?</p>
+        <div class="logout-dialog-actions">
+          <button class="logout-dialog-button cancel" id="logoutCancelButton">Cancel</button>
+          <button class="logout-dialog-button confirm" id="logoutConfirmButton">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Regenerate Code Confirmation Dialog -->
+    <div class="logout-dialog-overlay" id="regenerateCodeDialogOverlay">
+      <div class="logout-dialog">
+        <h3 class="logout-dialog-title">Regenerate Club Code</h3>
+        <p class="logout-dialog-message">Are you sure? You will need to change all your QR codes.</p>
+        <div class="logout-dialog-actions">
+          <button class="logout-dialog-button cancel" id="regenerateCodeCancelButton">Cancel</button>
+          <button class="logout-dialog-button confirm" id="regenerateCodeConfirmButton">Regenerate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Club Info Dialog -->
+    <div class="logout-dialog-overlay" id="clubInfoDialogOverlay">
+      <div class="logout-dialog" style="max-width: 600px; max-height: 80vh; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h3 class="logout-dialog-title" style="margin: 0;">Club Info</h3>
+          <button id="closeClubInfoDialog" style="background: none; border: none; cursor: pointer; padding: 4px; color: #757575; display: flex; align-items: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div style="flex: 1; overflow-y: auto; margin-bottom: 24px;">
+          <textarea id="clubInfoTextarea" placeholder="Add information about your club..." style="width: 100%; min-height: 400px; padding: 16px; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 8px; font-family: inherit; font-size: 16px; line-height: 1.6; resize: vertical; box-sizing: border-box;"></textarea>
+        </div>
+        <div class="logout-dialog-actions">
+          <button class="logout-dialog-button cancel" id="clubInfoCancelButton">Cancel</button>
+          <button class="logout-dialog-button confirm" id="clubInfoSaveButton">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Meeting Dialog -->
+    <div class="logout-dialog-overlay" id="createMeetingDialogOverlay">
+      <div class="logout-dialog" style="max-width: 500px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h3 class="logout-dialog-title" style="margin: 0;">Create Meeting</h3>
+          <button id="closeCreateMeetingDialog" style="background: none; border: none; cursor: pointer; padding: 4px; color: #757575; display: flex; align-items: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; font-size: 14px; font-weight: 500; color: #424242; margin-bottom: 8px;">Meeting Name</label>
+          <input type="text" id="meetingNameInput" placeholder="Enter meeting name..." style="width: 100%; padding: 12px 16px; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 8px; font-family: inherit; font-size: 16px; box-sizing: border-box;" />
+        </div>
+        <div class="logout-dialog-actions">
+          <button class="logout-dialog-button cancel" id="createMeetingCancelButton">Cancel</button>
+          <button class="logout-dialog-button confirm" id="createMeetingConfirmButton">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Meeting Confirmation Dialog -->
+    <div class="logout-dialog-overlay" id="deleteMeetingDialogOverlay">
+      <div class="logout-dialog" style="max-width: 400px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h3 class="logout-dialog-title" style="margin: 0;">Delete Meeting</h3>
+          <button id="closeDeleteMeetingDialog" style="background: none; border: none; cursor: pointer; padding: 4px; color: #757575; display: flex; align-items: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div style="margin-bottom: 24px;">
+          <p class="logout-dialog-message" id="deleteMeetingMessage">Are you sure you want to delete this meeting? This action cannot be undone.</p>
+        </div>
+        <div class="logout-dialog-actions">
+          <button class="logout-dialog-button cancel" id="deleteMeetingCancelButton">Cancel</button>
+          <button class="logout-dialog-button confirm" id="deleteMeetingConfirmButton" style="background: #d32f2f;">
+            <span id="deleteMeetingButtonText">Delete</span>
+            <span id="deleteMeetingButtonLoading" style="display: none;">Deleting...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meeting Info Dialog -->
+    <div class="logout-dialog-overlay" id="meetingInfoDialogOverlay">
+      <div class="logout-dialog" style="max-width: 500px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h3 class="logout-dialog-title" style="margin: 0;">Meeting Info</h3>
+          <button id="closeMeetingInfoDialog" style="background: none; border: none; cursor: pointer; padding: 4px; color: #757575; display: flex; align-items: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div style="margin-bottom: 24px;">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #757575; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Meeting Name</label>
+            <div style="font-size: 18px; font-weight: 500; color: #212121;" id="meetingInfoTitle"></div>
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #757575; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Meeting Code</label>
+            <div style="font-size: 24px; font-weight: 600; color: #212121; font-family: 'Courier New', monospace; letter-spacing: 4px;" id="meetingInfoCode"></div>
+          </div>
+        </div>
+        <div class="logout-dialog-actions">
+          <button class="logout-dialog-button confirm" id="meetingInfoCloseButton" style="width: 100%;">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/shared/notification.js"></script>
+    <script type="module" src="/js/shared/firebase-init.js"></script>
+    <script type="module" src="/js/pages/base.js"></script>
+  </body>
+</html>
+
