@@ -8,6 +8,7 @@ import '../providers/view_meeting_provider.dart';
 import '../widgets/voting_widget.dart';
 import '../widgets/footer_widget.dart';
 import 'dart:typed_data';
+import 'dart:math';
 
 class ViewMeetingScreen extends StatefulWidget {
   final String meetingId;
@@ -27,11 +28,29 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   
   // Fullscreen agenda state
   bool _showFullscreenAgenda = false;
+  
+  // Welcome message
+  late String _welcomeMessage;
+  
+  static const List<String> _welcomeMessages = [
+    'Hi there! 👋',
+    'Welcome!',
+    "Let's have fun!",
+    'Hey!',
+    'Welcome aboard!',
+    'Hello!',
+    'Glad you\'re here!',
+    'Welcome to the meeting!',
+  ];
 
   @override
   void initState() {
     super.initState();
     _viewMeetingProvider = Provider.of<ViewMeetingProvider>(context, listen: false);
+    
+    // Randomize welcome message
+    final random = Random();
+    _welcomeMessage = _welcomeMessages[random.nextInt(_welcomeMessages.length)];
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadMeetingData();
@@ -304,29 +323,86 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   }
 
 
-  String _formatMeetingCode(String meetingId) {
-    // Format meeting ID as "1234 5678"
-    final cleaned = meetingId.replaceAll(RegExp(r'[^0-9]'), '');
-    if (cleaned.length <= 4) {
-      return cleaned;
-    }
-    final chunks = <String>[];
-    for (int i = 0; i < cleaned.length; i += 4) {
-      final end = (i + 4 < cleaned.length) ? i + 4 : cleaned.length;
-      chunks.add(cleaned.substring(i, end));
-    }
-    return chunks.join(' ');
-  }
-
   @override
   void dispose() {
     super.dispose();
   }
 
+  void _showExitConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            'Exit Meeting',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF212121),
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to exit the meeting?',
+            style: TextStyle(
+              fontSize: 16,
+              color: Color(0xFF424242),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF757575),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/',
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC41E3A),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Exit',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Consumer<ViewMeetingProvider>(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          _showExitConfirmationDialog(context);
+        }
+      },
+      child: Scaffold(
+        body: Consumer<ViewMeetingProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -409,16 +485,16 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                               height: 1.2,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 16),
                           
-                          // Meeting Code
+                          // Welcome Message
                           Text(
-                            _formatMeetingCode(widget.meetingId),
+                            _welcomeMessage,
                             style: TextStyle(
-                              fontSize: isMobile ? 16 : 18,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF757575),
-                              letterSpacing: 2,
+                              fontSize: isMobile ? 20 : 24,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF424242),
+                              height: 1.3,
                             ),
                           ),
                           const SizedBox(height: 32),
@@ -817,6 +893,84 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                                     ),
                                   ),
                                 ),
+                                
+                                // Exit Meeting Button
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFFE0E0E0),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () => _showExitConfirmationDialog(context),
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(24),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 56,
+                                              height: 56,
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFFC41E3A),
+                                                    Color(0xFF003366),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: const Icon(
+                                                Icons.exit_to_app,
+                                                size: 28,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 20),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    'Exit Meeting',
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Color(0xFF212121),
+                                                      letterSpacing: -0.3,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    'Leave the meeting',
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w400,
+                                                      color: const Color(0xFF757575),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const Icon(
+                                              Icons.chevron_right,
+                                              color: Color(0xFF757575),
+                                              size: 24,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -831,6 +985,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
             ),
           );
         },
+      ),
       ),
     );
   }
