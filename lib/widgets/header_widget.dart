@@ -15,8 +15,8 @@ class HeaderWidget extends StatelessWidget {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor, // Same as main page background
+          decoration: const BoxDecoration(
+            color: Color(0xFFF0F0F0), // Slightly darker off-white background
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
