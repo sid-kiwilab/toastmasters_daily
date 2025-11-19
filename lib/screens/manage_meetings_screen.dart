@@ -233,7 +233,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     try {
       // Get base URL
       final baseUrl = Uri.base.origin;
-      final qrCodeData = '$baseUrl/$_clubCode';
+      final qrCodeData = '$baseUrl/clubs/$_clubCode';
       
       // Get club name for filename
       String? clubName = _clubName;

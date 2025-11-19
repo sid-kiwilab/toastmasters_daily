@@ -9,6 +9,7 @@ import 'utils/theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/manage_meetings_screen.dart';
 import 'screens/view_meeting_screen.dart';
+import 'screens/club_screen.dart';
 import 'screens/privacy_policy_screen.dart';
 import 'screens/terms_of_service_screen.dart';
 import 'providers/auth_provider.dart';
@@ -16,7 +17,7 @@ import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
 
 // Cache busting version - increment this when making changes that require browser cache clearing
-const String appVersion = '1.1.4';
+const String appVersion = '1.1.5';
 
 // Custom page transitions builder that removes all animations
 class NoTransitionsBuilder extends PageTransitionsBuilder {
@@ -156,6 +157,13 @@ class MainApp extends StatelessWidget {
             final actualMeetingId = _convertUrlToMeetingId(meetingId);
             return MaterialPageRoute(
               builder: (_) => ViewMeetingScreen(meetingId: actualMeetingId),
+              settings: settings,
+            );
+          }
+          if (name.startsWith('/clubs/')) {
+            final clubCode = name.substring('/clubs/'.length);
+            return MaterialPageRoute(
+              builder: (_) => ClubScreen(clubCode: clubCode),
               settings: settings,
             );
           }
