@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../providers/view_meeting_provider.dart';
 import '../widgets/voting_widget.dart';
 import '../widgets/footer_widget.dart';
+import '../widgets/guest_entry_widget.dart';
 import 'dart:typed_data';
 import 'dart:math';
 
@@ -829,7 +830,14 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                                     color: Colors.transparent,
                                     child: InkWell(
                                       onTap: () {
-                                        // TODO: Navigate to new member details entry screen
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => GuestEntryWidget(
+                                              meetingId: widget.meetingId,
+                                            ),
+                                          ),
+                                        );
                                       },
                                       borderRadius: BorderRadius.circular(12),
                                       child: Padding(

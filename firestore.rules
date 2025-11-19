@@ -37,6 +37,14 @@ service cloud.firestore {
       // Voting goes through Cloud Function (submit_vote) which has admin access
     }
     
+    // Allow guests to create entries in guests subcollection (for guest entry form)
+    match /users/{userId}/guests/{guestId} {
+      allow read: if request.auth != null && request.auth.uid == userId; // Only creator can read
+      allow create: if true; // Anyone can create (guests don't need auth)
+      allow update: if false; // No updates allowed
+      allow delete: if false; // No deletes allowed
+    }
+    
     // Active meetings - allow read only (to get creator_id), no writes (only Cloud Functions can write)
     match /active_meetings/{meetingId} {
       allow read: if true; // Need to read to get creator_id for finding user's meeting
