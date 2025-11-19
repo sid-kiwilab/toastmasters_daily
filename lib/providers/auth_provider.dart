@@ -90,7 +90,7 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } on FirebaseAuthException catch (e) {
       print('Signup error: ${e.code} - ${e.message}');
-      return false;
+      rethrow; // Re-throw so the screen can catch and display the specific error
     } catch (e) {
       print('Signup error: $e');
       return false;
@@ -123,7 +123,7 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } on FirebaseAuthException catch (e) {
       print('Login error: ${e.code} - ${e.message}');
-      return false;
+      rethrow; // Re-throw so the screen can catch and display the specific error
     } catch (e) {
       print('Login error: $e');
       return false;
@@ -201,7 +201,7 @@ class AuthProvider extends ChangeNotifier {
       case 'weak-password':
         return 'The password provided is too weak.';
       case 'email-already-in-use':
-        return 'An account already exists for that email.';
+        return 'The email address is already in use by another account.';
       case 'user-not-found':
         return 'No user found for that email.';
       case 'wrong-password':
