@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:ui' as ui;
 import 'package:provider/provider.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'dart:convert';
 import 'dart:io';
 import '../providers/auth_provider.dart';
@@ -11,6 +18,9 @@ import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
 import '../screens/setup_polls_screen.dart';
 import '../dialogs/poll_results_dialog.dart';
+
+// Web-specific imports
+import 'dart:html' as html if (dart.library.html) 'dart:html';
 
 class ManageMeetingsScreen extends StatefulWidget {
   const ManageMeetingsScreen({super.key});
@@ -32,6 +42,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   String? _clubInfo;
   final TextEditingController _clubInfoController = TextEditingController();
   bool _isSavingClubInfo = false;
+  
+  // Club code state
+  String? _clubCode;
+  bool _isLoadingClubCode = false;
+  bool _isRegeneratingClubCode = false;
 
   @override
   void initState() {
@@ -41,6 +56,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
       meetingsProvider.initialize();
       _loadProfileData();
+      _loadOrGenerateClubCode();
     });
   }
 
@@ -71,6 +87,273 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     } catch (e) {
       print('Error loading profile data: $e');
     }
+  }
+
+  Future<void> _loadOrGenerateClubCode() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser == null) return;
+    
+    final userId = authProvider.currentUser!.uid;
+    final db = FirebaseFirestore.instance;
+    
+    if (mounted) {
+      setState(() {
+        _isLoadingClubCode = true;
+      });
+    }
+    
+    try {
+      final userDocRef = db.collection('users').doc(userId);
+      final userDocSnap = await userDocRef.get();
+      
+      String? clubCode;
+      
+      // Check if user already has a club_code stored
+      if (userDocSnap.exists && userDocSnap.data()?['club_code'] != null) {
+        clubCode = userDocSnap.data()!['club_code'] as String;
+      } else {
+        // Check if a club_codes document already exists for this user
+        final clubCodesQuery = await db.collection('club_codes')
+            .where('uid', isEqualTo: userId)
+            .limit(1)
+            .get();
+        
+        if (clubCodesQuery.docs.isNotEmpty) {
+          // Use existing document ID
+          clubCode = clubCodesQuery.docs[0].id;
+          // Save to user document
+          await userDocRef.set({'club_code': clubCode}, SetOptions(merge: true));
+        } else {
+          // Use transaction to create club_codes document and update user document atomically
+          await db.runTransaction((transaction) async {
+            // Create new document reference in club_codes collection
+            final newClubCodeRef = db.collection('club_codes').doc();
+            clubCode = newClubCodeRef.id;
+            
+            // Set both documents in the transaction
+            transaction.set(newClubCodeRef, {'uid': userId});
+            transaction.set(userDocRef, {'club_code': clubCode}, SetOptions(merge: true));
+          });
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _clubCode = clubCode;
+          _isLoadingClubCode = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading/generating club code: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingClubCode = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _regenerateClubCode() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser == null) return;
+    
+    final userId = authProvider.currentUser!.uid;
+    final db = FirebaseFirestore.instance;
+    
+    if (mounted) {
+      setState(() {
+        _isRegeneratingClubCode = true;
+      });
+    }
+    
+    try {
+      await db.runTransaction((transaction) async {
+        final userDocRef = db.collection('users').doc(userId);
+        final userDocSnap = await transaction.get(userDocRef);
+        
+        String? oldClubCode;
+        if (userDocSnap.exists && userDocSnap.data()?['club_code'] != null) {
+          oldClubCode = userDocSnap.data()!['club_code'] as String;
+        }
+        
+        // Delete old club_codes document if it exists
+        if (oldClubCode != null && oldClubCode.isNotEmpty) {
+          final oldClubCodeRef = db.collection('club_codes').doc(oldClubCode);
+          final oldDocSnap = await transaction.get(oldClubCodeRef);
+          if (oldDocSnap.exists) {
+            transaction.delete(oldClubCodeRef);
+          }
+        }
+        
+        // Create new document reference in club_codes collection
+        final newClubCodeRef = db.collection('club_codes').doc();
+        final newClubCode = newClubCodeRef.id;
+        
+        // Set both documents in the transaction
+        transaction.set(newClubCodeRef, {'uid': userId});
+        transaction.set(userDocRef, {'club_code': newClubCode}, SetOptions(merge: true));
+      });
+      
+      // Reload the club code
+      await _loadOrGenerateClubCode();
+      
+      if (mounted) {
+        setState(() {
+          _isRegeneratingClubCode = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Club code regenerated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error regenerating club code: $e');
+      if (mounted) {
+        setState(() {
+          _isRegeneratingClubCode = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error regenerating club code. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _downloadQRCode() async {
+    if (_clubCode == null || _clubCode!.isEmpty) return;
+    
+    try {
+      // Get base URL
+      final baseUrl = Uri.base.origin;
+      final qrCodeData = '$baseUrl/$_clubCode';
+      
+      // Get club name for filename
+      String? clubName = _clubName;
+      final fileName = clubName != null && clubName.isNotEmpty
+          ? 'club-code-${clubName.replaceAll(RegExp(r'[^a-z0-9]'), '-').toLowerCase()}.pdf'
+          : 'club-code-$_clubCode.pdf';
+      
+      // Generate QR code image
+      final painter = QrPainter(
+        data: qrCodeData,
+        version: QrVersions.auto,
+        errorCorrectionLevel: QrErrorCorrectLevel.H,
+        color: Colors.black,
+        emptyColor: Colors.white,
+      );
+      
+      // Render QR code to image
+      final picRecorder = ui.PictureRecorder();
+      final canvas = Canvas(picRecorder);
+      const size = 600.0;
+      painter.paint(canvas, const Size(size, size));
+      final picture = picRecorder.endRecording();
+      final image = await picture.toImage(size.toInt(), size.toInt());
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final pngBytes = byteData!.buffer.asUint8List();
+      
+      // Convert to PDF image
+      final qrImage = pw.MemoryImage(pngBytes);
+      
+      // Create PDF document
+      final pdf = pw.Document();
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(50),
+          build: (pw.Context context) {
+            return pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                // QR Code
+                pw.Center(
+                  child: pw.Image(
+                    qrImage,
+                    width: 400,
+                    height: 400,
+                  ),
+                ),
+                pw.SizedBox(height: 30),
+                // Club Name
+                if (clubName != null && clubName.isNotEmpty)
+                  pw.Center(
+                    child: pw.Text(
+                      clubName,
+                      style: pw.TextStyle(
+                        fontSize: 24,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                      textAlign: pw.TextAlign.center,
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      );
+      
+      // Save/download the PDF
+      if (kIsWeb) {
+        // For web, download PDF directly
+        final pdfBytes = await pdf.save();
+        final blob = html.Blob([pdfBytes], 'application/pdf');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        html.AnchorElement(href: url)
+          ..setAttribute('download', fileName)
+          ..click();
+        html.Url.revokeObjectUrl(url);
+      } else {
+        // For mobile, use printing package
+        await Printing.layoutPdf(
+          onLayout: (PdfPageFormat format) async => pdf.save(),
+        );
+      }
+    } catch (e) {
+      print('Error downloading QR code: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error downloading QR code: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showRegenerateCodeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Regenerate Club Code'),
+        content: const Text(
+          'Are you sure you want to generate a new club code? The old code will no longer work.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _regenerateClubCode();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Regenerate'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _saveClubName(String newValue) async {
@@ -676,6 +959,8 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                         : 'Not set',
                                     onTap: _showClubInfoDialog,
                                   ),
+                                  // Club Code with buttons
+                                  _buildClubCodeItem(),
                                 ],
                               ),
                               const SizedBox(height: 32),
@@ -779,6 +1064,105 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       ),
       child: Column(
         children: children,
+      ),
+    );
+  }
+
+  Widget _buildClubCodeItem() {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFF5F5F5),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.qr_code,
+                  size: 22,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Club QR Code',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF212121),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _isLoadingClubCode
+                          ? 'Loading...'
+                          : (_clubCode ?? 'Not available'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF757575),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              if (_clubCode != null && !_isLoadingClubCode) ...[
+                // Download QR Code button
+                IconButton(
+                  icon: const Icon(Icons.download, size: 20),
+                  color: const Color(0xFF757575),
+                  onPressed: _downloadQRCode,
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
+                  tooltip: 'Download QR code',
+                ),
+                const SizedBox(width: 12),
+                // Regenerate button
+                _isRegeneratingClubCode
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF757575)),
+                        ),
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.refresh, size: 20),
+                        color: const Color(0xFF757575),
+                        onPressed: _showRegenerateCodeDialog,
+                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                        tooltip: 'Generate new code',
+                      ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -18,7 +18,8 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
       allow update: if false; // No updates allowed
-      allow delete: if false; // No deletes allowed
+      // Allow users to delete their own club code (for regeneration)
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
     
     // Allow read access to user meetings
