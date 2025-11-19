@@ -96,25 +96,13 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Setup Polls',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF212121),
-                            ),
-                          ),
-                          Text(
-                            widget.meetingTitle,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF757575),
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'Setup Polls',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF212121),
+                        ),
                       ),
                     ],
                   ),
@@ -164,7 +152,7 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
                         ],
                       ),
                       
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 16),
                       
                       // Polls Section
                       if (_polls.isEmpty)

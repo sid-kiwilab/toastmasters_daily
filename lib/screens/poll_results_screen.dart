@@ -379,25 +379,13 @@ class _PollResultsScreenState extends State<PollResultsScreen> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Poll Results',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF212121),
-                            ),
-                          ),
-                          Text(
-                            widget.meetingTitle,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF757575),
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'Poll Results',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF212121),
+                        ),
                       ),
                     ],
                   ),
