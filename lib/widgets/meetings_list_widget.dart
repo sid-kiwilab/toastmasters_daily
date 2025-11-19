@@ -138,28 +138,29 @@ class MeetingsListWidget extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // Delete button - big trash icon with visible hit box
-                    GestureDetector(
-                      onTap: () {
-                        _showDeleteDialog(context, meeting);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          border: Border.all(
-                            color: const Color(0xFFE0E0E0),
-                            width: 1,
+                    // Delete button - big trash icon with visible hit box (only show on desktop)
+                    if (!isMobile)
+                      GestureDetector(
+                        onTap: () {
+                          _showDeleteDialog(context, meeting);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            border: Border.all(
+                              color: const Color(0xFFE0E0E0),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.delete_outline,
-                          size: 28,
-                          color: Color(0xFF757575),
+                          child: const Icon(
+                            Icons.delete_outline,
+                            size: 28,
+                            color: Color(0xFF757575),
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

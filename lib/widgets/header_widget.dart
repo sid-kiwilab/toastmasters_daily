@@ -27,7 +27,7 @@ class HeaderWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Privacy Policy',
+                  'Privacy',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
@@ -72,7 +72,7 @@ class HeaderWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Terms of Service',
+                  'Terms',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,

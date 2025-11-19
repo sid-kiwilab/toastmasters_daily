@@ -16,7 +16,7 @@ import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
 
 // Cache busting version - increment this when making changes that require browser cache clearing
-const String appVersion = '1.1.3';
+const String appVersion = '1.1.4';
 
 // Custom page transitions builder that removes all animations
 class NoTransitionsBuilder extends PageTransitionsBuilder {
