@@ -965,12 +965,53 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                               ),
                               const SizedBox(height: 32),
                               
-                              // Upcoming Meetings Section
-                              if (meetingsProvider.meetings.isNotEmpty) ...[
-                                _buildSectionHeader(
-                                  'Upcoming Meetings',
-                                  'You can only have one active meeting at a time',
+                              // Meetings Section
+                              _buildSectionHeader(
+                                'Meetings',
+                                'Create and manage your meetings',
+                              ),
+                              const SizedBox(height: 12),
+                              // Create Meeting button - simple style like logout
+                              TextButton.icon(
+                                onPressed: _isCreatingMeeting ? null : () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => CreateMeetingDialog(
+                                      onConfirm: (title) async {
+                                        await _createMeeting(context, authProvider.currentUser!.uid, title);
+                                      },
+                                    ),
+                                  );
+                                },
+                                icon: _isCreatingMeeting
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Icon(Icons.add, size: 18),
+                                label: const Text(
+                                  'Create Meeting',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
+                                style: TextButton.styleFrom(
+                                  backgroundColor: Colors.grey[800],
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  minimumSize: const Size(double.infinity, 40),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                              // Existing meetings - separate card
+                              if (meetingsProvider.meetings.isNotEmpty) ...[
                                 const SizedBox(height: 12),
                                 ...meetingsProvider.meetings.asMap().entries.map((entry) {
                                   final index = entry.key;
@@ -978,34 +1019,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                   final isLast = index == meetingsProvider.meetings.length - 1;
                                   return _buildMeetingItem(meeting, isLast: isLast);
                                 }),
-                                const SizedBox(height: 32),
                               ],
-                              
-                              // Meetings Section
-                              _buildSectionHeader(
-                                'Meetings',
-                                'Create and manage your meetings',
-                              ),
-                              const SizedBox(height: 12),
-                              _buildCard(
-                                children: [
-                                  _buildItem(
-                                    icon: Icons.add,
-                                    label: 'Create Meeting',
-                                    value: 'Start a new meeting session',
-                                    onTap: _isCreatingMeeting ? null : () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => CreateMeetingDialog(
-                                          onConfirm: (title) async {
-                                            await _createMeeting(context, authProvider.currentUser!.uid, title);
-                                          },
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
                             ],
                           );
                         },
