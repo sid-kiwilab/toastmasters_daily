@@ -865,7 +865,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
         }
         
         return Scaffold(
-          backgroundColor: const Color(0xFFF5F5F5),
           body: SafeArea(
             child: SingleChildScrollView(
               child: Column(
@@ -873,55 +872,41 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                   // Header with Base title and logout button - full width
                   Container(
                     width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                     decoration: const BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0x0A000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
+                      color: Color(0xFFF0F0F0), // Same as HeaderWidget
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Base',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF212121),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _showLogoutDialog,
+                          icon: const Icon(Icons.logout, size: 18),
+                          label: const Text(
+                            'Logout',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.grey[800],
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                    child: Container(
-                      constraints: const BoxConstraints(maxWidth: 800),
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Row(
-                        children: [
-                          const Text(
-                            'Base',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF212121),
-                            ),
-                          ),
-                          const Spacer(),
-                          TextButton.icon(
-                            onPressed: _showLogoutDialog,
-                            icon: const Icon(Icons.logout, size: 18),
-                            label: const Text(
-                              'Logout',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            style: TextButton.styleFrom(
-                              backgroundColor: Colors.grey[800],
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                   

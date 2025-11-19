@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/footer_widget.dart';
+import '../widgets/header_widget.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
@@ -7,44 +8,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Header
-              Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1),
-                  ),
-                ),
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () => Navigator.of(context).pop(),
-                        color: const Color(0xFF212121),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Privacy Policy',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF212121),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              const HeaderWidget(),
               
               // Content
               Container(
