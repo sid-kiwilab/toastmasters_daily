@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../dialogs/auth_dialog.dart';
+import '../screens/login_screen.dart';
 import '../providers/auth_provider.dart';
 
 class HeaderWidget extends StatelessWidget {
@@ -37,9 +37,10 @@ class HeaderWidget extends StatelessWidget {
               const SizedBox(width: 16),
               ElevatedButton(
                 onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => const AuthDialog(initialTab: 1), // Login tab
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
