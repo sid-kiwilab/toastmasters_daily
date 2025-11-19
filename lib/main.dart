@@ -9,6 +9,8 @@ import 'utils/theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/manage_meetings_screen.dart';
 import 'screens/view_meeting_screen.dart';
+import 'screens/privacy_policy_screen.dart';
+import 'screens/terms_of_service_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
@@ -144,6 +146,8 @@ class MainApp extends StatelessWidget {
         routes: {
           '/': (context) => const AuthWrapper(),
           '/base': (context) => const ManageMeetingsScreen(),
+          '/privacy': (context) => const PrivacyPolicyScreen(),
+          '/terms': (context) => const TermsOfServiceScreen(),
         },
         onGenerateRoute: (settings) {
           final name = settings.name ?? '';

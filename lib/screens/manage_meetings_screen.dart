@@ -18,6 +18,7 @@ import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
 import '../screens/setup_polls_screen.dart';
 import '../dialogs/poll_results_dialog.dart';
+import '../widgets/footer_widget.dart';
 
 // Web-specific imports
 import 'dart:html' as html if (dart.library.html) 'dart:html';
@@ -866,168 +867,168 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
         return Scaffold(
           backgroundColor: const Color(0xFFF5F5F5),
           body: SafeArea(
-            child: Column(
-              children: [
-                // Header with Base title and logout button - full width
-                Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x0A000000),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Header with Base title and logout button - full width
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1),
                       ),
-                    ],
-                  ),
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Row(
-                      children: [
-                        const Text(
-                          'Base',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF212121),
-                          ),
-                        ),
-                        const Spacer(),
-                        TextButton.icon(
-                          onPressed: _showLogoutDialog,
-                          icon: const Icon(Icons.logout, size: 18),
-                          label: const Text(
-                            'Logout',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey[800],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x0A000000),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
                         ),
                       ],
                     ),
-                  ),
-                ),
-                
-                // Main content
-                Expanded(
-                  child: SingleChildScrollView(
                     child: Container(
                       constraints: const BoxConstraints(maxWidth: 800),
                       margin: const EdgeInsets.symmetric(horizontal: 20),
-                      padding: const EdgeInsets.symmetric(vertical: 32),
-                      child: Consumer<ManageMeetingsProvider>(
-                        builder: (context, meetingsProvider, child) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Profile Section - Club Name
-                              _buildSectionHeader(
-                                'Profile',
-                                'Manage your account information',
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Row(
+                        children: [
+                          const Text(
+                            'Base',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF212121),
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: _showLogoutDialog,
+                            icon: const Icon(Icons.logout, size: 18),
+                            label: const Text(
+                              'Logout',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                               ),
-                              const SizedBox(height: 12),
-                              _buildCard(
-                                children: [
-                                  _buildItem(
-                                    icon: Icons.groups,
-                                    label: 'Toastmasters Club Name',
-                                    value: _clubName ?? 'Not set',
-                                    onTap: _showClubNameDialog,
-                                  ),
-                                  _buildItem(
-                                    icon: Icons.info_outline,
-                                    label: 'Club Info',
-                                    value: _clubInfo != null && _clubInfo!.isNotEmpty
-                                        ? (_clubInfo!.length > 50 
-                                            ? '${_clubInfo!.substring(0, 50)}...' 
-                                            : _clubInfo!)
-                                        : 'Not set',
-                                    onTap: _showClubInfoDialog,
-                                  ),
-                                  // Club Code with buttons
-                                  _buildClubCodeItem(),
-                                ],
+                            ),
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.grey[800],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              const SizedBox(height: 32),
-                              
-                              // Meetings Section
-                              _buildSectionHeader(
-                                'Meetings',
-                                'Create and manage your meetings',
-                              ),
-                              const SizedBox(height: 12),
-                              // Create Meeting button - simple style like logout
-                              TextButton.icon(
-                                onPressed: _isCreatingMeeting ? null : () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => CreateMeetingDialog(
-                                      onConfirm: (title) async {
-                                        await _createMeeting(context, authProvider.currentUser!.uid, title);
-                                      },
-                                    ),
-                                  );
-                                },
-                                icon: _isCreatingMeeting
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      )
-                                    : const Icon(Icons.add, size: 18),
-                                label: const Text(
-                                  'Create Meeting',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                style: TextButton.styleFrom(
-                                  backgroundColor: Colors.grey[800],
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                  minimumSize: const Size(double.infinity, 40),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                              ),
-                              // Existing meetings - separate card
-                              if (meetingsProvider.meetings.isNotEmpty) ...[
-                                const SizedBox(height: 12),
-                                ...meetingsProvider.meetings.asMap().entries.map((entry) {
-                                  final index = entry.key;
-                                  final meeting = entry.value;
-                                  final isLast = index == meetingsProvider.meetings.length - 1;
-                                  return _buildMeetingItem(meeting, isLast: isLast);
-                                }),
-                              ],
-                            ],
-                          );
-                        },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-              ],
+                  
+                  // Main content
+                  Container(
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Consumer<ManageMeetingsProvider>(
+                      builder: (context, meetingsProvider, child) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Profile Section - Club Name
+                            _buildSectionHeader(
+                              'Profile',
+                              'Manage your account information',
+                            ),
+                            const SizedBox(height: 12),
+                            _buildCard(
+                              children: [
+                                _buildItem(
+                                  icon: Icons.groups,
+                                  label: 'Toastmasters Club Name',
+                                  value: _clubName ?? 'Not set',
+                                  onTap: _showClubNameDialog,
+                                ),
+                                _buildItem(
+                                  icon: Icons.info_outline,
+                                  label: 'Club Info',
+                                  value: _clubInfo != null && _clubInfo!.isNotEmpty
+                                      ? (_clubInfo!.length > 50 
+                                          ? '${_clubInfo!.substring(0, 50)}...' 
+                                          : _clubInfo!)
+                                      : 'Not set',
+                                  onTap: _showClubInfoDialog,
+                                ),
+                                // Club Code with buttons
+                                _buildClubCodeItem(),
+                              ],
+                            ),
+                            const SizedBox(height: 32),
+                            
+                            // Meetings Section
+                            _buildSectionHeader(
+                              'Meetings',
+                              'Create and manage your meetings',
+                            ),
+                            const SizedBox(height: 12),
+                            // Create Meeting button - simple style like logout
+                            TextButton.icon(
+                              onPressed: _isCreatingMeeting ? null : () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => CreateMeetingDialog(
+                                    onConfirm: (title) async {
+                                      await _createMeeting(context, authProvider.currentUser!.uid, title);
+                                    },
+                                  ),
+                                );
+                              },
+                              icon: _isCreatingMeeting
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Icon(Icons.add, size: 18),
+                              label: const Text(
+                                'Create Meeting',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.grey[800],
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                minimumSize: const Size(double.infinity, 40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                            // Existing meetings - separate card
+                            if (meetingsProvider.meetings.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              ...meetingsProvider.meetings.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final meeting = entry.value;
+                                final isLast = index == meetingsProvider.meetings.length - 1;
+                                return _buildMeetingItem(meeting, isLast: isLast);
+                              }),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  const FooterWidget(),
+                ],
+              ),
             ),
           ),
         );
