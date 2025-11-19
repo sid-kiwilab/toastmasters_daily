@@ -56,47 +56,31 @@ exports.upload_agenda = functions.https.onCall(async (data, context) => {
     // Get the public URL
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
     
-    // Store agenda reference in Firestore and update meeting documents
+    // Store agenda reference in Firestore - only in users collection
     const db = admin.firestore();
     
     try {
-      // Use a transaction to update both collections atomically
-      await db.runTransaction(async (transaction) => {
-        // STEP 1: ALL READS FIRST
-        // Read the active meeting document
-        const activeMeetingRef = db.collection('active_meetings').doc(data.meetingId);
-        const activeMeetingDoc = await transaction.get(activeMeetingRef);
-        
-        if (!activeMeetingDoc.exists) {
-          return; // Exit transaction early if document doesn't exist
-        }
-        
-        // Read the user meeting document (if creator_id exists)
-        const creator_id = activeMeetingDoc.data().creator_id;
-        
-        let userMeetingDoc = null;
-        if (creator_id) {
-          const userMeetingRef = db.collection('users').doc(creator_id).collection('meetings').doc(data.meetingId);
-          userMeetingDoc = await transaction.get(userMeetingRef);
-        }
-        
-        // STEP 2: ALL WRITES AFTER ALL READS
-        // Update the active meetings collection
-        transaction.update(activeMeetingRef, {
-          agenda_url: publicUrl
-        });
-        
-        // Update the user's meetings subcollection if it exists
-        if (creator_id && userMeetingDoc && userMeetingDoc.exists) {
-          const userMeetingRef = db.collection('users').doc(creator_id).collection('meetings').doc(data.meetingId);
-          transaction.update(userMeetingRef, {
-            agenda_url: publicUrl
-          });
-        }
+      // First get creator_id from active_meetings
+      const activeMeetingRef = db.collection('active_meetings').doc(data.meetingId);
+      const activeMeetingDoc = await activeMeetingRef.get();
+      
+      if (!activeMeetingDoc.exists) {
+        return { success: false, error: 'Meeting not found' };
+      }
+      
+      const creator_id = activeMeetingDoc.data().creator_id;
+      if (!creator_id) {
+        return { success: false, error: 'Meeting creator not found' };
+      }
+      
+      // Update only the user's meetings document with agenda_url
+      const userMeetingRef = db.collection('users').doc(creator_id).collection('meetings').doc(data.meetingId);
+      await userMeetingRef.update({
+        agenda_url: publicUrl
       });
-    } catch (transactionError) {
-      console.error(`Transaction failed for meeting ${data.meetingId}:`, transactionError);
-      return { success: false, error: 'Failed to update Firestore documents' };
+    } catch (error) {
+      console.error(`Error updating agenda URL for meeting ${data.meetingId}:`, error);
+      return { success: false, error: 'Failed to update Firestore document' };
     }
 
     return {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Meeting {
@@ -10,7 +11,6 @@ class Meeting {
   final String description;
   final DateTime? createdAt;
   final String? agendaUrl;
-  final Map<String, dynamic>? polls;
 
   Meeting({
     required this.id,
@@ -18,7 +18,6 @@ class Meeting {
     required this.description,
     this.createdAt,
     this.agendaUrl,
-    this.polls,
   });
 
   factory Meeting.fromFirestore(DocumentSnapshot doc) {
@@ -29,7 +28,6 @@ class Meeting {
       description: data['description'] ?? 'No description',
       createdAt: data['created_at']?.toDate(),
       agendaUrl: data['agendaUrl'] ?? data['agenda_url'],
-      polls: data['polls'],
     );
   }
 }
@@ -71,11 +69,13 @@ class Poll {
     return Poll(
       question: map['question'] ?? '',
       options: List<String>.from(map['options'] ?? []),
-      isActive: map['isActive'] ?? false,
+      isActive: map['is_active'] ?? map['isActive'] ?? false,
       tallies: Map<String, int>.from(map['tallies'] ?? {}),
-      totalResponses: map['totalResponses'] ?? 0,
-      createdAt: map['createdAt']?.toDate() ?? DateTime.now(),
-      deviceVotes: map['deviceVotes'] != null 
+      totalResponses: map['total_responses'] ?? map['totalResponses'] ?? 0,
+      createdAt: map['created_at']?.toDate() ?? map['createdAt']?.toDate() ?? DateTime.now(),
+      deviceVotes: map['device_votes'] != null 
+          ? Map<String, String>.from(map['device_votes'])
+          : map['deviceVotes'] != null 
           ? Map<String, String>.from(map['deviceVotes'])
           : null,
     );
@@ -204,32 +204,49 @@ class ManageMeetingsProvider extends ChangeNotifier {
     }
   }
 
-  // Polls management methods
-  Future<void> createPoll(String meetingId, Poll poll) async {
+  // Helper method to get polls collection reference
+  Future<CollectionReference> _getPollsCollectionRef(String meetingId) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+    
+    // Verify meeting exists
+    final meetingRef = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('meetings')
+        .doc(meetingId);
+    
+    final meetingDoc = await meetingRef.get();
+    if (!meetingDoc.exists) {
+      throw Exception('Meeting not found');
+    }
+    
+    return meetingRef.collection('polls');
+  }
+
+  // Polls management methods - using subcollection
+  Future<String> createPoll(String meetingId, Poll poll) async {
     try {
-      final user = _auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
-
-      final meetingRef = _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('meetings')
-          .doc(meetingId);
-
-      // Get current polls or initialize empty map
-      final meetingDoc = await meetingRef.get();
-      final currentData = meetingDoc.data() ?? {};
-      final currentPolls = Map<String, dynamic>.from(currentData['polls'] ?? {});
-
+      final pollsRef = await _getPollsCollectionRef(meetingId);
+      
       // Generate unique poll ID
       final pollId = 'poll_${DateTime.now().millisecondsSinceEpoch}';
-      currentPolls[pollId] = poll.toMap();
-
-      // Update the meeting document with new polls
-      await meetingRef.update({'polls': currentPolls});
-
-      // Refresh meetings list
-      _refreshMeetings();
+      
+      // Convert poll to map with snake_case fields
+      final pollMap = {
+        'question': poll.question,
+        'options': poll.options,
+        'is_active': poll.isActive,
+        'tallies': Map.fromIterable(poll.options, key: (option) => option, value: (_) => 0),
+        'total_responses': 0,
+        'device_votes': <String, String>{},
+        'created_at': FieldValue.serverTimestamp(),
+      };
+      
+      // Create poll document in subcollection
+      await pollsRef.doc(pollId).set(pollMap);
+      
+      return pollId;
     } catch (e) {
       throw Exception('Failed to create poll: $e');
     }
@@ -237,28 +254,110 @@ class ManageMeetingsProvider extends ChangeNotifier {
 
   Future<void> updatePoll(String meetingId, String pollId, Poll poll) async {
     try {
-      final user = _auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
+      final pollsRef = await _getPollsCollectionRef(meetingId);
+      
+      // Get existing poll
+      final pollDoc = await pollsRef.doc(pollId).get();
+      if (!pollDoc.exists) {
+        throw Exception('Poll not found');
+      }
 
-      final meetingRef = _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('meetings')
-          .doc(meetingId);
+      final existingData = pollDoc.data() as Map<String, dynamic>;
+      final oldOptions = List<String>.from(existingData['options'] ?? []);
+      final newOptions = poll.options;
+      
+      // Get existing tallies and device votes
+      final existingTallies = Map<String, int>.from(existingData['tallies'] ?? {});
+      final existingDeviceVotes = Map<String, String>.from(existingData['device_votes'] ?? {});
 
-      // Get current polls
-      final meetingDoc = await meetingRef.get();
-      final currentData = meetingDoc.data() ?? {};
-      final currentPolls = Map<String, dynamic>.from(currentData['polls'] ?? {});
+      // Build position-based mapping ONLY for true renames (not deletions or moves)
+      // A rename is: old option doesn't exist in new list AND new option doesn't exist in old list
+      final positionMapping = <String, String>{};
+      final minLength = oldOptions.length < newOptions.length ? oldOptions.length : newOptions.length;
+      for (int i = 0; i < minLength; i++) {
+        final oldOption = oldOptions[i];
+        final newOption = newOptions[i];
+        
+        // Only map if this is a true rename:
+        // 1. Old option doesn't exist in new list (was renamed or deleted)
+        // 2. New option doesn't exist in old list (is a new name, not moved)
+        // 3. They're different (not the same option)
+        if (oldOption != newOption && 
+            !newOptions.contains(oldOption) && 
+            !oldOptions.contains(newOption)) {
+          // This is a rename: old option was renamed to new option at same position
+          positionMapping[oldOption] = newOption;
+        }
+        // If oldOption == newOption: same option, handle by name
+        // If oldOption exists in new list: it was moved, handle by name
+        // If newOption exists in old list: it was moved, handle by name
+        // If oldOption doesn't exist in new list AND newOption exists in old list: deletion, don't map
+      }
+      
+      // Build new tallies: preserve votes for renamed/moved options, lose votes for deleted options
+      final newTallies = <String, int>{};
+      for (final entry in existingTallies.entries) {
+        final oldOption = entry.key;
+        
+        // First check: was this option renamed? (position mapping exists and old option not in new list)
+        if (positionMapping.containsKey(oldOption) && !newOptions.contains(oldOption)) {
+          // Option was renamed at same position
+          final newOption = positionMapping[oldOption]!;
+          newTallies[newOption] = (newTallies[newOption] ?? 0) + entry.value;
+        } else if (newOptions.contains(oldOption)) {
+          // Option still exists (moved or unchanged) - preserve by name
+          newTallies[oldOption] = (newTallies[oldOption] ?? 0) + entry.value;
+        }
+        // If option doesn't exist in new list and isn't in position mapping, it was deleted - votes lost
+      }
+      
+      // Ensure all new options have entries
+      for (final option in newOptions) {
+        if (!newTallies.containsKey(option)) {
+          newTallies[option] = 0;
+        }
+      }
 
-      // Update the specific poll
-      currentPolls[pollId] = poll.toMap();
+      // Build new device votes: preserve votes for existing options, remove votes for deleted options
+      final newDeviceVotes = <String, String>{};
+      int removedVotesCount = 0;
+      
+      for (final entry in existingDeviceVotes.entries) {
+        final deviceId = entry.key;
+        final oldVotedOption = entry.value;
+        
+        // First check: was this option renamed? (position mapping exists and old option not in new list)
+        if (positionMapping.containsKey(oldVotedOption) && !newOptions.contains(oldVotedOption)) {
+          // Option was renamed at same position
+          final newVotedOption = positionMapping[oldVotedOption]!;
+          if (newOptions.contains(newVotedOption)) {
+            newDeviceVotes[deviceId] = newVotedOption;
+          } else {
+            // Shouldn't happen, but safety check
+            removedVotesCount++;
+          }
+        } else if (newOptions.contains(oldVotedOption)) {
+          // Option still exists (moved or unchanged) - preserve by name
+          newDeviceVotes[deviceId] = oldVotedOption;
+        } else {
+          // Option was deleted - remove the vote
+          removedVotesCount++;
+        }
+      }
+      
+      // Calculate new total responses
+      final existingTotalResponses = existingData['total_responses'] ?? 0;
+      final newTotalResponses = (existingTotalResponses - removedVotesCount).clamp(0, double.infinity).toInt();
 
-      // Update the meeting document
-      await meetingRef.update({'polls': currentPolls});
-
-      // Refresh meetings list
-      _refreshMeetings();
+      // Update poll document
+      await pollsRef.doc(pollId).update({
+        'question': poll.question,
+        'options': newOptions,
+        'is_active': poll.isActive,
+        'tallies': newTallies,
+        'device_votes': newDeviceVotes,
+        'total_responses': newTotalResponses,
+      });
     } catch (e) {
       throw Exception('Failed to update poll: $e');
     }
@@ -266,118 +365,72 @@ class ManageMeetingsProvider extends ChangeNotifier {
 
   Future<void> deletePoll(String meetingId, String pollId) async {
     try {
-      final user = _auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
+      final pollsRef = await _getPollsCollectionRef(meetingId);
+      
+      // Verify poll exists
+      final pollDoc = await pollsRef.doc(pollId).get();
+      if (!pollDoc.exists) {
+        throw Exception('Poll not found');
+      }
 
-      final meetingRef = _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('meetings')
-          .doc(meetingId);
-
-      // Get current polls
-      final meetingDoc = await meetingRef.get();
-      final currentData = meetingDoc.data() ?? {};
-      final currentPolls = Map<String, dynamic>.from(currentData['polls'] ?? {});
-
-      // Remove the specific poll
-      currentPolls.remove(pollId);
-
-      // Update the meeting document
-      await meetingRef.update({'polls': currentPolls});
-
-      // Refresh meetings list
-      _refreshMeetings();
+      // Delete poll document
+      await pollsRef.doc(pollId).delete();
     } catch (e) {
       throw Exception('Failed to delete poll: $e');
     }
   }
 
-  Future<void> submitPollResponse(String meetingId, String pollId, String option) async {
+  Future<void> submitPollResponse(String meetingId, String pollId, String option, String deviceId) async {
     try {
-      final user = _auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
+      final functions = FirebaseFunctions.instance;
+      final result = await functions.httpsCallable('submit_vote').call({
+        'meeting_id': meetingId,
+        'poll_id': pollId,
+        'option': option,
+        'device_id': deviceId,
+      });
 
-      final meetingRef = _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('meetings')
-          .doc(meetingId);
-
-      // Get current polls
-      final meetingDoc = await meetingRef.get();
-      final currentData = meetingDoc.data() ?? {};
-      final currentPolls = Map<String, dynamic>.from(currentData['polls'] ?? {});
-      
-      if (!currentPolls.containsKey(pollId)) {
-        throw Exception('Poll not found');
+      if (result.data['success'] != true) {
+        throw Exception(result.data['error'] ?? 'Failed to submit vote');
       }
 
-      final pollData = currentPolls[pollId];
-      final tallies = Map<String, int>.from(pollData['tallies'] ?? {});
-      
-      // Increment the selected option's tally
-      if (tallies.containsKey(option)) {
-        tallies[option] = (tallies[option] ?? 0) + 1;
-      }
-
-      // Update total responses
-      final totalResponses = (pollData['totalResponses'] ?? 0) + 1;
-
-      // Update the poll data
-      currentPolls[pollId] = {
-        ...pollData,
-        'tallies': tallies,
-        'totalResponses': totalResponses,
-      };
-
-      // Update the meeting document
-      await meetingRef.update({'polls': currentPolls});
-
-      // Refresh meetings list
-      _refreshMeetings();
+      // Note: Real-time updates will come through listeners, no need to refresh manually
     } catch (e) {
       throw Exception('Failed to submit poll response: $e');
     }
   }
 
-  // Helper method to refresh meetings
-  void _refreshMeetings() {
-    final user = _auth.currentUser;
-    if (user != null) {
-      _startListening(user.uid);
-    }
-  }
 
-  // Get polls for a specific meeting
-  Future<Map<String, Poll>> getPollsForMeeting(String meetingId) async {
+  // Get polls for a specific meeting from polls subcollection
+  // Accepts creatorId parameter to support viewing polls from any creator
+  Future<Map<String, Poll>> getPollsForMeeting(String meetingId, {String? creatorId}) async {
     try {
-      final user = _auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
-
-      final meetingRef = _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('meetings')
-          .doc(meetingId);
-
-      final meetingDoc = await meetingRef.get();
-      if (!meetingDoc.exists) {
-        throw Exception('Meeting not found');
+      String? userId = creatorId;
+      
+      // If creatorId not provided, use current user (for own meetings)
+      if (userId == null) {
+        final user = _auth.currentUser;
+        if (user == null) throw Exception('User not authenticated');
+        userId = user.uid;
       }
 
-      final data = meetingDoc.data() ?? {};
-      final pollsData = Map<String, dynamic>.from(data['polls'] ?? {});
+      final pollsRef = _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('meetings')
+          .doc(meetingId)
+          .collection('polls');
+
+      final querySnapshot = await pollsRef.orderBy('created_at', descending: false).get();
       
       final Map<String, Poll> polls = {};
-      pollsData.forEach((pollId, pollData) {
+      for (final doc in querySnapshot.docs) {
         try {
-          polls[pollId] = Poll.fromMap(Map<String, dynamic>.from(pollData));
+          polls[doc.id] = Poll.fromMap(doc.data());
         } catch (e) {
-          // Skip invalid poll data
-          print('Error parsing poll $pollId: $e');
+          print('Error parsing poll ${doc.id}: $e');
         }
-      });
+      }
       
       return polls;
     } catch (e) {

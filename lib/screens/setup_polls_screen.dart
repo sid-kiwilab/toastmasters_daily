@@ -22,7 +22,7 @@ class SetupPollsScreen extends StatefulWidget {
 class _SetupPollsScreenState extends State<SetupPollsScreen> {
   Map<String, Poll> _polls = {};
   bool _isLoading = false;
-  StreamSubscription<DocumentSnapshot>? _pollsSubscription;
+  StreamSubscription<QuerySnapshot>? _pollsSubscription;
   Set<String> _expandedPolls = {};
   Map<String, TextEditingController> _questionControllers = {};
   Map<String, List<TextEditingController>> _optionControllers = {};
@@ -325,7 +325,7 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
       // Create a sample poll for now - you can enhance this with a form dialog later
       final poll = Poll(
         question: 'Poll Question ${_polls.length + 1}',
-        options: ['Option 1'],
+        options: ['Option 1', 'Option 2'],
         isActive: false,
       );
       
@@ -445,26 +445,30 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
     final poll = _polls[pollId];
     if (poll == null) return;
     
+    // Get ScaffoldMessenger from widget's context before showing dialog
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Poll'),
         content: Text('Are you sure you want to delete "${poll.question}"?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
+              
               try {
                 final provider = Provider.of<ManageMeetingsProvider>(context, listen: false);
                 await provider.deletePoll(widget.meetingId, pollId);
                 
                 // Check if widget is still mounted before showing snackbar
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     const SnackBar(
                       content: Text('Poll deleted successfully!'),
                       backgroundColor: Colors.green,
@@ -475,7 +479,7 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
               } catch (e) {
                 // Check if widget is still mounted before showing snackbar
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Text('Error deleting poll: $e'),
                       backgroundColor: Colors.red,
@@ -552,46 +556,27 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    // Listen to real-time changes in the polls field
+    // Listen to real-time changes in polls subcollection
     _pollsSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('meetings')
         .doc(widget.meetingId)
+        .collection('polls')
+        .orderBy('created_at', descending: true)
         .snapshots()
         .listen((snapshot) {
-      if (!mounted) return; // Check if widget is still mounted
+      if (!mounted) return;
       
-      if (snapshot.exists && snapshot.data() != null) {
-        final data = snapshot.data()!;
-        final pollsData = data['polls'] as Map<String, dynamic>?;
-        
-        if (pollsData != null) {
-          setState(() {
-            // Convert to list, sort by createdAt (latest first), then convert back to map
-            final pollsList = pollsData.entries.map(
-              (entry) => MapEntry(entry.key, Poll.fromMap(entry.value)),
-            ).toList();
-            
-            // Sort by createdAt in descending order (latest first)
-            pollsList.sort((a, b) => b.value.createdAt.compareTo(a.value.createdAt));
-            
-            _polls = Map.fromEntries(pollsList);
-          });
-        } else {
-          setState(() {
-            _polls = {};
-          });
-        }
-      } else {
-        setState(() {
-          _polls = {};
-        });
-      }
+      setState(() {
+        // Convert to map, sorted by createdAt (latest first)
+        _polls = {
+          for (var doc in snapshot.docs)
+            doc.id: Poll.fromMap(doc.data())
+        };
+      });
     }, onError: (error) {
-      // Only show error if widget is still mounted
       if (mounted) {
-        // Use a delayed callback to ensure the widget is fully built
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(

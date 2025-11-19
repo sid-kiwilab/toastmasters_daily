@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+import '../utils/meeting_utils.dart';
 import '../providers/manage_meetings_provider.dart';
 
 class PollResultsDialog extends StatefulWidget {
@@ -20,32 +22,80 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
   Map<String, Poll> _polls = {};
   bool _isLoading = true;
   String? _error;
+  String? _creatorId;
+  StreamSubscription<QuerySnapshot>? _pollsSubscription;
 
   @override
   void initState() {
     super.initState();
-    _loadPolls();
+    _initialize();
   }
 
-  Future<void> _loadPolls() async {
+  Future<void> _initialize() async {
     try {
-      final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
-      final polls = await meetingsProvider.getPollsForMeeting(widget.meetingId);
+      // Get creator_id first
+      _creatorId = await MeetingUtils.getCreatorId(widget.meetingId);
       
-      if (mounted) {
-        setState(() {
-          _polls = polls;
-          _isLoading = false;
-        });
+      if (_creatorId == null) {
+        if (mounted) {
+          setState(() {
+            _error = 'Could not load meeting information';
+            _isLoading = false;
+          });
+        }
+        return;
       }
+      
+      // Set up real-time listener
+      _setupPollsListener();
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = 'Error initializing: $e';
           _isLoading = false;
         });
       }
     }
+  }
+
+  void _setupPollsListener() {
+    if (_creatorId == null) return;
+    
+    _pollsSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_creatorId)
+        .collection('meetings')
+        .doc(widget.meetingId)
+        .collection('polls')
+        .orderBy('created_at', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoading = false;
+        _error = null;
+        
+        // Convert to Poll objects (already sorted by query)
+        _polls = {
+          for (var doc in snapshot.docs)
+            doc.id: Poll.fromMap(doc.data())
+        };
+      });
+    }, onError: (error) {
+      if (mounted) {
+        setState(() {
+          _error = 'Error loading polls: $error';
+          _isLoading = false;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollsSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -167,7 +217,6 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: _polls.entries.map((entry) {
-                                  final pollId = entry.key;
                                   final poll = entry.value;
                                   
                                   return Card(
@@ -218,7 +267,6 @@ class _PollResultsDialogState extends State<PollResultsDialog> {
                                           // Poll options with results
                                           ...poll.options.map((option) {
                                             final votes = poll.tallies[option] ?? 0;
-                                            final totalVotes = poll.totalResponses;
                                             
                                             return Padding(
                                               padding: const EdgeInsets.only(bottom: 8),

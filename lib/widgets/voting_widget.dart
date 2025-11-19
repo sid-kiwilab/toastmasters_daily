@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'dart:async';
 import 'dart:math';
 import '../utils/web_device_identifier.dart';
+import '../utils/meeting_utils.dart';
 import '../providers/manage_meetings_provider.dart';
 
 class VotingWidget extends StatefulWidget {
@@ -23,6 +25,7 @@ class _VotingWidgetState extends State<VotingWidget> {
   StreamSubscription<QuerySnapshot>? _pollsSubscription;
   int _selectedPollIndex = 0;
   String? _deviceId;
+  String? _creatorId; // Cache creator_id to avoid repeated lookups
   Map<String, String?> _userVotes = {}; // pollId -> selectedOption
   bool _isVoting = false; // Track if a vote is currently being processed
 
@@ -221,9 +224,7 @@ class _VotingWidgetState extends State<VotingWidget> {
                    const SizedBox(height: 32),
                    
                                        // Options
-                    ...selectedPoll.options.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final option = entry.value;
+                    ...selectedPoll.options.map((option) {
                       final pollId = allPolls[_selectedPollIndex].key;
                       final isSelected = _userVotes[pollId] == option;
                      
@@ -329,9 +330,20 @@ class _VotingWidgetState extends State<VotingWidget> {
   void initState() {
     super.initState();
     print('VotingWidget initState called for meeting: ${widget.meetingId}');
-    _getDeviceId().then((_) {
-      _setupPollsListener();
-    });
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await _getDeviceId();
+    await _loadCreatorId();
+    _setupPollsListener();
+  }
+
+  Future<void> _loadCreatorId() async {
+    _creatorId = await MeetingUtils.getCreatorId(widget.meetingId);
+    if (_creatorId == null) {
+      print('Warning: Could not get creator_id for meeting ${widget.meetingId}');
+    }
   }
 
   Future<void> _getDeviceId() async {
@@ -355,78 +367,55 @@ class _VotingWidgetState extends State<VotingWidget> {
   void _setupPollsListener() {
     print('Setting up polls listener for meeting: ${widget.meetingId}');
 
-    // Since we don't know the user ID, we'll search through all users
-    // and find the meeting document by its ID
+    // Use cached creator_id or return if not available
+    if (_creatorId == null) {
+      print('Creator ID not available, cannot set up listener');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: Could not load meeting information'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+    
+    // Listen to polls subcollection
     _pollsSubscription = FirebaseFirestore.instance
-        .collectionGroup('meetings')
+        .collection('users')
+        .doc(_creatorId)
+        .collection('meetings')
+        .doc(widget.meetingId)
+        .collection('polls')
+        .orderBy('created_at', descending: false)
         .snapshots()
         .listen((snapshot) {
       if (!mounted) return;
       
-      print('Received snapshot update for meeting ${widget.meetingId}');
-      print('Snapshot docs count: ${snapshot.docs.length}');
+      print('Received polls update for meeting ${widget.meetingId}: ${snapshot.docs.length} polls');
       
-      // Find the meeting document with the specific ID
-      final meetingDoc = snapshot.docs.where((doc) => doc.id == widget.meetingId).firstOrNull;
+      setState(() {
+        // Convert to Poll objects
+        _polls = {
+          for (var doc in snapshot.docs)
+            doc.id: Poll.fromMap(doc.data())
+        };
+        
+        // Order by createdAt (already sorted by query, but maintain list for UI)
+        _pollOrder = _polls.entries.toList()
+            .map((entry) => entry.key)
+            .toList()
+            ..sort((a, b) {
+              return _polls[a]!.createdAt.compareTo(_polls[b]!.createdAt);
+            });
+      });
       
-      if (meetingDoc != null) {
-        print('Meeting document found in collection: ${meetingDoc.reference.path}');
-        
-        final data = meetingDoc.data();
-        print('Meeting data keys: ${data.keys.toList()}');
-        
-        final pollsData = data['polls'] as Map<String, dynamic>?;
-        print('Polls data: $pollsData');
-        
-                 if (pollsData != null && pollsData.isNotEmpty) {
-           print('Found ${pollsData.length} polls');
-           
-           setState(() {
-             // Convert to Poll objects
-             _polls = pollsData.map((key, value) {
-               print('Processing poll $key: $value');
-               return MapEntry(key, Poll.fromMap(value));
-             });
-           });
-           
-           // Always order by createdAt date for consistent ordering
-           _pollOrder = _polls.entries.toList()
-               .map((entry) => entry.key)
-               .toList()
-               ..sort((a, b) {
-                 final pollA = _polls[a]!;
-                 final pollB = _polls[b]!;
-                 
-                 // Sort by createdAt date (oldest first)
-                 if (pollA.createdAt != null && pollB.createdAt != null) {
-                   return pollA.createdAt!.compareTo(pollB.createdAt!);
-                 }
-                 
-                 // Fallback: if createdAt is null, put them at the end
-                 if (pollA.createdAt == null && pollB.createdAt != null) return 1;
-                 if (pollA.createdAt != null && pollB.createdAt == null) return -1;
-                 
-                 // If both are null, maintain some order
-                 return a.compareTo(b);
-               });
-           
-           print('Processed polls: ${_polls.keys.toList()}');
-           print('Poll order by createdAt: $_pollOrder');
-           
-           // Check for existing votes from this device
-           _checkExistingVotes();
-         } else {
-          print('No polls data found');
-          setState(() {
-            _polls = {};
-          });
-        }
-      } else {
-        print('Meeting document not found');
-        setState(() {
-          _polls = {};
-        });
-      }
+      print('Processed polls: ${_polls.keys.toList()}');
+      
+      // Check for existing votes from this device
+      _checkExistingVotes();
     }, onError: (error) {
       print('Error in polls listener: $error');
       if (mounted) {
@@ -474,77 +463,11 @@ class _VotingWidgetState extends State<VotingWidget> {
     });
 
     try {
-      // Use Firestore transaction to prevent race conditions
-      // First, find the meeting document path
-      final meetingDocs = await FirebaseFirestore.instance
-          .collectionGroup('meetings')
-          .get();
-      
-      final meetingDoc = meetingDocs.docs.where((doc) => doc.id == widget.meetingId).firstOrNull;
-      
-      if (meetingDoc == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Meeting not found.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
+      // Use Cloud Function to submit vote (handles atomicity server-side)
+      final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+      await meetingsProvider.submitPollResponse(widget.meetingId, pollId, option, _deviceId!);
 
-      // Now use transaction with the specific document reference
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // Get the latest data within the transaction
-        final meetingSnapshot = await transaction.get(meetingDoc.reference);
-        final meetingData = meetingSnapshot.data();
-        
-        if (meetingData == null) {
-          throw Exception('Meeting data not found');
-        }
-
-        final pollsData = meetingData['polls'] as Map<String, dynamic>?;
-
-        if (pollsData == null || !pollsData.containsKey(pollId)) {
-          throw Exception('Poll not found');
-        }
-
-        final pollData = pollsData[pollId] as Map<String, dynamic>;
-        
-        // Check if device already voted
-        final deviceVotes = pollData['deviceVotes'] as Map<String, dynamic>? ?? {};
-        final hasVoted = deviceVotes.containsKey(_deviceId);
-        final previousVote = deviceVotes[_deviceId];
-        
-        // Update the poll with the new vote
-        final newTallies = Map<String, int>.from(pollData['tallies'] ?? {});
-        int responseIncrement = 0;
-        
-        if (hasVoted && previousVote != null) {
-          // If changing vote, decrement previous option and increment new option
-          if (previousVote != option) {
-            newTallies[previousVote] = (newTallies[previousVote] ?? 1) - 1;
-            newTallies[option] = (newTallies[option] ?? 0) + 1;
-            // No increment to totalResponses for vote changes
-          }
-          // If same option selected, no change needed
-        } else {
-          // First time voting, just increment the new option
-          newTallies[option] = (newTallies[option] ?? 0) + 1;
-          responseIncrement = 1; // Only increment for new votes
-        }
-        
-        final newDeviceVotes = Map<String, dynamic>.from(deviceVotes);
-        newDeviceVotes[_deviceId!] = option;
-
-        // Update Firestore within transaction - only the necessary fields, createdAt remains unchanged
-        transaction.update(meetingDoc.reference, {
-          'polls.$pollId.tallies': newTallies,
-          'polls.$pollId.totalResponses': (pollData['totalResponses'] ?? 0) + responseIncrement,
-          'polls.$pollId.deviceVotes': newDeviceVotes,
-        });
-      });
-
-      // Update local state after successful transaction
+      // Update local state after successful vote
       setState(() {
         _userVotes[pollId] = option;
         _isVoting = false; // Reset voting state

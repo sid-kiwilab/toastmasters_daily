@@ -21,14 +21,25 @@ service cloud.firestore {
       allow delete: if false; // No deletes allowed
     }
     
-    // Allow read access to polls field in user meetings
+    // Allow read access to user meetings
     match /users/{userId}/meetings/{meetingId} {
       allow read: if true;
+      // Allow writes to agenda_url field (for agenda uploads)
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['agenda_url']);
     }
     
-    // Allow anyone to write to polls field in user meetings (for voting)
-    match /users/{userId}/meetings/{meetingId} {
-      allow write: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['polls']);
+    // Allow read/write access to polls subcollection
+    match /users/{userId}/meetings/{meetingId}/polls/{pollId} {
+      allow read: if true;
+      // Allow creator to manage polls (create, update, delete)
+      allow write: if request.auth != null && request.auth.uid == userId;
+      // Voting goes through Cloud Function (submit_vote) which has admin access
+    }
+    
+    // Active meetings - allow read only (to get creator_id), no writes (only Cloud Functions can write)
+    match /active_meetings/{meetingId} {
+      allow read: if true; // Need to read to get creator_id for finding user's meeting
+      allow write: if false; // Only Cloud Functions can write
     }
     
     // Default: no write access to other documents

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'manage_meetings_provider.dart';
 
 class PollWithId {
@@ -15,6 +16,7 @@ class ViewMeetingProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String? _creatorId;
+  StreamSubscription<QuerySnapshot>? _pollsSubscription;
 
   Meeting? get meeting => _meeting;
   List<PollWithId> get polls => _polls;
@@ -40,10 +42,13 @@ class ViewMeetingProvider extends ChangeNotifier {
 
       if (doc.exists) {
         _meeting = Meeting.fromFirestore(doc);
-        // Get creator_id from the meeting document to fetch polls
+        // Get creator_id from the meeting document to fetch polls and agenda
         _creatorId = doc.data()?['creator_id'] as String? ?? doc.data()?['creatorId'] as String?;
         if (_creatorId != null) {
-          await _fetchPolls(_creatorId!, meetingId);
+          // Fetch agenda_url from users collection
+          await _fetchAgendaUrl(_creatorId!, meetingId);
+          // Start real-time listener for polls
+          _startPollsListener(_creatorId!, meetingId);
         }
       } else {
         _error = 'Meeting not found';
@@ -56,9 +61,9 @@ class ViewMeetingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _fetchPolls(String creatorId, String meetingId) async {
+  Future<void> _fetchAgendaUrl(String creatorId, String meetingId) async {
     try {
-      // Get polls from users/{creatorId}/meetings/{meetingId}
+      // Get agenda_url from users/{creatorId}/meetings/{meetingId}
       final meetingData = await FirebaseFirestore.instance
           .collection('users')
           .doc(creatorId)
@@ -68,71 +73,75 @@ class ViewMeetingProvider extends ChangeNotifier {
       
       if (meetingData.exists) {
         final data = meetingData.data()!;
-        final pollsData = data['polls'] as Map<String, dynamic>?;
+        final agendaUrl = data['agenda_url'] as String?;
         
-        if (pollsData != null) {
-          _polls = pollsData.entries.map((entry) {
-            final pollData = entry.value as Map<String, dynamic>;
+        // Update the meeting object with agenda_url
+        if (_meeting != null) {
+          // Create a new Meeting object with the agenda_url (even if null, to ensure it's set)
+          _meeting = Meeting(
+            id: _meeting!.id,
+            title: _meeting!.title,
+            description: _meeting!.description,
+            createdAt: _meeting!.createdAt,
+            agendaUrl: agendaUrl,
+          );
+          notifyListeners(); // Notify listeners that agenda URL has been loaded
+        }
+      }
+    } catch (e) {
+      // Silently handle agenda loading errors - meeting will just have no agenda
+      print('Error fetching agenda URL: $e');
+    }
+  }
+
+  void _startPollsListener(String creatorId, String meetingId) {
+    // Cancel any existing subscription
+    _pollsSubscription?.cancel();
+    
+    // Set up real-time listener for polls subcollection
+    _pollsSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(creatorId)
+        .collection('meetings')
+        .doc(meetingId)
+        .collection('polls')
+        .orderBy('created_at', descending: false)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        _polls = snapshot.docs.map((doc) {
+          try {
             return PollWithId(
-              id: entry.key,
-              poll: Poll.fromMap(pollData),
+              id: doc.id,
+              poll: Poll.fromMap(doc.data()),
             );
-          }).toList();
-        }
-      }
-    } catch (e) {
-      // Silently handle poll loading errors for now
-    }
-  }
-
-  Future<void> voteOnPoll(String pollId, String selectedOption) async {
-    if (_creatorId == null || _meeting == null) return;
-
-    try {
-      // Update the poll tallies in Firestore
-      final pollRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(_creatorId!)
-          .collection('meetings')
-          .doc(_meeting!.id);
-
-      // Get current poll data
-      final meetingDoc = await pollRef.get();
-      if (meetingDoc.exists) {
-        final data = meetingDoc.data()!;
-        final pollsData = data['polls'] as Map<String, dynamic>?;
+          } catch (e) {
+            print('Error parsing poll ${doc.id}: $e');
+            return PollWithId(
+              id: doc.id,
+              poll: Poll(
+                question: 'Error loading poll',
+                options: ['Error'],
+                isActive: false,
+              ),
+            );
+          }
+        }).toList();
         
-        if (pollsData != null && pollsData.containsKey(pollId)) {
-          final pollData = pollsData[pollId] as Map<String, dynamic>;
-          final tallies = Map<String, int>.from(pollData['tallies'] ?? {});
-          
-          // Increment the selected option
-          tallies[selectedOption] = (tallies[selectedOption] ?? 0) + 1;
-          
-          // Update total responses
-          final totalResponses = (pollData['totalResponses'] ?? 0) + 1;
-          
-          // Update the poll data
-          pollsData[pollId] = {
-            ...pollData,
-            'tallies': tallies,
-            'totalResponses': totalResponses,
-          };
-          
-          // Update the document
-          await pollRef.update({'polls': pollsData});
-          
-          // Refresh polls data
-          await _fetchPolls(_creatorId!, _meeting!.id);
-        }
-      }
-    } catch (e) {
-      _error = 'Error voting: $e';
-      notifyListeners();
-    }
+        notifyListeners();
+      },
+      onError: (error) {
+        print('Error in polls listener: $error');
+        _polls = [];
+        notifyListeners();
+      },
+    );
   }
+
 
   void clearData({bool notify = true}) {
+    _pollsSubscription?.cancel();
+    _pollsSubscription = null;
     _meeting = null;
     _polls = [];
     _isLoading = false;
@@ -141,5 +150,11 @@ class ViewMeetingProvider extends ChangeNotifier {
     if (notify) {
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _pollsSubscription?.cancel();
+    super.dispose();
   }
 }
