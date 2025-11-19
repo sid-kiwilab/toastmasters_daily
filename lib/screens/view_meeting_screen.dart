@@ -61,6 +61,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   static const int _maxLoadAttempts = 3;
 
   Future<void> _loadPdfFromUrl(String url) async {
+    if (!mounted) return;
     setState(() {
       _isPdfLoading = true;
       _pdfError = null;
@@ -146,6 +147,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
       
     } catch (e) {
       print('PDF loading error: $e');
+      if (!mounted) return;
       setState(() {
         _pdfError = e.toString();
         _isPdfLoading = false;
@@ -156,6 +158,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   void _loadPdfFromBytes(Uint8List bytes) async {
     try {
       final document = await PdfDocument.openData(bytes);
+      if (!mounted) return;
       setState(() {
         _pdfDocument = document;
         _pdfBytes = bytes; // Store the bytes for the viewer
@@ -166,6 +169,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
       print('PDF loaded successfully into document, pages: ${document.pageCount}');
     } catch (e) {
       print('Error creating PDF document: $e');
+      if (!mounted) return;
       setState(() {
         _pdfError = 'Error creating PDF document: $e';
         _isPdfLoading = false;

@@ -10,7 +10,6 @@ import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
 import '../screens/setup_polls_screen.dart';
 import '../dialogs/poll_results_dialog.dart';
-import '../dialogs/qr_code_dialog.dart';
 
 class ManageMeetingsScreen extends StatefulWidget {
   const ManageMeetingsScreen({super.key});
@@ -242,16 +241,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     );
   }
 
-  void _showQRCodeDialog(BuildContext context, Meeting meeting) {
-    showDialog(
-      context: context,
-      builder: (context) => QRCodeDialog(
-        meetingId: meeting.id,
-        meetingTitle: meeting.title,
-      ),
-    );
-  }
-
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -301,8 +290,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         // Wait for auth state to be resolved before checking
@@ -387,418 +374,389 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                 // Main content
                 Expanded(
                   child: SingleChildScrollView(
-                       padding: const EdgeInsets.all(24),
-                       child: Column(
-                         mainAxisAlignment: MainAxisAlignment.center,
-                         crossAxisAlignment: CrossAxisAlignment.center,
-                         children: [
-                           // Create Meeting Button
-                           ElevatedButton(
-                             onPressed: _isCreatingMeeting ? null : () {
-                               showDialog(
-                                 context: context,
-                                 builder: (context) => CreateMeetingDialog(
-                                   onConfirm: (title) async {
-                                     await _createMeeting(context, authProvider.currentUser!.uid, title);
-                                   },
-                                 ),
-                               );
-                             },
-                             style: ElevatedButton.styleFrom(
-                               backgroundColor: theme.colorScheme.primary,
-                               foregroundColor: Colors.white,
-                               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                             ),
-                             child: _isCreatingMeeting
-                                 ? const SizedBox(
-                                     width: 20,
-                                     height: 20,
-                                     child: CircularProgressIndicator(
-                                       strokeWidth: 2,
-                                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                     ),
-                                   )
-                                 : const Text('Create Meeting'),
-                           ),
-                           const SizedBox(height: 32),
-                           
-                           // Meetings list using the provider
-                           Consumer<ManageMeetingsProvider>(
-                             builder: (context, meetingsProvider, child) {
-                               if (meetingsProvider.isLoading) {
-                                 return const Center(
-                                   child: CircularProgressIndicator(),
-                                 );
-                               }
-                               
-                               if (meetingsProvider.error != null) {
-                                 return Center(
-                                   child: Column(
-                                     children: [
-                                       Icon(
-                                         Icons.error_outline,
-                                         size: 64,
-                                         color: theme.colorScheme.error,
-                                       ),
-                                       const SizedBox(height: 16),
-                                       Text(
-                                         'Unable to load meetings',
-                                         style: theme.textTheme.titleMedium?.copyWith(
-                                           color: theme.colorScheme.error,
-                                         ),
-                                         textAlign: TextAlign.center,
-                                       ),
-                                       const SizedBox(height: 8),
-                                       Text(
-                                         meetingsProvider.error!,
-                                         style: theme.textTheme.bodyMedium?.copyWith(
-                                           color: theme.colorScheme.onSurfaceVariant,
-                                         ),
-                                         textAlign: TextAlign.center,
-                                       ),
-                                     ],
-                                   ),
-                                 );
-                               }
-                               
-                               if (meetingsProvider.meetings.isEmpty) {
-                                 return Text(
-                                   'You have no upcoming meetings',
-                                   style: theme.textTheme.titleMedium?.copyWith(
-                                     color: theme.colorScheme.onSurfaceVariant,
-                                   ),
-                                   textAlign: TextAlign.center,
-                                 );
-                               }
-                               
-                                                                                             // Display meetings list
-                               return Column(
-                                 children: meetingsProvider.meetings.map((meeting) {
-                                   return Center(
-                                     child: ConstrainedBox(
-                                       constraints: const BoxConstraints(maxWidth: 1000),
-                                       child: Card(
-                                         margin: const EdgeInsets.only(bottom: 12),
-                                         shape: RoundedRectangleBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                           side: const BorderSide(color: Colors.purple, width: 2),
-                                         ),
-                                         child: Padding(
-                                           padding: const EdgeInsets.all(16),
-                                           child: Column(
-                                             crossAxisAlignment: CrossAxisAlignment.start,
-                                             children: [
-                                               // Meeting ID and Title row
-                                               Row(
-                                                 children: [
-                                                   // Meeting ID
-                                                   Text(
-                                                     _formatMeetingId(meeting.id),
-                                                     style: theme.textTheme.headlineSmall?.copyWith(
-                                                       fontWeight: FontWeight.bold,
-                                                     ),
-                                                   ),
-                                                   
-                                                   const SizedBox(width: 16),
-                                                   
-                                                   // Meeting Title
-                                                   Expanded(
-                                                     child: GestureDetector(
-                                                       onTap: () {
-                                                         final urlMeetingId = meeting.id.replaceAll(' ', '');
-                                                         Navigator.pushNamed(context, '/meetings/$urlMeetingId');
-                                                       },
-                                                       child: Text(
-                                                         meeting.title,
-                                                         style: theme.textTheme.titleMedium?.copyWith(
-                                                           color: theme.colorScheme.primary,
-                                                           decoration: TextDecoration.underline,
-                                                         ),
-                                                       ),
-                                                     ),
-                                                   ),
-                                                   
-                                                   // Copy button
-                                                   IconButton(
-                                                     onPressed: () {
-                                                       // Copy meeting ID to clipboard
-                                                       final meetingId = meeting.id;
-                                                       Clipboard.setData(ClipboardData(text: meetingId));
-                                                       ScaffoldMessenger.of(context).showSnackBar(
-                                                         SnackBar(
-                                                           content: Text('Meeting ID copied to clipboard'),
-                                                           duration: const Duration(seconds: 2),
-                                                         ),
-                                                       );
-                                                     },
-                                                     icon: Icon(
-                                                       Icons.copy,
-                                                       color: theme.colorScheme.primary,
-                                                       size: 18,
-                                                     ),
-                                                     tooltip: 'Copy Meeting ID',
-                                                     constraints: const BoxConstraints(
-                                                       minWidth: 32,
-                                                       minHeight: 32,
-                                                     ),
-                                                   ),
-                                                 ],
-                                               ),
-                                               
-                                               const SizedBox(height: 16),
-                                               
-                                               // Action buttons - responsive layout
-                                               LayoutBuilder(
-                                                 builder: (context, constraints) {
-                                                   // Check if we have enough width for side-by-side layout
-                                                   final hasViewAgenda = meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty;
-                                                   final useSideBySide = constraints.maxWidth >= 800; // Switch to mobile view at 800px instead of calculating
-                                                   
-                                                   if (useSideBySide) {
-                                                     // Side by side layout
-                                                     return Row(
-                                                       children: [
-                                                         // Upload Agenda button
-                                                         Expanded(
-                                                           child: ElevatedButton.icon(
-                                                             onPressed: _uploadingAgendas[meeting.id] == true
-                                                                 ? null
-                                                                 : () {
-                                                                     _uploadAgenda(context, meeting.id);
-                                                                   },
-                                                             icon: _uploadingAgendas[meeting.id] == true
-                                                                 ? const SizedBox(
-                                                                     width: 20,
-                                                                     height: 20,
-                                                                   )
-                                                                 : const Icon(Icons.upload_file, size: 18),
-                                                             label: _uploadingAgendas[meeting.id] == true
-                                                                 ? const Text('Uploading...')
-                                                                 : const Text('Upload Agenda'),
-                                                             style: ElevatedButton.styleFrom(
-                                                               backgroundColor: theme.colorScheme.primary,
-                                                               foregroundColor: Colors.white,
-                                                               padding: const EdgeInsets.symmetric(vertical: 8),
-                                                               elevation: 2,
-                                                             ),
-                                                           ),
-                                                         ),
-                                                         
-                                                         const SizedBox(width: 12),
-                                                         
-                                                         // View Agenda button (only show if agendaUrl exists)
-                                                         if (hasViewAgenda) ...[
-                                                           Expanded(
-                                                             child: ElevatedButton.icon(
-                                                               onPressed: () {
-                                                                 // Use the provider to view agenda
-                                                                 final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
-                                                                 meetingsProvider.viewAgenda(context, meeting.agendaUrl!);
-                                                               },
-                                                               icon: const Icon(Icons.visibility, size: 18),
-                                                               label: const Text('View Agenda'),
-                                                               style: ElevatedButton.styleFrom(
-                                                                 backgroundColor: theme.colorScheme.primary,
-                                                                 foregroundColor: Colors.white,
-                                                                 padding: const EdgeInsets.symmetric(vertical: 8),
-                                                                 elevation: 2,
-                                                               ),
-                                                             ),
-                                                           ),
-                                                           const SizedBox(width: 12),
-                                                         ],
-                                                         
-                                                         // Setup Polls button
-                                                         Expanded(
-                                                           child: ElevatedButton.icon(
-                                                             onPressed: () {
-                                                               _showSetupPollsDialog(context, meeting);
-                                                             },
-                                                             icon: const Icon(Icons.poll, size: 18),
-                                                             label: const Text('Setup Polls'),
-                                                             style: ElevatedButton.styleFrom(
-                                                               backgroundColor: theme.colorScheme.primary,
-                                                               foregroundColor: Colors.white,
-                                                               padding: const EdgeInsets.symmetric(vertical: 8),
-                                                               elevation: 2,
-                                                             ),
-                                                           ),
-                                                         ),
-                                                         const SizedBox(width: 12),
-                                                         // Poll Results button
-                                                         Expanded(
-                                                           child: ElevatedButton.icon(
-                                                             onPressed: () {
-                                                               _showPollResultsDialog(context, meeting);
-                                                             },
-                                                             icon: const Icon(Icons.analytics, size: 18),
-                                                             label: const Text('Poll Results'),
-                                                             style: ElevatedButton.styleFrom(
-                                                               backgroundColor: theme.colorScheme.secondary,
-                                                               foregroundColor: Colors.white,
-                                                               padding: const EdgeInsets.symmetric(vertical: 8),
-                                                               elevation: 2,
-                                                             ),
-                                                           ),
-                                                         ),
-                                                         
-                                                         const SizedBox(width: 12),
-                                                         
-                                                         // QR Code button
-                                                         Expanded(
-                                                           child: ElevatedButton.icon(
-                                                             onPressed: () {
-                                                               _showQRCodeDialog(context, meeting);
-                                                             },
-                                                             icon: const Icon(Icons.qr_code, size: 18),
-                                                             label: const Text('QR Code'),
-                                                             style: ElevatedButton.styleFrom(
-                                                               backgroundColor: theme.colorScheme.tertiary,
-                                                               foregroundColor: Colors.white,
-                                                               padding: const EdgeInsets.symmetric(vertical: 8),
-                                                               elevation: 2,
-                                                             ),
-                                                           ),
-                                                         ),
-                                                       ],
-                                                     );
-                                                   } else {
-                                                     // Stacked layout for small screens
-                                                     return Column(
-                                                       children: [
-                                                         // Upload Agenda button
-                                                         SizedBox(
-                                                           width: double.infinity,
-                                                           child: ElevatedButton.icon(
-                                                             onPressed: _uploadingAgendas[meeting.id] == true
-                                                                 ? null
-                                                                 : () {
-                                                                     _uploadAgenda(context, meeting.id);
-                                                                   },
-                                                             icon: _uploadingAgendas[meeting.id] == true
-                                                                 ? const SizedBox(
-                                                                     width: 20,
-                                                                     height: 20,
-                                                                   )
-                                                                 : const Icon(Icons.upload_file, size: 18),
-                                                             label: _uploadingAgendas[meeting.id] == true
-                                                                 ? const Text('Uploading...')
-                                                                 : const Text('Upload Agenda'),
-                                                             style: ElevatedButton.styleFrom(
-                                                               backgroundColor: theme.colorScheme.primary,
-                                                               foregroundColor: Colors.white,
-                                                               padding: const EdgeInsets.symmetric(vertical: 8),
-                                                               elevation: 2,
-                                                             ),
-                                                           ),
-                                                         ),
-                                                         
-                                                         if (hasViewAgenda) ...[
-                                                           const SizedBox(height: 12),
-                                                           // View Agenda button
-                                                           SizedBox(
-                                                             width: double.infinity,
-                                                             child: ElevatedButton.icon(
-                                                               onPressed: () {
-                                                                 // Use the provider to view agenda
-                                                                 final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
-                                                                 meetingsProvider.viewAgenda(context, meeting.agendaUrl!);
-                                                               },
-                                                               icon: const Icon(Icons.visibility, size: 18),
-                                                               label: const Text('View Agenda'),
-                                                               style: ElevatedButton.styleFrom(
-                                                                 backgroundColor: theme.colorScheme.primary,
-                                                                 foregroundColor: Colors.white,
-                                                                 padding: const EdgeInsets.symmetric(vertical: 8),
-                                                                 elevation: 2,
-                                                               ),
-                                                             ),
-                                                           ),
-                                                         ],
-                                                         
-                                                         const SizedBox(height: 12),
-                                                         
-                                                         // Setup Polls button
-                                                         SizedBox(
-                                                           width: double.infinity,
-                                                           child: ElevatedButton.icon(
-                                                             onPressed: () {
-                                                               _showSetupPollsDialog(context, meeting);
-                                                             },
-                                                             icon: const Icon(Icons.poll, size: 18),
-                                                             label: const Text('Setup Polls'),
-                                                             style: ElevatedButton.styleFrom(
-                                                               backgroundColor: theme.colorScheme.primary,
-                                                               foregroundColor: Colors.white,
-                                                               padding: const EdgeInsets.symmetric(vertical: 8),
-                                                               elevation: 2,
-                                                             ),
-                                                           ),
-                                                         ),
-                                                         
-                                                         const SizedBox(height: 12),
-                                                         
-                                                         // Poll Results button
-                                                         SizedBox(
-                                                           width: double.infinity,
-                                                           child: ElevatedButton.icon(
-                                                             onPressed: () {
-                                                               _showPollResultsDialog(context, meeting);
-                                                             },
-                                                             icon: const Icon(Icons.analytics, size: 18),
-                                                             label: const Text('Poll Results'),
-                                                             style: ElevatedButton.styleFrom(
-                                                               backgroundColor: theme.colorScheme.secondary,
-                                                               foregroundColor: Colors.white,
-                                                               padding: const EdgeInsets.symmetric(vertical: 8),
-                                                               elevation: 2,
-                                                             ),
-                                                           ),
-                                                         ),
-                                                         
-                                                         const SizedBox(height: 12),
-                                                         
-                                                         // QR Code button
-                                                         SizedBox(
-                                                           width: double.infinity,
-                                                           child: ElevatedButton.icon(
-                                                             onPressed: () {
-                                                               _showQRCodeDialog(context, meeting);
-                                                             },
-                                                             icon: const Icon(Icons.qr_code, size: 18),
-                                                             label: const Text('QR Code'),
-                                                             style: ElevatedButton.styleFrom(
-                                                               backgroundColor: theme.colorScheme.tertiary,
-                                                               foregroundColor: Colors.white,
-                                                               padding: const EdgeInsets.symmetric(vertical: 8),
-                                                               elevation: 2,
-                                                             ),
-                                                           ),
-                                                         ),
-                                                       ],
-                                                     );
-                                                   }
-                                                 },
-                                               ),
-                                             ],
-                                           ),
-                                         ),
-                                       ),
-                                     ),
-                                   );
-                                 }).toList(),
-                               );
-                             },
-                           ),
-                         ],
-                       ),
-                     ),
-                   ),
-               ],
-             ),
-           ),
-         );
-       },
-     );
-   }
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Consumer<ManageMeetingsProvider>(
+                        builder: (context, meetingsProvider, child) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Upcoming Meetings Section
+                              if (meetingsProvider.meetings.isNotEmpty) ...[
+                                _buildSectionHeader(
+                                  'Upcoming Meetings',
+                                  'You can only have one active meeting at a time',
+                                ),
+                                const SizedBox(height: 12),
+                                ...meetingsProvider.meetings.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final meeting = entry.value;
+                                  final isLast = index == meetingsProvider.meetings.length - 1;
+                                  return _buildMeetingItem(meeting, isLast: isLast);
+                                }),
+                                const SizedBox(height: 32),
+                              ],
+                              
+                              // Meetings Section
+                              _buildSectionHeader(
+                                'Meetings',
+                                'Create and manage your meetings',
+                              ),
+                              const SizedBox(height: 12),
+                              _buildCard(
+                                children: [
+                                  _buildItem(
+                                    icon: Icons.add,
+                                    label: 'Create Meeting',
+                                    value: 'Start a new meeting session',
+                                    onTap: _isCreatingMeeting ? null : () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => CreateMeetingDialog(
+                                          onConfirm: (title) async {
+                                            await _createMeeting(context, authProvider.currentUser!.uid, title);
+                                          },
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSectionHeader(String title, String description) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF212121),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            description,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF757575),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard({required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildItem({
+    required IconData icon,
+    required String label,
+    String? value,
+    VoidCallback? onTap,
+    Widget? trailing,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: const Color(0xFFF5F5F5),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Material(
+        color: onTap != null ? Colors.transparent : Colors.white,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 22,
+                    color: const Color(0xFF424242),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF212121),
+                        ),
+                      ),
+                      if (value != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          value,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF757575),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (trailing != null) trailing,
+                if (onTap != null)
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: Color(0xFF9E9E9E),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMeetingItem(Meeting meeting, {bool isLast = false}) {
+    final hasAgenda = meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty;
+    
+    return Container(
+      margin: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Main meeting info row
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Navigator.pushNamed(context, '/meetings/${meeting.id}');
+              },
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.event,
+                        size: 22,
+                        color: Color(0xFF424242),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            meeting.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF212121),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _formatMeetingId(meeting.id),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF757575),
+                              fontFamily: 'monospace',
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: Color(0xFF9E9E9E),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Action buttons row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAFAFA),
+              border: Border(
+                top: BorderSide(
+                  color: const Color(0xFFF5F5F5),
+                  width: 1,
+                ),
+              ),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+            ),
+            child: Row(
+              children: [
+                // Upload Agenda button
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _uploadingAgendas[meeting.id] == true
+                        ? null
+                        : () => _uploadAgenda(context, meeting.id),
+                    icon: _uploadingAgendas[meeting.id] == true
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.upload_file, size: 16),
+                    label: Text(
+                      _uploadingAgendas[meeting.id] == true ? 'Uploading...' : 'Upload Agenda',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF424242),
+                      side: const BorderSide(color: Color(0xFFE0E0E0)),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                if (hasAgenda) ...[
+                  const SizedBox(width: 8),
+                  // View Agenda button
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+                        meetingsProvider.viewAgenda(context, meeting.agendaUrl!);
+                      },
+                      icon: const Icon(Icons.visibility, size: 16),
+                      label: const Text(
+                        'View Agenda',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF424242),
+                        side: const BorderSide(color: Color(0xFFE0E0E0)),
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 8),
+                // Setup Polls button
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showSetupPollsDialog(context, meeting),
+                    icon: const Icon(Icons.poll, size: 16),
+                    label: const Text(
+                      'Setup Polls',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF424242),
+                      side: const BorderSide(color: Color(0xFFE0E0E0)),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Poll Results button
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showPollResultsDialog(context, meeting),
+                    icon: const Icon(Icons.analytics, size: 16),
+                    label: const Text(
+                      'Poll Results',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF424242),
+                      side: const BorderSide(color: Color(0xFFE0E0E0)),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
