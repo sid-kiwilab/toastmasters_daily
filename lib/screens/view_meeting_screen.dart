@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'package:pdf_render/pdf_render.dart';
 import 'package:pdf_render/pdf_render_widgets.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
 import '../providers/view_meeting_provider.dart';
-import '../providers/manage_meetings_provider.dart';
-import '../utils/theme.dart';
-import '../widgets/agenda_widget.dart';
 import '../widgets/voting_widget.dart';
+import '../widgets/footer_widget.dart';
 import 'dart:typed_data';
 
 class ViewMeetingScreen extends StatefulWidget {
@@ -23,21 +20,18 @@ class ViewMeetingScreen extends StatefulWidget {
 
 class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   late ViewMeetingProvider _viewMeetingProvider;
-  late ManageMeetingsProvider _manageMeetingsProvider;
   
-  PdfDocument? _pdfDocument;
   Uint8List? _pdfBytes; // Store the PDF bytes separately
   bool _isPdfLoading = false;
   String? _pdfError;
   
-  // Tab selection state
-  int _selectedTabIndex = 0; // 0 for Agenda, 1 for Polls
+  // Fullscreen agenda state
+  bool _showFullscreenAgenda = false;
 
   @override
   void initState() {
     super.initState();
     _viewMeetingProvider = Provider.of<ViewMeetingProvider>(context, listen: false);
-    _manageMeetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadMeetingData();
@@ -47,7 +41,6 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   Future<void> _loadMeetingData() async {
     // Reset load attempts for new meeting
     _loadAttempts = 0;
-    _hasAttemptedLoad = false;
     
     _viewMeetingProvider.initialize(widget.meetingId);
     if (_viewMeetingProvider.meeting != null && 
@@ -56,7 +49,6 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
     }
   }
 
-  bool _hasAttemptedLoad = false;
   int _loadAttempts = 0;
   static const int _maxLoadAttempts = 3;
 
@@ -156,33 +148,12 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
   }
 
   void _loadPdfFromBytes(Uint8List bytes) async {
-    try {
-      final document = await PdfDocument.openData(bytes);
-      if (!mounted) return;
-      setState(() {
-        _pdfDocument = document;
-        _pdfBytes = bytes; // Store the bytes for the viewer
-        _isPdfLoading = false;
-        _pdfError = null;
-      });
-      
-      print('PDF loaded successfully into document, pages: ${document.pageCount}');
-    } catch (e) {
-      print('Error creating PDF document: $e');
-      if (!mounted) return;
-      setState(() {
-        _pdfError = 'Error creating PDF document: $e';
-        _isPdfLoading = false;
-      });
-    }
-  }
-
-  Widget _buildPdfViewer(String url) {
-    if (kIsWeb) {
-      return _buildWebPdfViewer(url);
-    } else {
-      return _buildMobilePdfPlaceholder(url);
-    }
+    if (!mounted) return;
+    setState(() {
+      _pdfBytes = bytes; // Store the bytes for the viewer
+      _isPdfLoading = false;
+      _pdfError = null;
+    });
   }
 
   Widget _buildWebPdfViewer(String url) {
@@ -283,51 +254,47 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
     );
   }
 
-     Widget _buildMobilePdfPlaceholder(String url) {
-     return Container(
-       color: Colors.grey[100],
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+
+  Widget _buildFullscreenAgenda(String? agendaUrl) {
+    if (agendaUrl == null || agendaUrl.isEmpty) {
+      return Container();
+    }
+    
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        child: Stack(
           children: [
-            Icon(
-              Icons.picture_as_pdf,
-              size: 48,
-              color: Colors.red[400],
+            // PDF Viewer
+            Positioned.fill(
+              child: _buildWebPdfViewer(agendaUrl),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'PDF Document Ready',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.grey[700],
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Click "Open in Browser" to view the full PDF',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: SelectableText(
-                url,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.blue[700],
-                  fontFamily: 'monospace',
-                  fontSize: 11,
+            // Close button
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                textAlign: TextAlign.center,
+                child: IconButton(
+                  icon: const Icon(Icons.close, size: 24),
+                  color: const Color(0xFF212121),
+                  onPressed: () {
+                    setState(() {
+                      _showFullscreenAgenda = false;
+                    });
+                  },
+                  padding: const EdgeInsets.all(12),
+                ),
               ),
             ),
           ],
@@ -336,42 +303,23 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
     );
   }
 
-  void _showExitConfirmationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Exit Meeting'),
-          content: const Text('Are you sure you want to exit the meeting?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/',
-                  (route) => false,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[600],
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Exit'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
+  String _formatMeetingCode(String meetingId) {
+    // Format meeting ID as "1234 5678"
+    final cleaned = meetingId.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.length <= 4) {
+      return cleaned;
+    }
+    final chunks = <String>[];
+    for (int i = 0; i < cleaned.length; i += 4) {
+      final end = (i + 4 < cleaned.length) ? i + 4 : cleaned.length;
+      chunks.add(cleaned.substring(i, end));
+    }
+    return chunks.join(' ');
+  }
 
   @override
   void dispose() {
-    _pdfDocument?.dispose();
     super.dispose();
   }
 
@@ -425,110 +373,520 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
 
           final meeting = provider.meeting!;
 
-                     return SafeArea(
-             child: Column(
-               crossAxisAlignment: CrossAxisAlignment.center,
-               children: [
-                                   // Header section
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Welcome Toastmaster!',
-                            style: Theme.of(context).textTheme.titleLarge,
-                            textAlign: TextAlign.left,
-                          ),
+          // Show fullscreen agenda if requested
+          if (_showFullscreenAgenda) {
+            return _buildFullscreenAgenda(meeting.agendaUrl);
+          }
+
+          return SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 600;
+                
+                return SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Main content
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 24.0 : 40.0,
+                          vertical: 32.0,
                         ),
-                        ElevatedButton(
-                          onPressed: () => _showExitConfirmationDialog(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[600],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 800),
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                          // Meeting Title
+                          Text(
+                            meeting.title,
+                            style: TextStyle(
+                              fontSize: isMobile ? 28 : 32,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF212121),
+                              letterSpacing: -1,
+                              height: 1.2,
                             ),
                           ),
-                          child: const Text('Exit'),
+                          const SizedBox(height: 8),
+                          
+                          // Meeting Code
+                          Text(
+                            _formatMeetingCode(widget.meetingId),
+                            style: TextStyle(
+                              fontSize: isMobile ? 16 : 18,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF757575),
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          
+                          // Decorative line with Toastmasters colors
+                          Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFC41E3A),
+                                      Color(0xFF003366),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                width: 60,
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE0E0E0),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                width: 40,
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF003366),
+                                      Color(0xFFC41E3A),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 40),
+                          
+                          // Quick Actions Section
+                          Text(
+                            'Quick Actions',
+                            style: TextStyle(
+                              fontSize: isMobile ? 20 : 24,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF212121),
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Action Cards
+                          if (meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFE0E0E0),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _showFullscreenAgenda = true;
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 56,
+                                          height: 56,
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFFC41E3A),
+                                                Color(0xFF003366),
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: const Icon(
+                                            Icons.description,
+                                            size: 28,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 20),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text(
+                                                'View Agenda',
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFF212121),
+                                                  letterSpacing: -0.3,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Open agenda in full screen',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w400,
+                                                  color: const Color(0xFF757575),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.chevron_right,
+                                          color: Color(0xFF757575),
+                                          size: 24,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          
+                          // Voting Card
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFE0E0E0),
+                                width: 2,
+                              ),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => _VotingScreen(meetingId: widget.meetingId),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 56,
+                                        height: 56,
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Color(0xFFC41E3A),
+                                              Color(0xFF003366),
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(
+                                          Icons.how_to_vote,
+                                          size: 28,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 20),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Voting',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFF212121),
+                                                letterSpacing: -0.3,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Participate in polls and voting',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w400,
+                                                color: const Color(0xFF757575),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.chevron_right,
+                                        color: Color(0xFF757575),
+                                        size: 24,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                                // Meeting Info Section
+                                const SizedBox(height: 40),
+                                Text(
+                                  'Meeting Info',
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 20 : 24,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF212121),
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                
+                                // Role Holder Info Button
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFFE0E0E0),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        // TODO: Navigate to role holder info screen
+                                      },
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(24),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 56,
+                                              height: 56,
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFFC41E3A),
+                                                    Color(0xFF003366),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: const Icon(
+                                                Icons.person_outline,
+                                                size: 28,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 20),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    'Role Holder Info',
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Color(0xFF212121),
+                                                      letterSpacing: -0.3,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    'View meeting role assignments',
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w400,
+                                                      color: const Color(0xFF757575),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const Icon(
+                                              Icons.chevron_right,
+                                              color: Color(0xFF757575),
+                                              size: 24,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                
+                                // New Member Details Button
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFFE0E0E0),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        // TODO: Navigate to new member details entry screen
+                                      },
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(24),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 56,
+                                              height: 56,
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFFC41E3A),
+                                                    Color(0xFF003366),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: const Icon(
+                                                Icons.person_add_outlined,
+                                                size: 28,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 20),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    'New to the Club?',
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Color(0xFF212121),
+                                                      letterSpacing: -0.3,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    'Enter your details',
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w400,
+                                                      color: const Color(0xFF757575),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const Icon(
+                                              Icons.chevron_right,
+                                              color: Color(0xFF757575),
+                                              size: 24,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
+                        const SizedBox(height: 40),
+                        // Footer - full width
+                        const FooterWidget(),
                       ],
                     ),
-                  ),
-                 
-                 // Agenda container that extends to bottom
-                 Expanded(
-                   child: Container(
-                     width: double.infinity,
-                     padding: const EdgeInsets.all(4),
-                     decoration: BoxDecoration(
-                       color: Theme.of(context).colorScheme.primaryContainer,
-                       border: Border.all(
-                         color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                         width: 0.1,
-                       ),
-                     ),
-                     child: Column(
-                       children: [
-                         // Refresh Button at the top
-                         Padding(
-                           padding: const EdgeInsets.only(bottom: 4),
-                           child: Row(
-                             mainAxisAlignment: MainAxisAlignment.center,
-                             children: [
-                                                               // Agenda Button
-                                ElevatedButton(
-                                  onPressed: () => setState(() => _selectedTabIndex = 0),
-                                 child: Text(meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
-                                   ? 'Agenda'
-                                   : 'No Agenda'),
-                                 style: ElevatedButton.styleFrom(
-                                   backgroundColor: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
-                                     ? Theme.of(context).colorScheme.onPrimary
-                                     : Colors.grey,
-                                   foregroundColor: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
-                                     ? Theme.of(context).colorScheme.primary
-                                     : Theme.of(context).colorScheme.onPrimary,
-                                   shape: RoundedRectangleBorder(
-                                     borderRadius: BorderRadius.circular(8),
-                                   ),
-                                 ),
-                               ),
-                               const SizedBox(width: 8),
-                               // Voting Button (renamed from Polls)
-                               ElevatedButton(
-                                 onPressed: () => setState(() => _selectedTabIndex = 1),
-                                 child: const Text('Voting'),
-                                 style: ElevatedButton.styleFrom(
-                                   backgroundColor: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
-                                       ? Theme.of(context).colorScheme.onPrimary
-                                       : Colors.grey,
-                                   foregroundColor: meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty
-                                       ? Theme.of(context).colorScheme.primary
-                                       : Theme.of(context).colorScheme.onPrimary,
-                                   shape: RoundedRectangleBorder(
-                                     borderRadius: BorderRadius.circular(8),
-                                   ),
-                                 ),
-                               ),
-                             ],
-                           ),
-                         ),
-                         
-                                                                              // Content area that changes based on selected tab
-                          Expanded(
-                            child: _selectedTabIndex == 0
-                                ? AgendaWidget(agendaUrl: meeting.agendaUrl)
-                                : VotingWidget(meetingId: widget.meetingId),
-                          ),
-                       ],
-                     ),
-                   ),
-                 ),
-               ],
-             ),
-           );
+                );
+              },
+            ),
+          );
         },
+      ),
+    );
+  }
+}
+
+// Voting Screen - Full screen for voting
+class _VotingScreen extends StatelessWidget {
+  final String meetingId;
+  
+  const _VotingScreen({required this.meetingId});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with close button
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF0F0F0),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Color(0xFFE0E0E0),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Voting',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF212121),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 24),
+                    color: const Color(0xFF424242),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            // Voting Widget
+            Expanded(
+              child: VotingWidget(meetingId: meetingId),
+            ),
+          ],
+        ),
       ),
     );
   }
