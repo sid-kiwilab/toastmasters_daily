@@ -64,7 +64,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
       meetingsProvider.initialize();
       _loadProfileData();
-      _loadOrGenerateClubCode();
+      _loadClubCode();
       _setupGuestsListener();
     });
   }
@@ -122,7 +122,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     }
   }
 
-  Future<void> _loadOrGenerateClubCode() async {
+  Future<void> _loadClubCode() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.currentUser == null) return;
     
@@ -141,32 +141,26 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       
       String? clubCode;
       
-      // Check if user already has a club_code stored
+      // Only load existing club_code from user document
+      // Club code should have been created by cloud function on user creation
       if (userDocSnap.exists && userDocSnap.data()?['club_code'] != null) {
         clubCode = userDocSnap.data()!['club_code'] as String;
       } else {
-        // Check if a club_codes document already exists for this user
+        // Fallback: Check if a club_codes document already exists for this user
+        // (This handles edge cases where the cloud function might have failed)
         final clubCodesQuery = await db.collection('club_codes')
             .where('uid', isEqualTo: userId)
             .limit(1)
             .get();
         
         if (clubCodesQuery.docs.isNotEmpty) {
-          // Use existing document ID
+          // Use existing document ID and sync to user document
           clubCode = clubCodesQuery.docs[0].id;
-          // Save to user document
           await userDocRef.set({'club_code': clubCode}, SetOptions(merge: true));
         } else {
-          // Use transaction to create club_codes document and update user document atomically
-          await db.runTransaction((transaction) async {
-            // Create new document reference in club_codes collection
-            final newClubCodeRef = db.collection('club_codes').doc();
-            clubCode = newClubCodeRef.id;
-            
-            // Set both documents in the transaction
-            transaction.set(newClubCodeRef, {'uid': userId});
-            transaction.set(userDocRef, {'club_code': clubCode}, SetOptions(merge: true));
-          });
+          // Club code should have been created by cloud function on user creation
+          print('Warning: Club code not found for user $userId. It should have been created on signup.');
+          clubCode = null;
         }
       }
       
@@ -177,7 +171,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
         });
       }
     } catch (e) {
-      print('Error loading/generating club code: $e');
+      print('Error loading club code: $e');
       if (mounted) {
         setState(() {
           _isLoadingClubCode = false;
@@ -228,7 +222,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       });
       
       // Reload the club code
-      await _loadOrGenerateClubCode();
+      await _loadClubCode();
       
       if (mounted) {
         setState(() {
@@ -1342,7 +1336,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                     Text(
                       _isLoadingClubCode
                           ? 'Loading...'
-                          : (_clubCode ?? 'Not available'),
+                          : (_clubCode ?? 'Refresh to load code'),
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF757575),

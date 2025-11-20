@@ -626,42 +626,6 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                // Club Info Section (if info exists)
-                                if (_clubInfo != null && _clubInfo!.isNotEmpty) ...[
-                                  Text(
-                                    'About',
-                                    style: TextStyle(
-                                      fontSize: isMobile ? 20 : 24,
-                                      fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF212121),
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(24),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: const Color(0xFFE0E0E0),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      _clubInfo!,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w400,
-                                        color: Color(0xFF424242),
-                                        height: 1.5,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 40),
-                                ],
-                                
                                 // Meetings Section
                                 Text(
                                   'Join Meetings',
@@ -804,6 +768,42 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                       ),
                                     );
                                   })),
+                                
+                                // Club Info Section (if info exists)
+                                if (_clubInfo != null && _clubInfo!.isNotEmpty) ...[
+                                  const SizedBox(height: 40),
+                                  Text(
+                                    'About',
+                                    style: TextStyle(
+                                      fontSize: isMobile ? 20 : 24,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF212121),
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: const Color(0xFFE0E0E0),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _clubInfo!,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400,
+                                        color: Color(0xFF424242),
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                                   ],
                                 ),
                               ),

@@ -11,7 +11,7 @@ The HTML renderer reduces bundle size by **20-30MB** compared to Canvaskit.
 flutter build web --release
 ```
 
-**Note:** The HTML renderer is automatically configured in `web/index.html` via `window.flutterConfiguration`. No need for the `--web-renderer` flag in newer Flutter versions.
+**Note:** Flutter will automatically use the HTML renderer by default in newer versions, which is smaller than Canvaskit. The HTML renderer is perfect for UI-heavy apps like this one.
 
 ### Expected Results:
 - **Before**: ~50-80MB (with Canvaskit)
