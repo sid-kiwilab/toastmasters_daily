@@ -1419,16 +1419,16 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Expanded(
-                  child: Text(
-                    'Guests',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF212121),
-                    ),
-                  ),
-                ),
+                                                const Expanded(
+                                                  child: Text(
+                                                    'Guests List',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.w500,
+                                                      color: Color(0xFF212121),
+                                                    ),
+                                                  ),
+                                                ),
                 const Icon(
                   Icons.chevron_right,
                   size: 16,
