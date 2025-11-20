@@ -277,6 +277,32 @@ class _ProfileWidgetState extends State<ProfileWidget> {
       // Get base URL for web
       final base_url = kIsWeb ? Uri.base.origin : null;
 
+      // Open window immediately (synchronously) to avoid popup blocker
+      html.WindowBase? checkoutWindow;
+      if (kIsWeb) {
+        // Open window with loading page immediately while user action is still valid
+        // Use data URL to show loading message
+        final loadingHtml = '''
+          <html>
+            <head><title>Loading...</title></head>
+            <body style="font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f5f5f5;">
+              <div style="text-align: center;">
+                <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                <p style="color: #666;">Redirecting to checkout...</p>
+              </div>
+              <style>
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              </style>
+            </body>
+          </html>
+        ''';
+        final dataUrl = 'data:text/html;charset=utf-8,${Uri.encodeComponent(loadingHtml)}';
+        checkoutWindow = html.window.open(dataUrl, '_blank');
+      }
+
       try {
         final functions = FirebaseFunctions.instance;
         final callable = functions.httpsCallable('create_checkout_session');
@@ -297,7 +323,13 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         
         if (session_url != null && session_url.isNotEmpty) {
           if (kIsWeb) {
-            html.window.open(session_url, '_blank');
+            if (checkoutWindow != null) {
+              // Update the popup window location to the checkout URL
+              checkoutWindow.location.href = session_url;
+            } else {
+              // Popup was blocked, navigate current window instead
+              html.window.location.href = session_url;
+            }
           } else {
             final uri = Uri.parse(session_url);
             if (await canLaunchUrl(uri)) {
@@ -314,6 +346,10 @@ class _ProfileWidgetState extends State<ProfileWidget> {
             }
           }
         } else {
+          // Close the window if we didn't get a URL
+          if (kIsWeb && checkoutWindow != null) {
+            checkoutWindow.close();
+          }
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -325,6 +361,10 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         }
       } catch (e) {
         print('Error creating checkout session: $e');
+        // Close the window on error
+        if (kIsWeb && checkoutWindow != null) {
+          checkoutWindow.close();
+        }
         if (mounted) {
           setState(() {
             _isCreatingCheckoutSession = false;
