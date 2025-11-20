@@ -12,6 +12,8 @@ import 'screens/view_meeting_screen.dart';
 import 'screens/club_screen.dart';
 import 'screens/privacy_policy_screen.dart';
 import 'screens/terms_of_service_screen.dart';
+import 'screens/voting_screen.dart';
+import 'screens/guest_entry_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
@@ -152,21 +154,68 @@ class MainApp extends StatelessWidget {
         },
         onGenerateRoute: (settings) {
           final name = settings.name ?? '';
+          
+          // Handle voting route: /meetings/{meetingId}/voting
+          if (name.contains('/voting')) {
+            final parts = name.split('/');
+            if (parts.length >= 3 && parts[0] == '' && parts[1] == 'meetings') {
+              final meetingId = _convertUrlToMeetingId(parts[2]);
+              return MaterialPageRoute(
+                builder: (_) => VotingScreen(meetingId: meetingId),
+                settings: settings,
+              );
+            }
+          }
+          
+          // Handle guest entry route: /meetings/{meetingId}/guest
+          if (name.contains('/guest')) {
+            final parts = name.split('/');
+            if (parts.length >= 3 && parts[0] == '' && parts[1] == 'meetings') {
+              final meetingId = _convertUrlToMeetingId(parts[2]);
+              return MaterialPageRoute(
+                builder: (_) => GuestEntryScreen(meetingId: meetingId),
+                settings: settings,
+              );
+            }
+            // Handle guest entry route: /clubs/{clubCode}/guest
+            if (parts.length >= 3 && parts[0] == '' && parts[1] == 'clubs') {
+              final clubCode = parts[2];
+              return MaterialPageRoute(
+                builder: (_) => GuestEntryScreen(clubCode: clubCode),
+                settings: settings,
+              );
+            }
+          }
+          
+          // Handle meeting view route: /meetings/{meetingId}
           if (name.startsWith('/meetings/')) {
             final meetingId = name.substring('/meetings/'.length);
-            final actualMeetingId = _convertUrlToMeetingId(meetingId);
+            // Remove /voting or /guest if present
+            final cleanMeetingId = meetingId.split('/').first;
+            final actualMeetingId = _convertUrlToMeetingId(cleanMeetingId);
             return MaterialPageRoute(
               builder: (_) => ViewMeetingScreen(meetingId: actualMeetingId),
               settings: settings,
             );
           }
+          
+          // Handle club route: /clubs/{clubCode}
           if (name.startsWith('/clubs/')) {
             final clubCode = name.substring('/clubs/'.length);
+            // Check if it's /guest route
+            if (clubCode.endsWith('/guest')) {
+              final actualClubCode = clubCode.substring(0, clubCode.length - '/guest'.length);
+              return MaterialPageRoute(
+                builder: (_) => GuestEntryScreen(clubCode: actualClubCode),
+                settings: settings,
+              );
+            }
             return MaterialPageRoute(
               builder: (_) => ClubScreen(clubCode: clubCode),
               settings: settings,
             );
           }
+          
           return null;
         },
       ),

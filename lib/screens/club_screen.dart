@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'dart:html' as html;
 import '../providers/manage_meetings_provider.dart';
-import '../widgets/guest_entry_widget.dart';
 
 class ClubScreen extends StatefulWidget {
   final String clubCode;
@@ -81,14 +80,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
     
     if (isGuest && _meetings.isNotEmpty) {
       // Show guest entry widget for the first (latest) meeting
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => GuestEntryWidget(
-            meetingId: _meetings.first.id,
-          ),
-        ),
-      ).then((_) {
+      Navigator.of(context).pushNamed('/clubs/${widget.clubCode}/guest').then((_) {
         // After guest entry is closed, show club content
         if (mounted) {
           setState(() {

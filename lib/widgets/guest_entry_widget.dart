@@ -4,12 +4,14 @@ import '../utils/meeting_utils.dart';
 import '../utils/web_device_identifier.dart';
 
 class GuestEntryWidget extends StatefulWidget {
-  final String meetingId;
+  final String? meetingId;
+  final String? creatorId;
   
   const GuestEntryWidget({
     super.key,
-    required this.meetingId,
-  });
+    this.meetingId,
+    this.creatorId,
+  }) : assert(meetingId != null || creatorId != null, 'Either meetingId or creatorId must be provided');
 
   @override
   State<GuestEntryWidget> createState() => _GuestEntryWidgetState();
@@ -59,7 +61,10 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
     if (_deviceId == null) return;
 
     try {
-      final creatorId = await MeetingUtils.getCreatorId(widget.meetingId);
+      String? creatorId = widget.creatorId;
+      if (creatorId == null && widget.meetingId != null) {
+        creatorId = await MeetingUtils.getCreatorId(widget.meetingId!);
+      }
       if (creatorId == null) return;
 
       final querySnapshot = await FirebaseFirestore.instance
@@ -114,12 +119,15 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
     });
 
     try {
-      // Get the meeting creator ID
-      final creatorId = await MeetingUtils.getCreatorId(widget.meetingId);
+      // Get the creator ID
+      String? creatorId = widget.creatorId;
+      if (creatorId == null && widget.meetingId != null) {
+        creatorId = await MeetingUtils.getCreatorId(widget.meetingId!);
+      }
       
       if (creatorId == null) {
         setState(() {
-          _errorMessage = 'Could not find meeting information. Please try again.';
+          _errorMessage = 'Could not find creator information. Please try again.';
           _isSaving = false;
         });
         return;

@@ -5,9 +5,7 @@ import 'package:pdf_render/pdf_render_widgets.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
 import '../providers/view_meeting_provider.dart';
-import '../widgets/voting_widget.dart';
 import '../widgets/footer_widget.dart';
-import '../widgets/guest_entry_widget.dart';
 import 'dart:typed_data';
 import 'dart:math';
 
@@ -662,11 +660,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                               color: Colors.transparent,
                               child: InkWell(
                                 onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => _VotingScreen(meetingId: widget.meetingId),
-                                    ),
-                                  );
+                                  Navigator.of(context).pushNamed('/meetings/${widget.meetingId}/voting');
                                 },
                                 borderRadius: BorderRadius.circular(12),
                                 child: Padding(
@@ -839,14 +833,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                                     color: Colors.transparent,
                                     child: InkWell(
                                       onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => GuestEntryWidget(
-                                              meetingId: widget.meetingId,
-                                            ),
-                                          ),
-                                        );
+                                        Navigator.of(context).pushNamed('/meetings/${widget.meetingId}/guest');
                                       },
                                       borderRadius: BorderRadius.circular(12),
                                       child: Padding(
@@ -1009,57 +996,3 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
 }
 
 // Voting Screen - Full screen for voting
-class _VotingScreen extends StatelessWidget {
-  final String meetingId;
-  
-  const _VotingScreen({required this.meetingId});
-  
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header with close button
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF0F0F0),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Color(0xFFE0E0E0),
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Voting',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF212121),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 24),
-                    color: const Color(0xFF424242),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            ),
-            // Voting Widget
-            Expanded(
-              child: VotingWidget(meetingId: meetingId),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
