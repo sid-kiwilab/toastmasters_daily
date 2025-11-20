@@ -17,12 +17,14 @@ import 'screens/guest_entry_screen.dart';
 import 'screens/agenda_viewer_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/sign_up_screen.dart';
+import 'screens/role_holders_list_screen.dart';
+import 'screens/role_detail_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
 
 // Cache busting version - increment this when making changes that require browser cache clearing
-const String appVersion = '1.1.5';
+const String appVersion = '1.1.6';
 
 // Custom page transitions builder that removes all animations
 class NoTransitionsBuilder extends PageTransitionsBuilder {
@@ -184,6 +186,32 @@ class MainApp extends StatelessWidget {
             }
           }
           
+          // Handle role holders list route: /meetings/{meetingId}/roles
+          if (name.contains('/roles') && !name.contains('/roles/')) {
+            final parts = name.split('/');
+            if (parts.length >= 4 && parts[0] == '' && parts[1] == 'meetings' && parts[3] == 'roles') {
+              final meetingId = _convertUrlToMeetingId(parts[2]);
+              return MaterialPageRoute(
+                builder: (context) => _RoleHoldersListRouteScreen(meetingId: meetingId),
+                settings: settings,
+              );
+            }
+          }
+          
+          // Handle role detail route: /meetings/{meetingId}/roles/{roleName}
+          if (name.contains('/roles/')) {
+            final parts = name.split('/');
+            if (parts.length >= 5 && parts[0] == '' && parts[1] == 'meetings' && parts[3] == 'roles') {
+              final meetingId = _convertUrlToMeetingId(parts[2]);
+              final urlRoleName = parts[4];
+              final roleName = _urlToRoleName(urlRoleName);
+              return MaterialPageRoute(
+                builder: (context) => _RoleDetailRouteScreen(meetingId: meetingId, roleName: roleName),
+                settings: settings,
+              );
+            }
+          }
+          
           // Handle guest entry route: /meetings/{meetingId}/guest
           if (name.contains('/guest')) {
             final parts = name.split('/');
@@ -321,6 +349,33 @@ String _convertUrlToMeetingId(String urlMeetingId) {
   return urlMeetingId.replaceAll(RegExp(r'[^0-9]'), '');
 }
 
+// Helper function to convert URL format back to role name (proper capitalization)
+String _urlToRoleName(String urlRoleName) {
+  // Map of known role names for proper capitalization
+  const roleNameMap = {
+    'toastmaster': 'Toastmaster',
+    'general-evaluator': 'General Evaluator',
+    'timer': 'Timer',
+    'grammarian': 'Grammarian',
+    'ah-counter': 'Ah Counter',
+    'table-topics-master': 'Table Topics Master',
+    'speaker': 'Speaker',
+    'evaluator': 'Evaluator',
+  };
+  
+  // Check if we have a mapping for this role
+  if (roleNameMap.containsKey(urlRoleName)) {
+    return roleNameMap[urlRoleName]!;
+  }
+  
+  // Fallback: convert hyphens to spaces and capitalize words
+  final parts = urlRoleName.split('-');
+  return parts.map((part) {
+    if (part.isEmpty) return '';
+    return part[0].toUpperCase() + part.substring(1).toLowerCase();
+  }).join(' ');
+}
+
 // Simple screen that uses ViewMeetingProvider to get agenda URL and show AgendaViewerScreen
 class _AgendaRouteScreen extends StatelessWidget {
   final String meetingId;
@@ -374,6 +429,115 @@ class _AgendaRouteScreen extends StatelessWidget {
         }
 
         return AgendaViewerScreen(agendaUrl: meeting.agendaUrl!);
+      },
+    );
+  }
+}
+
+// Route screen for role holders list - fetches meeting title
+class _RoleHoldersListRouteScreen extends StatelessWidget {
+  final String meetingId;
+
+  const _RoleHoldersListRouteScreen({required this.meetingId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ViewMeetingProvider>(
+      builder: (context, provider, child) {
+        // Initialize if not already done
+        if (provider.meeting == null && !provider.isLoading) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            provider.initialize(meetingId);
+          });
+        }
+
+        if (provider.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (provider.error != null || provider.meeting == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Role Holders')),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(provider.error ?? 'Meeting not found'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Go Back'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final meeting = provider.meeting!;
+        return RoleHoldersListScreen(
+          meetingId: meetingId,
+          meetingTitle: meeting.title,
+        );
+      },
+    );
+  }
+}
+
+// Route screen for role detail - fetches meeting title
+class _RoleDetailRouteScreen extends StatelessWidget {
+  final String meetingId;
+  final String roleName;
+
+  const _RoleDetailRouteScreen({
+    required this.meetingId,
+    required this.roleName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ViewMeetingProvider>(
+      builder: (context, provider, child) {
+        // Initialize if not already done
+        if (provider.meeting == null && !provider.isLoading) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            provider.initialize(meetingId);
+          });
+        }
+
+        if (provider.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (provider.error != null || provider.meeting == null) {
+          return Scaffold(
+            appBar: AppBar(title: Text(roleName)),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(provider.error ?? 'Meeting not found'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Go Back'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final meeting = provider.meeting!;
+        return RoleDetailScreen(
+          meetingId: meetingId,
+          meetingTitle: meeting.title,
+          roleName: roleName,
+        );
       },
     );
   }

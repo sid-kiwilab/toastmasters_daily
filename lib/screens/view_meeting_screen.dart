@@ -473,7 +473,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
                                     color: Colors.transparent,
                                     child: InkWell(
                                       onTap: () {
-                                        // TODO: Navigate to role holder info screen
+                                        Navigator.of(context).pushNamed('/meetings/${widget.meetingId}/roles');
                                       },
                                       borderRadius: BorderRadius.circular(12),
                                       child: Padding(
