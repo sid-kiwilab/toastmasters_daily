@@ -27,12 +27,16 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   // Subscription state
   String? _subscriptionStatus; // 'active' or 'inactive' or null
   DateTime? _trialEndDate; // If exists, trial was used
+  bool? _subscriptionCancelAtPeriodEnd; // If true, subscription is scheduled to cancel
+  DateTime? _subscriptionCurrentPeriodEnd; // When the subscription period ends
   StreamSubscription<DocumentSnapshot>? _subscriptionSubscription;
   bool _isSubscriptionDataLoaded = false; // Track if subscription data has been loaded
   
   bool _isSendingVerificationEmail = false;
   bool _isStartingTrial = false;
   bool _isCreatingCheckoutSession = false;
+  bool _isCancellingSubscription = false;
+  bool _isResumingSubscription = false;
 
   @override
   void initState() {
@@ -65,9 +69,13 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         final data = snapshot.data()!;
         final subscription = data['subscription'] as String?;
         final trialEndDate = data['trial_end_date'] as Timestamp?;
+        final cancelAtPeriodEnd = data['subscription_cancel_at_period_end'] as bool?;
+        final currentPeriodEnd = data['subscription_current_period_end'] as Timestamp?;
         setState(() {
           _subscriptionStatus = subscription;
           _trialEndDate = trialEndDate?.toDate();
+          _subscriptionCancelAtPeriodEnd = cancelAtPeriodEnd;
+          _subscriptionCurrentPeriodEnd = currentPeriodEnd?.toDate();
           _isSubscriptionDataLoaded = true; // Mark as loaded after first snapshot
         });
         
@@ -333,12 +341,223 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   }
 
   Future<void> _stopSubscription(BuildContext context) async {
-    // TODO: Implement stop subscription logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Stop subscription feature coming soon'),
+    // Show confirmation dialog to cancel auto-renewal
+    final shouldCancel = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Cancel Auto-Renewal'),
+              Icon(Icons.warning_amber_rounded, color: Colors.orange),
+            ],
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to cancel auto-renewal?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Your subscription will remain active until the end of the current billing period. After that, it will not renew automatically.',
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: _isCancellingSubscription ? null : () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Keep Auto-Renewal'),
+            ),
+            ElevatedButton(
+              onPressed: _isCancellingSubscription
+                  ? null
+                  : () async {
+                      setState(() {
+                        _isCancellingSubscription = true;
+                      });
+                      setDialogState(() {}); // Rebuild dialog
+
+                      final authProvider = Provider.of<app_auth.AuthProvider>(context, listen: false);
+                      if (authProvider.currentUser == null) {
+                        if (mounted) {
+                          setState(() { _isCancellingSubscription = false; });
+                          Navigator.of(dialogContext).pop(false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('User not authenticated'), backgroundColor: Colors.red),
+                          );
+                        }
+                        return;
+                      }
+
+                      try {
+                        final functions = FirebaseFunctions.instance;
+                        final callable = functions.httpsCallable('cancel_subscription');
+                        await callable.call();
+
+                        if (mounted) {
+                          setState(() { _isCancellingSubscription = false; });
+                          Navigator.of(dialogContext).pop(true);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Auto-renewal canceled. Subscription will end at the current period.'),
+                              backgroundColor: Colors.green,
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        print('Error canceling subscription: $e');
+                        if (mounted) {
+                          setState(() { _isCancellingSubscription = false; });
+                          Navigator.of(dialogContext).pop(false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to cancel auto-renewal: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+              ),
+              child: _isCancellingSubscription
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Cancel Auto-Renewal'),
+            ),
+          ],
+        ),
       ),
     );
+
+    if (shouldCancel != true) {
+      setState(() { _isCancellingSubscription = false; });
+    }
+  }
+
+  Future<void> _resumeSubscription(BuildContext context) async {
+    // Show confirmation dialog to resume auto-renewal
+    final shouldResume = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Resume Auto-Renewal'),
+              Icon(Icons.check_circle, color: Colors.green),
+            ],
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Resume automatic subscription renewal?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Your subscription will automatically renew at the end of each billing period.',
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: _isResumingSubscription ? null : () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: _isResumingSubscription
+                  ? null
+                  : () async {
+                      setState(() {
+                        _isResumingSubscription = true;
+                      });
+                      setDialogState(() {}); // Rebuild dialog
+
+                      final authProvider = Provider.of<app_auth.AuthProvider>(context, listen: false);
+                      if (authProvider.currentUser == null) {
+                        if (mounted) {
+                          setState(() { _isResumingSubscription = false; });
+                          Navigator.of(dialogContext).pop(false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('User not authenticated'), backgroundColor: Colors.red),
+                          );
+                        }
+                        return;
+                      }
+
+                      try {
+                        final functions = FirebaseFunctions.instance;
+                        final callable = functions.httpsCallable('resume_subscription');
+                        await callable.call();
+
+                        if (mounted) {
+                          setState(() { _isResumingSubscription = false; });
+                          Navigator.of(dialogContext).pop(true);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Auto-renewal resumed successfully'),
+                              backgroundColor: Colors.green,
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        print('Error resuming subscription: $e');
+                        if (mounted) {
+                          setState(() { _isResumingSubscription = false; });
+                          Navigator.of(dialogContext).pop(false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to resume auto-renewal: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green[600],
+                foregroundColor: Colors.white,
+              ),
+              child: _isResumingSubscription
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Resume Auto-Renewal'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (shouldResume != true) {
+      setState(() { _isResumingSubscription = false; });
+    }
   }
 
   Future<void> _sendVerificationEmail(BuildContext context, app_auth.AuthProvider authProvider) async {
@@ -684,9 +903,22 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                 final isActive = _subscriptionStatus == 'active';
                 final hasTrialEndDate = _trialEndDate != null;
                 
-                // Calculate days remaining in trial
+                // Calculate days remaining in trial or subscription cancellation date
                 String subscriptionValue;
-                if (isActive) {
+                if (_subscriptionCancelAtPeriodEnd == true && _subscriptionCurrentPeriodEnd != null) {
+                  // Subscription is scheduled to cancel
+                  final cancelDate = _subscriptionCurrentPeriodEnd!;
+                  if (cancelDate.isAfter(DateTime.now())) {
+                    final monthNames = [
+                      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                    ];
+                    final formattedDate = '${cancelDate.day} ${monthNames[cancelDate.month - 1]} ${cancelDate.year}';
+                    subscriptionValue = 'Cancels $formattedDate';
+                  } else {
+                    subscriptionValue = 'Cancelled';
+                  }
+                } else if (isActive) {
                   subscriptionValue = 'Active';
                 } else if (hasTrialEndDate && _trialEndDate!.isAfter(DateTime.now())) {
                   final daysRemaining = _trialEndDate!.difference(DateTime.now()).inDays;
@@ -698,12 +930,14 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                 }
                 
                 // Button is enabled only if subscription data is loaded AND (subscription is active OR email is verified)
-                // Also disable if creating checkout session
+                // Also disable if creating checkout session or cancelling/resuming subscription
                 final isButtonEnabled = _isSubscriptionDataLoaded && 
                     (isActive || isEmailVerified) && 
-                    !_isCreatingCheckoutSession;
+                    !_isCreatingCheckoutSession &&
+                    !_isCancellingSubscription &&
+                    !_isResumingSubscription;
                 final buttonText = isActive 
-                    ? 'Stop' 
+                    ? (_subscriptionCancelAtPeriodEnd == true ? 'Resume Renewal' : 'Cancel Renewal')
                     : (hasTrialEndDate ? 'Subscribe' : 'Start Trial');
                 
                 String tooltipMessage = '';
@@ -725,8 +959,12 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                       onPressed: isButtonEnabled
                           ? () {
                               if (isActive) {
-                                // Stop subscription
-                                _stopSubscription(context);
+                                // Cancel or Resume renewal based on current state
+                                if (_subscriptionCancelAtPeriodEnd == true) {
+                                  _resumeSubscription(context);
+                                } else {
+                                  _stopSubscription(context);
+                                }
                               } else {
                                 // Subscribe or Start Trial
                                 _subscribe(context);
@@ -735,7 +973,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isActive 
-                            ? Colors.red[600] 
+                            ? (_subscriptionCancelAtPeriodEnd == true ? Colors.green[600] : Colors.red[600])
                             : Colors.green[600],
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: Colors.grey[400],
@@ -747,7 +985,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: _isCreatingCheckoutSession
+                      child: (_isCreatingCheckoutSession || _isCancellingSubscription || _isResumingSubscription)
                           ? const SizedBox(
                               width: 16,
                               height: 16,
