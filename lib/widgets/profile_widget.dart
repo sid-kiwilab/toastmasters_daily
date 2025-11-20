@@ -22,6 +22,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   String? _subscriptionStatus; // 'active' or 'inactive' or null
   DateTime? _trialEndDate; // If exists, trial was used
   StreamSubscription<DocumentSnapshot>? _subscriptionSubscription;
+  bool _isSubscriptionDataLoaded = false; // Track if subscription data has been loaded
   
   bool _isSendingVerificationEmail = false;
   bool _isStartingTrial = false;
@@ -60,6 +61,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         setState(() {
           _subscriptionStatus = subscription;
           _trialEndDate = trialEndDate?.toDate();
+          _isSubscriptionDataLoaded = true; // Mark as loaded after first snapshot
         });
         
         // Notify parent about subscription status
@@ -70,6 +72,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         setState(() {
           _subscriptionStatus = null;
           _trialEndDate = null;
+          _isSubscriptionDataLoaded = true; // Mark as loaded even if document doesn't exist
         });
         widget.onSubscriptionStatusChanged(false);
       }
@@ -128,6 +131,9 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                           final authProvider = Provider.of<app_auth.AuthProvider>(context, listen: false);
                           if (authProvider.currentUser == null) {
                             if (mounted) {
+                              setState(() {
+                                _isStartingTrial = false;
+                              });
                               Navigator.of(dialogContext).pop(false);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -140,6 +146,36 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                           }
                           
                           try {
+                            // Double-check: Verify trial_end_date doesn't already exist
+                            final userDoc = await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(authProvider.currentUser!.uid)
+                                .get();
+                            
+                            if (userDoc.exists) {
+                              final userData = userDoc.data();
+                              final existingTrialEndDate = userData?['trial_end_date'];
+                              
+                              if (existingTrialEndDate != null) {
+                                // Trial already exists, don't allow starting another one
+                                if (mounted) {
+                                  setState(() {
+                                    _isStartingTrial = false;
+                                  });
+                                  Navigator.of(dialogContext).pop(false);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Trial has already been started. You cannot start another trial.'),
+                                      backgroundColor: Colors.red,
+                                      duration: Duration(seconds: 4),
+                                    ),
+                                  );
+                                }
+                                return;
+                              }
+                            }
+                            
+                            // Set trial_end_date to 30 days from now
                             final trialEndDate = DateTime.now().add(const Duration(days: 30));
                             
                             await FirebaseFirestore.instance
@@ -573,17 +609,25 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                   subscriptionValue = 'Active';
                 } else if (hasTrialEndDate && _trialEndDate!.isAfter(DateTime.now())) {
                   final daysRemaining = _trialEndDate!.difference(DateTime.now()).inDays;
-                  subscriptionValue = '$daysRemaining ${daysRemaining == 1 ? 'day' : 'days'} left';
+                  subscriptionValue = '$daysRemaining ${daysRemaining == 1 ? 'day' : 'days'} left in trial';
                 } else if (hasTrialEndDate && !_trialEndDate!.isAfter(DateTime.now())) {
                   subscriptionValue = 'Trial ended. Inactive';
                 } else {
                   subscriptionValue = 'Inactive';
                 }
                 
-                final isButtonEnabled = isActive || isEmailVerified;
+                // Button is enabled only if subscription data is loaded AND (subscription is active OR email is verified)
+                final isButtonEnabled = _isSubscriptionDataLoaded && (isActive || isEmailVerified);
                 final buttonText = isActive 
                     ? 'Stop' 
                     : (hasTrialEndDate ? 'Subscribe' : 'Start Trial');
+                
+                String tooltipMessage = '';
+                if (!_isSubscriptionDataLoaded) {
+                  tooltipMessage = 'Loading subscription status...';
+                } else if (!isActive && !isEmailVerified) {
+                  tooltipMessage = 'Please verify your email to ${hasTrialEndDate ? "subscribe" : "start trial"}';
+                }
                 
                 return _buildItem(
                   icon: Icons.payment,
@@ -592,9 +636,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                   onTap: null, // Disable the main tap, use trailing button instead
                   isLast: true, // Remove bottom border to show card's rounded corners
                   trailing: Tooltip(
-                    message: !isActive && !isEmailVerified
-                        ? 'Please verify your email to ${hasTrialEndDate ? "subscribe" : "start trial"}'
-                        : '',
+                    message: tooltipMessage,
                     child: ElevatedButton(
                       onPressed: isButtonEnabled
                           ? () {
