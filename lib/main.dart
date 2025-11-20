@@ -14,6 +14,7 @@ import 'screens/privacy_policy_screen.dart';
 import 'screens/terms_of_service_screen.dart';
 import 'screens/voting_screen.dart';
 import 'screens/guest_entry_screen.dart';
+import 'screens/agenda_viewer_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
@@ -167,6 +168,18 @@ class MainApp extends StatelessWidget {
             }
           }
           
+          // Handle agenda viewer route: /meetings/{meetingId}/agenda
+          if (name.contains('/agenda')) {
+            final parts = name.split('/');
+            if (parts.length >= 3 && parts[0] == '' && parts[1] == 'meetings') {
+              final meetingId = _convertUrlToMeetingId(parts[2]);
+              return MaterialPageRoute(
+                builder: (context) => _AgendaRouteScreen(meetingId: meetingId),
+                settings: settings,
+              );
+            }
+          }
+          
           // Handle guest entry route: /meetings/{meetingId}/guest
           if (name.contains('/guest')) {
             final parts = name.split('/');
@@ -238,4 +251,62 @@ String _convertUrlToMeetingId(String urlMeetingId) {
   // Remove any non-digit characters and return the clean meeting ID
   // This should match exactly what's stored in the active_meetings collection
   return urlMeetingId.replaceAll(RegExp(r'[^0-9]'), '');
+}
+
+// Simple screen that uses ViewMeetingProvider to get agenda URL and show AgendaViewerScreen
+class _AgendaRouteScreen extends StatelessWidget {
+  final String meetingId;
+
+  const _AgendaRouteScreen({required this.meetingId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ViewMeetingProvider>(
+      builder: (context, provider, child) {
+        // Initialize if not already done
+        if (provider.meeting == null && !provider.isLoading) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            provider.initialize(meetingId);
+          });
+        }
+
+        if (provider.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (provider.error != null || provider.meeting == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Agenda')),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(provider.error ?? 'Meeting not found'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Go Back'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final meeting = provider.meeting!;
+        if (meeting.agendaUrl == null || meeting.agendaUrl!.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Agenda')),
+            body: const Center(
+              child: Text('No agenda available for this meeting'),
+            ),
+          );
+        }
+
+        return AgendaViewerScreen(agendaUrl: meeting.agendaUrl!);
+      },
+    );
+  }
 }
