@@ -14,7 +14,6 @@ import 'package:printing/printing.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
-import '../main.dart' show appVersion;
 import '../providers/auth_provider.dart';
 import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
@@ -23,6 +22,7 @@ import '../screens/poll_results_screen.dart';
 import '../widgets/footer_widget.dart';
 import '../widgets/meetings_list_widget.dart';
 import '../widgets/profile_widget.dart';
+import '../widgets/app_info_widget.dart';
 
 // Web-specific imports
 import 'dart:html' as html if (dart.library.html) 'dart:html';
@@ -880,36 +880,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     }
   }
 
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
-              await authProvider.logout();
-              if (mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[600],
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1054,17 +1024,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                             const SizedBox(height: 32),
                             
                             // App Info Section
-                            _buildSectionHeader(
-                              'App Info',
-                              'Application information',
-                            ),
-                            const SizedBox(height: 12),
-                            _buildCard(
-                              children: [
-                                _buildVersionItem(),
-                                _buildLogoutItem(),
-                              ],
-                            ),
+                            const AppInfoWidget(),
                           ],
                         );
                       },
@@ -1129,58 +1089,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     );
   }
 
-  Widget _buildVersionItem() {
-    return Container(
-      child: Material(
-        color: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.info_outline,
-                  size: 22,
-                  color: Color(0xFF424242),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Version',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF212121),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      appVersion,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF757575),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildClubCodeItem() {
     return Container(
@@ -1333,65 +1241,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   }
 
 
-  Widget _buildLogoutItem() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: const Color(0xFFF5F5F5),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _showLogoutDialog,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.logout,
-                    size: 22,
-                    color: Color(0xFF424242),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Logout',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF212121),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right,
-                  size: 16,
-                  color: Color(0xFF9E9E9E),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildItem({
     required IconData icon,
