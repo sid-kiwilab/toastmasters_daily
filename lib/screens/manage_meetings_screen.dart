@@ -55,7 +55,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   
   // Subscription state
   String? _subscriptionStatus; // 'active' or 'inactive' or null
-  DateTime? _trialEndDate; // If exists, trial was used
   StreamSubscription<DocumentSnapshot>? _subscriptionSubscription;
   
   // Guests state
@@ -145,15 +144,12 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       if (snapshot.exists) {
         final data = snapshot.data()!;
         final subscription = data['subscription'] as String?;
-        final trialEndDate = data['trial_end_date'] as Timestamp?;
         setState(() {
           _subscriptionStatus = subscription;
-          _trialEndDate = trialEndDate?.toDate();
         });
       } else {
         setState(() {
           _subscriptionStatus = null;
-          _trialEndDate = null;
         });
       }
     }, onError: (error) {
@@ -1206,7 +1202,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                     child: Text(
                                       _subscriptionStatus == 'active' 
                                           ? 'Stop' 
-                                          : (_trialEndDate != null ? 'Start' : 'Start Trial'),
+                                          : 'Subscribe',
                                       style: const TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
