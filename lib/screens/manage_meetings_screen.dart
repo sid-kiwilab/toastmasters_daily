@@ -36,6 +36,7 @@ class ManageMeetingsScreen extends StatefulWidget {
 class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   bool _isCreatingMeeting = false;
   Map<String, bool> _uploadingAgendas = {}; // Track upload state for each meeting
+  bool _isSendingVerificationEmail = false;
   
   // Club name state
   String? _clubName;
@@ -1014,6 +1015,130 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                 ),
                                 // Club Code with buttons
                                 _buildClubCodeItem(),
+                                // Email
+                                Consumer<AuthProvider>(
+                                  builder: (context, authProvider, child) {
+                                    final email = authProvider.userEmail ?? 'No email';
+                                    final isVerified = authProvider.isEmailVerified;
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: const Color(0xFFF5F5F5),
+                                            width: 1,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Material(
+                                        color: Colors.white,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                width: 40,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFF5F5F5),
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.email,
+                                                  size: 22,
+                                                  color: Color(0xFF424242),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        const Text(
+                                                          'Email',
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                            fontWeight: FontWeight.w500,
+                                                            color: Color(0xFF212121),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        Container(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                          decoration: BoxDecoration(
+                                                            color: isVerified ? Colors.green[100] : Colors.red[100],
+                                                            borderRadius: BorderRadius.circular(12),
+                                                          ),
+                                                          child: Text(
+                                                            isVerified ? 'Verified' : 'Not verified',
+                                                            style: TextStyle(
+                                                              fontSize: 11,
+                                                              color: isVerified ? Colors.green[700] : Colors.red[700],
+                                                              fontWeight: FontWeight.w600,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      email,
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                        color: Color(0xFF757575),
+                                                      ),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              if (!isVerified)
+                                                Container(
+                                                  margin: const EdgeInsets.only(left: 12),
+                                                  child: TextButton(
+                                                    onPressed: _isSendingVerificationEmail ? null : () => _sendVerificationEmail(context, authProvider),
+                                                    style: TextButton.styleFrom(
+                                                      backgroundColor: Colors.grey[800],
+                                                      foregroundColor: Colors.white,
+                                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      minimumSize: const Size(100, 38),
+                                                    ),
+                                                    child: _isSendingVerificationEmail
+                                                        ? const SizedBox(
+                                                            width: 16,
+                                                            height: 16,
+                                                            child: CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                            ),
+                                                          )
+                                                        : Row(
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            children: const [
+                                                              Icon(Icons.email, size: 18),
+                                                              SizedBox(width: 6),
+                                                              Text(
+                                                                'Verify',
+                                                                style: TextStyle(
+                                                                  fontSize: 14,
+                                                                  fontWeight: FontWeight.w500,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                                 // Guests button
                                 _buildGuestsItem(),
                               ],
@@ -1319,6 +1444,51 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
 
   void _showGuestsScreen() {
     Navigator.of(context).pushNamed('/guest-list');
+  }
+
+  Future<void> _sendVerificationEmail(BuildContext context, AuthProvider authProvider) async {
+    setState(() {
+      _isSendingVerificationEmail = true;
+    });
+
+    try {
+      final success = await authProvider.sendVerificationEmail();
+      if (context.mounted) {
+        setState(() {
+          _isSendingVerificationEmail = false;
+        });
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Verification email sent successfully! Please check your inbox.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to send verification email. Please try again.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        setState(() {
+          _isSendingVerificationEmail = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildLogoutItem() {
