@@ -367,10 +367,7 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/',
-                  (route) => false,
-                );
+                Navigator.of(context).pushNamed('/');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC41E3A),
@@ -395,12 +392,10 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
+      return PopScope(
+      canPop: true,
       onPopInvoked: (didPop) {
-        if (!didPop) {
-          _showExitConfirmationDialog(context);
-        }
+        // Allow normal back navigation
       },
       child: Scaffold(
         body: Consumer<ViewMeetingProvider>(
@@ -411,39 +406,53 @@ class _ViewMeetingScreenState extends State<ViewMeetingScreen> {
 
           if (provider.error != null || provider.meeting == null) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '👻',
-                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      fontSize: 72,
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.grey[400],
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Oops! Nothing lives here...',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.grey[700],
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 16),
+                    Text(
+                      'Oops! Nothing lives here...',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/',
-                      (route) => false,
+                    const SizedBox(height: 8),
+                    if (provider.error != null)
+                      Text(
+                        provider.error!,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF757575),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        } else {
+                          Navigator.of(context).pushNamed('/');
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      child: const Text('Back to Home'),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    ),
-                    child: const Text('Back to Home'),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           }

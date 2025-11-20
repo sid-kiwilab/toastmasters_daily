@@ -273,6 +273,64 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    // If there's an error, show it immediately (don't wait for welcome screen)
+    if (_error != null && !_isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(40),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Oops! Nothing lives here...',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _error!,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF757575),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      } else {
+                        Navigator.of(context).pushNamed('/');
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    child: const Text('Back to Home'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    
     // If welcome should be shown, NEVER show club content - only loading or welcome
     if (_shouldShowWelcome) {
       // Show welcome screen with animation after club name is loaded
@@ -480,33 +538,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                   child: CircularProgressIndicator(),
                 ),
               )
-            : _error != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: Colors.red[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _error!,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF212121),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : SingleChildScrollView(
+            : SingleChildScrollView(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final isMobile = constraints.maxWidth < 600;

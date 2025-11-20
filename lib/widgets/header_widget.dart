@@ -36,7 +36,7 @@ class HeaderWidget extends StatelessWidget {
                 ),
                 TextButton.icon(
                   onPressed: () {
-                    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                    Navigator.of(context).pushNamed('/');
                   },
                   icon: const Icon(Icons.home, size: 18),
                   label: const Text(
@@ -81,7 +81,7 @@ class HeaderWidget extends StatelessWidget {
                 ),
                 TextButton.icon(
                   onPressed: () {
-                    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                    Navigator.of(context).pushNamed('/');
                   },
                   icon: const Icon(Icons.home, size: 18),
                   label: const Text(
