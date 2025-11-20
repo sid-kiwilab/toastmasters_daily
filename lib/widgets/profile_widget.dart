@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
 import 'package:toastmasters_daily/providers/auth_provider.dart' as app_auth;
+
+// Web-specific imports
+import 'dart:html' as html if (dart.library.html) 'dart:html';
 
 class ProfileWidget extends StatefulWidget {
   final Function(bool isSubscriptionActive) onSubscriptionStatusChanged;
@@ -26,6 +32,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   
   bool _isSendingVerificationEmail = false;
   bool _isStartingTrial = false;
+  bool _isCreatingCheckoutSession = false;
 
   @override
   void initState() {
@@ -241,13 +248,87 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         return; // User cancelled or error occurred
       }
     } else {
-      // Regular subscription flow
-      // TODO: Implement subscription logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Subscribe feature coming soon'),
-        ),
-      );
+      // Regular subscription flow - create checkout session
+      const String price_id = 'price_1SVPGsCFYmZ3GbaT4UO5fRvQ';
+      
+      final authProvider = Provider.of<app_auth.AuthProvider>(context, listen: false);
+      if (authProvider.currentUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User not authenticated'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _isCreatingCheckoutSession = true;
+      });
+
+      // Get base URL for web
+      final base_url = kIsWeb ? Uri.base.origin : null;
+
+      try {
+        final functions = FirebaseFunctions.instance;
+        final callable = functions.httpsCallable('create_checkout_session');
+        final result = await callable.call({
+          'price_id': price_id,
+          'user_id': authProvider.currentUser!.uid,
+          'email': authProvider.currentUser!.email,
+          'base_url': base_url,
+        });
+
+        final session_url = result.data['url'] as String?;
+        
+        if (mounted) {
+          setState(() {
+            _isCreatingCheckoutSession = false;
+          });
+        }
+        
+        if (session_url != null && session_url.isNotEmpty) {
+          if (kIsWeb) {
+            html.window.open(session_url, '_blank');
+          } else {
+            final uri = Uri.parse(session_url);
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            } else {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Could not open checkout page'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to create checkout session'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        print('Error creating checkout session: $e');
+        if (mounted) {
+          setState(() {
+            _isCreatingCheckoutSession = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to create checkout session: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -617,7 +698,10 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                 }
                 
                 // Button is enabled only if subscription data is loaded AND (subscription is active OR email is verified)
-                final isButtonEnabled = _isSubscriptionDataLoaded && (isActive || isEmailVerified);
+                // Also disable if creating checkout session
+                final isButtonEnabled = _isSubscriptionDataLoaded && 
+                    (isActive || isEmailVerified) && 
+                    !_isCreatingCheckoutSession;
                 final buttonText = isActive 
                     ? 'Stop' 
                     : (hasTrialEndDate ? 'Subscribe' : 'Start Trial');
@@ -663,14 +747,23 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: Text(
-                        buttonText,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                      child: _isCreatingCheckoutSession
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(
+                              buttonText,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                     ),
                   ),
                 );
