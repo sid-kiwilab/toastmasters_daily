@@ -19,6 +19,7 @@ import 'screens/login_screen.dart';
 import 'screens/sign_up_screen.dart';
 import 'screens/role_holders_list_screen.dart';
 import 'screens/role_detail_screen.dart';
+import 'screens/guest_list_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
@@ -158,6 +159,7 @@ class MainApp extends StatelessWidget {
           '/terms': (context) => const TermsOfServiceScreen(),
           '/login': (context) => const LoginAuthGate(),
           '/signup': (context) => const SignUpAuthGate(),
+          '/guest-list': (context) => const GuestListScreen(),
         },
         onGenerateRoute: (settings) {
           final name = settings.name ?? '';
