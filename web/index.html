@@ -49,6 +49,12 @@
       // params: {}
     };
   </script>
+  <script>
+    // Use HTML renderer instead of Canvaskit to reduce bundle size by ~20-30MB
+    window.flutterConfiguration = {
+      renderer: "html"
+    };
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
