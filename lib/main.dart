@@ -15,6 +15,8 @@ import 'screens/terms_of_service_screen.dart';
 import 'screens/voting_screen.dart';
 import 'screens/guest_entry_screen.dart';
 import 'screens/agenda_viewer_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/sign_up_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
@@ -152,6 +154,8 @@ class MainApp extends StatelessWidget {
           '/base': (context) => const ManageMeetingsScreen(),
           '/privacy': (context) => const PrivacyPolicyScreen(),
           '/terms': (context) => const TermsOfServiceScreen(),
+          '/login': (context) => const LoginAuthGate(),
+          '/signup': (context) => const SignUpAuthGate(),
         },
         onGenerateRoute: (settings) {
           final name = settings.name ?? '';
@@ -243,6 +247,70 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     // Always show HomeScreen - no gating
     return const HomeScreen();
+  }
+}
+
+// Reverse auth gate for login screen - redirects if already authenticated
+class LoginAuthGate extends StatelessWidget {
+  const LoginAuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Wait for auth state to be resolved
+        if (!authProvider.authStateResolved) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // If authenticated, redirect to base
+        if (authProvider.isLoggedIn) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed('/base');
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Not authenticated, show login screen
+        return const LoginScreen();
+      },
+    );
+  }
+}
+
+// Reverse auth gate for signup screen - redirects if already authenticated
+class SignUpAuthGate extends StatelessWidget {
+  const SignUpAuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Wait for auth state to be resolved
+        if (!authProvider.authStateResolved) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // If authenticated, redirect to base
+        if (authProvider.isLoggedIn) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed('/base');
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Not authenticated, show signup screen
+        return const SignUpScreen();
+      },
+    );
   }
 }
 

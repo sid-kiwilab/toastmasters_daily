@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../screens/login_screen.dart';
 import '../providers/auth_provider.dart';
 
 class HeaderWidget extends StatelessWidget {
@@ -157,11 +156,7 @@ class HeaderWidget extends StatelessWidget {
                 const SizedBox(width: 16),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
+                    Navigator.of(context).pushNamed('/login');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[800],
