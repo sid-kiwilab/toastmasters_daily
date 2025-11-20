@@ -19,6 +19,24 @@ exports.create_meeting = functions.https.onCall(async (data, context) => {
       return { success: false, error: 'Missing required fields' };
     }
     
+    // Verify subscription is active
+    const userDoc = await db.collection('users').doc(data.creator_id).get();
+    
+    if (!userDoc.exists) {
+      console.error('User document not found:', data.creator_id);
+      return { success: false, error: 'User profile not found' };
+    }
+    
+    const subscriptionStatus = userDoc.data()?.subscription;
+    // If subscription field doesn't exist or is not 'active', deny access
+    if (subscriptionStatus !== 'active') {
+      console.error('Subscription not active for user:', data.creator_id, 'Status:', subscriptionStatus || 'not set');
+      return { 
+        success: false, 
+        error: 'Creating meetings requires an active subscription' 
+      };
+    }
+    
     // Generate random 8-digit meeting code
     const meeting_code = Math.floor(10000000 + Math.random() * 90000000).toString();
     

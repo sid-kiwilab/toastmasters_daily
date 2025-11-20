@@ -11,6 +11,7 @@ class MeetingsListWidget extends StatelessWidget {
   final void Function(BuildContext, Meeting) onSetupPolls;
   final void Function(BuildContext, Meeting) onPollResults;
   final Future<void> Function(BuildContext, Meeting, String) onDeleteMeeting;
+  final bool isSubscriptionActive;
 
   const MeetingsListWidget({
     super.key,
@@ -22,6 +23,7 @@ class MeetingsListWidget extends StatelessWidget {
     required this.onSetupPolls,
     required this.onPollResults,
     required this.onDeleteMeeting,
+    this.isSubscriptionActive = false,
   });
 
   // Helper method to format meeting ID with space for display
@@ -364,32 +366,47 @@ class MeetingsListWidget extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         // Create Meeting button - simple style like logout
-        TextButton.icon(
-          onPressed: isCreatingMeeting ? null : onCreateMeeting,
-          icon: isCreatingMeeting
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : const Icon(Icons.add, size: 18),
-          label: const Text(
-            'Create Meeting',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+        Opacity(
+          opacity: (isCreatingMeeting || !isSubscriptionActive) ? 0.5 : 1.0,
+          child: TextButton.icon(
+            onPressed: (isCreatingMeeting || !isSubscriptionActive) ? null : onCreateMeeting,
+            icon: isCreatingMeeting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : (!isSubscriptionActive
+                    ? const SizedBox.shrink()
+                    : const Icon(
+                        Icons.add,
+                        size: 18,
+                        color: Colors.white,
+                      )),
+            label: Text(
+              isCreatingMeeting
+                  ? 'Creating Meeting...'
+                  : (!isSubscriptionActive
+                      ? 'Create Meeting (Subscription Required)'
+                      : 'Create Meeting'),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
             ),
-          ),
-          style: TextButton.styleFrom(
-            backgroundColor: Colors.grey[800],
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            minimumSize: const Size(double.infinity, 40),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.grey[800],
+              foregroundColor: Colors.white,
+              disabledForegroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              minimumSize: const Size(double.infinity, 40),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
         ),

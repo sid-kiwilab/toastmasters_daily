@@ -53,6 +53,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   bool _isLoadingClubCode = false;
   bool _isRegeneratingClubCode = false;
   
+  // Subscription state
+  String? _subscriptionStatus; // 'active' or 'inactive' or null
+  String? _trialPeriod; // 'ended' or null
+  StreamSubscription<DocumentSnapshot>? _subscriptionSubscription;
+  
   // Guests state
   StreamSubscription<QuerySnapshot>? _guestsSubscription;
 
@@ -65,6 +70,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       meetingsProvider.initialize();
       _loadProfileData();
       _loadClubCode();
+      _setupSubscriptionListener();
       _setupGuestsListener();
     });
   }
@@ -73,6 +79,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   void dispose() {
     _clubNameController.dispose();
     _clubInfoController.dispose();
+    _subscriptionSubscription?.cancel();
     _guestsSubscription?.cancel();
     super.dispose();
   }
@@ -120,6 +127,56 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     } catch (e) {
       print('Error loading profile data: $e');
     }
+  }
+
+  void _setupSubscriptionListener() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser == null) return;
+    
+    final userId = authProvider.currentUser!.uid;
+    
+    _subscriptionSubscription?.cancel();
+    _subscriptionSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .snapshots()
+        .listen((snapshot) {
+      if (!mounted) return;
+      if (snapshot.exists) {
+        final data = snapshot.data()!;
+        final subscription = data['subscription'] as String?;
+        final trialPeriod = data['trial_period'] as String?;
+        setState(() {
+          _subscriptionStatus = subscription;
+          _trialPeriod = trialPeriod?.trim(); // Trim whitespace to handle "ended " vs "ended"
+        });
+      } else {
+        setState(() {
+          _subscriptionStatus = null;
+          _trialPeriod = null;
+        });
+      }
+    }, onError: (error) {
+      print('Error listening to subscription status: $error');
+    });
+  }
+
+  Future<void> _subscribe(BuildContext context) async {
+    // TODO: Implement subscription logic
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Subscribe feature coming soon'),
+      ),
+    );
+  }
+
+  Future<void> _stopSubscription(BuildContext context) async {
+    // TODO: Implement stop subscription logic
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Stop subscription feature coming soon'),
+      ),
+    );
   }
 
   Future<void> _loadClubCode() async {
@@ -983,7 +1040,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Profile Section - Club Name
+                            // Profile Section
                             _buildSectionHeader(
                               'Profile',
                               'Manage your account information',
@@ -991,24 +1048,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                             const SizedBox(height: 12),
                             _buildCard(
                               children: [
-                                _buildItem(
-                                  icon: Icons.groups,
-                                  label: 'Toastmasters Club Name',
-                                  value: _clubName ?? 'Not set',
-                                  onTap: _showClubNameDialog,
-                                ),
-                                _buildItem(
-                                  icon: Icons.info_outline,
-                                  label: 'Club Info',
-                                  value: _clubInfo != null && _clubInfo!.isNotEmpty
-                                      ? (_clubInfo!.length > 50 
-                                          ? '${_clubInfo!.substring(0, 50)}...' 
-                                          : _clubInfo!)
-                                      : 'Not set',
-                                  onTap: _showClubInfoDialog,
-                                ),
-                                // Club Code with buttons
-                                _buildClubCodeItem(),
                                 // Email
                                 Consumer<AuthProvider>(
                                   builder: (context, authProvider, child) {
@@ -1024,7 +1063,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                         ),
                                       ),
                                       child: Material(
-                                        color: Colors.white,
+                                        color: Colors.transparent,
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                           child: Row(
@@ -1133,6 +1172,79 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                                     );
                                   },
                                 ),
+                                // Subscription button (last item in Profile card)
+                                _buildItem(
+                                  icon: Icons.payment,
+                                  label: 'Subscription',
+                                  value: _subscriptionStatus == 'active' 
+                                      ? 'Active' 
+                                      : 'Inactive',
+                                  onTap: null, // Disable the main tap, use trailing button instead
+                                  isLast: true, // Remove bottom border to show card's rounded corners
+                                  trailing: ElevatedButton(
+                                    onPressed: () {
+                                      if (_subscriptionStatus == 'active') {
+                                        // Stop subscription
+                                        _stopSubscription(context);
+                                      } else {
+                                        // Subscribe
+                                        _subscribe(context);
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _subscriptionStatus == 'active' 
+                                          ? Colors.red[600] 
+                                          : Colors.green[600],
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                      minimumSize: const Size(80, 36),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _subscriptionStatus == 'active' 
+                                          ? 'Stop' 
+                                          : (_trialPeriod == 'ended' ? 'Start' : 'Start Trial'),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 32),
+                            
+                            // My Club Section
+                            _buildSectionHeader(
+                              'My Club',
+                              'Manage your club information',
+                            ),
+                            const SizedBox(height: 12),
+                            _buildCard(
+                              children: [
+                                _buildItem(
+                                  icon: Icons.groups,
+                                  label: 'Toastmasters Club Name',
+                                  value: _clubName ?? 'Not set',
+                                  onTap: _showClubNameDialog,
+                                ),
+                                _buildItem(
+                                  icon: Icons.info_outline,
+                                  label: 'Club Info',
+                                  value: _clubInfo != null && _clubInfo!.isNotEmpty
+                                      ? (_clubInfo!.length > 50 
+                                          ? '${_clubInfo!.substring(0, 50)}...' 
+                                          : _clubInfo!)
+                                      : 'Not set',
+                                  onTap: _showClubInfoDialog,
+                                ),
+                                // Club Code with buttons
+                                _buildClubCodeItem(),
                                 // Guests button
                                 _buildGuestsItem(),
                               ],
@@ -1144,6 +1256,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                               meetings: meetingsProvider.meetings,
                               isCreatingMeeting: _isCreatingMeeting,
                               uploadingAgendas: _uploadingAgendas,
+                              isSubscriptionActive: _subscriptionStatus == 'active',
                               onCreateMeeting: () {
                                 showDialog(
                                   context: context,
@@ -1551,10 +1664,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     String? value,
     VoidCallback? onTap,
     Widget? trailing,
+    bool isLast = false,
   }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border(
+        border: isLast ? null : Border(
           bottom: BorderSide(
             color: const Color(0xFFF5F5F5),
             width: 1,
@@ -1562,7 +1676,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
         ),
       ),
       child: Material(
-        color: onTap != null ? Colors.transparent : Colors.white,
+        color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
           child: Padding(
