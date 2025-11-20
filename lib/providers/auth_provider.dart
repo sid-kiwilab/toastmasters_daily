@@ -55,20 +55,12 @@ class AuthProvider extends ChangeNotifier {
 
   // Send verification email function
   Future<bool> sendVerificationEmail() async {
-    try {
-      User? user = _auth.currentUser;
-      if (user != null && !user.emailVerified) {
-        await user.sendEmailVerification();
-        return true;
-      }
-      return false;
-    } on FirebaseAuthException catch (e) {
-      print('Send verification email error: ${e.code} - ${e.message}');
-      return false;
-    } catch (e) {
-      print('Send verification email error: $e');
-      return false;
+    User? user = _auth.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+      return true;
     }
+    return false;
   }
 
   // Sign up function

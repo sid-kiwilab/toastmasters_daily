@@ -22,6 +22,7 @@ import '../screens/setup_polls_screen.dart';
 import '../screens/poll_results_screen.dart';
 import '../widgets/footer_widget.dart';
 import '../widgets/meetings_list_widget.dart';
+import '../widgets/profile_widget.dart';
 
 // Web-specific imports
 import 'dart:html' as html if (dart.library.html) 'dart:html';
@@ -36,7 +37,6 @@ class ManageMeetingsScreen extends StatefulWidget {
 class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   bool _isCreatingMeeting = false;
   Map<String, bool> _uploadingAgendas = {}; // Track upload state for each meeting
-  bool _isSendingVerificationEmail = false;
   
   // Club name state
   String? _clubName;
@@ -53,9 +53,8 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   bool _isLoadingClubCode = false;
   bool _isRegeneratingClubCode = false;
   
-  // Subscription state
-  String? _subscriptionStatus; // 'active' or 'inactive' or null
-  StreamSubscription<DocumentSnapshot>? _subscriptionSubscription;
+  // Subscription status for meetings list
+  bool _isSubscriptionActive = false;
   
   // Guests state
   StreamSubscription<QuerySnapshot>? _guestsSubscription;
@@ -69,7 +68,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       meetingsProvider.initialize();
       _loadProfileData();
       _loadClubCode();
-      _setupSubscriptionListener();
       _setupGuestsListener();
     });
   }
@@ -78,7 +76,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   void dispose() {
     _clubNameController.dispose();
     _clubInfoController.dispose();
-    _subscriptionSubscription?.cancel();
     _guestsSubscription?.cancel();
     super.dispose();
   }
@@ -128,51 +125,10 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     }
   }
 
-  void _setupSubscriptionListener() {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.currentUser == null) return;
-    
-    final userId = authProvider.currentUser!.uid;
-    
-    _subscriptionSubscription?.cancel();
-    _subscriptionSubscription = FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .snapshots()
-        .listen((snapshot) {
-      if (!mounted) return;
-      if (snapshot.exists) {
-        final data = snapshot.data()!;
-        final subscription = data['subscription'] as String?;
-        setState(() {
-          _subscriptionStatus = subscription;
-        });
-      } else {
-        setState(() {
-          _subscriptionStatus = null;
-        });
-      }
-    }, onError: (error) {
-      print('Error listening to subscription status: $error');
+  void _onSubscriptionStatusChanged(bool isActive) {
+    setState(() {
+      _isSubscriptionActive = isActive;
     });
-  }
-
-  Future<void> _subscribe(BuildContext context) async {
-    // TODO: Implement subscription logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Subscribe feature coming soon'),
-      ),
-    );
-  }
-
-  Future<void> _stopSubscription(BuildContext context) async {
-    // TODO: Implement stop subscription logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Stop subscription feature coming soon'),
-      ),
-    );
   }
 
   Future<void> _loadClubCode() async {
@@ -1037,181 +993,8 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Profile Section
-                            _buildSectionHeader(
-                              'Profile',
-                              'Manage your account information',
-                            ),
-                            const SizedBox(height: 12),
-                            _buildCard(
-                              children: [
-                                // Email
-                                Consumer<AuthProvider>(
-                                  builder: (context, authProvider, child) {
-                                    final email = authProvider.userEmail ?? 'No email';
-                                    final isVerified = authProvider.isEmailVerified;
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        border: Border(
-                                          bottom: BorderSide(
-                                            color: const Color(0xFFF5F5F5),
-                                            width: 1,
-                                          ),
-                                        ),
-                                      ),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                width: 40,
-                                                height: 40,
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFF5F5F5),
-                                                  borderRadius: BorderRadius.circular(10),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.email,
-                                                  size: 22,
-                                                  color: Color(0xFF424242),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 16),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Row(
-                                                      children: [
-                                                        const Text(
-                                                          'Email',
-                                                          style: TextStyle(
-                                                            fontSize: 16,
-                                                            fontWeight: FontWeight.w500,
-                                                            color: Color(0xFF212121),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(width: 8),
-                                                        Container(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                          decoration: BoxDecoration(
-                                                            color: isVerified ? Colors.green[100] : Colors.red[100],
-                                                            borderRadius: BorderRadius.circular(12),
-                                                          ),
-                                                          child: Text(
-                                                            isVerified ? 'Verified' : 'Not verified',
-                                                            style: TextStyle(
-                                                              fontSize: 11,
-                                                              color: isVerified ? Colors.green[700] : Colors.red[700],
-                                                              fontWeight: FontWeight.w600,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 2),
-                                                    Text(
-                                                      email,
-                                                      style: const TextStyle(
-                                                        fontSize: 14,
-                                                        color: Color(0xFF757575),
-                                                      ),
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              if (!isVerified)
-                                                Container(
-                                                  margin: const EdgeInsets.only(left: 12),
-                                                  child: TextButton(
-                                                    onPressed: _isSendingVerificationEmail ? null : () => _sendVerificationEmail(context, authProvider),
-                                                    style: TextButton.styleFrom(
-                                                      backgroundColor: Colors.grey[800],
-                                                      foregroundColor: Colors.white,
-                                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius: BorderRadius.circular(8),
-                                                      ),
-                                                      minimumSize: const Size(100, 38),
-                                                    ),
-                                                    child: _isSendingVerificationEmail
-                                                        ? const SizedBox(
-                                                            width: 16,
-                                                            height: 16,
-                                                            child: CircularProgressIndicator(
-                                                              strokeWidth: 2,
-                                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                                            ),
-                                                          )
-                                                        : Row(
-                                                            mainAxisSize: MainAxisSize.min,
-                                                            children: const [
-                                                              Icon(Icons.email, size: 18),
-                                                              SizedBox(width: 6),
-                                                              Text(
-                                                                'Verify',
-                                                                style: TextStyle(
-                                                                  fontSize: 14,
-                                                                  fontWeight: FontWeight.w500,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                // Subscription button (last item in Profile card)
-                                _buildItem(
-                                  icon: Icons.payment,
-                                  label: 'Subscription',
-                                  value: _subscriptionStatus == 'active' 
-                                      ? 'Active' 
-                                      : 'Inactive',
-                                  onTap: null, // Disable the main tap, use trailing button instead
-                                  isLast: true, // Remove bottom border to show card's rounded corners
-                                  trailing: ElevatedButton(
-                                    onPressed: () {
-                                      if (_subscriptionStatus == 'active') {
-                                        // Stop subscription
-                                        _stopSubscription(context);
-                                      } else {
-                                        // Subscribe
-                                        _subscribe(context);
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: _subscriptionStatus == 'active' 
-                                          ? Colors.red[600] 
-                                          : Colors.green[600],
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                      minimumSize: const Size(80, 36),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      _subscriptionStatus == 'active' 
-                                          ? 'Stop' 
-                                          : 'Subscribe',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            ProfileWidget(
+                              onSubscriptionStatusChanged: _onSubscriptionStatusChanged,
                             ),
                             const SizedBox(height: 32),
                             
@@ -1252,7 +1035,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                               meetings: meetingsProvider.meetings,
                               isCreatingMeeting: _isCreatingMeeting,
                               uploadingAgendas: _uploadingAgendas,
-                              isSubscriptionActive: _subscriptionStatus == 'active',
+                              isSubscriptionActive: _isSubscriptionActive,
                               onCreateMeeting: () {
                                 showDialog(
                                   context: context,
@@ -1549,50 +1332,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     Navigator.of(context).pushNamed('/guest-list');
   }
 
-  Future<void> _sendVerificationEmail(BuildContext context, AuthProvider authProvider) async {
-    setState(() {
-      _isSendingVerificationEmail = true;
-    });
-
-    try {
-      final success = await authProvider.sendVerificationEmail();
-      if (context.mounted) {
-        setState(() {
-          _isSendingVerificationEmail = false;
-        });
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Verification email sent successfully! Please check your inbox.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to send verification email. Please try again.'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        setState(() {
-          _isSendingVerificationEmail = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
 
   Widget _buildLogoutItem() {
     return Container(

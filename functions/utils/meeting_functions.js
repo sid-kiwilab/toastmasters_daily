@@ -19,7 +19,7 @@ exports.create_meeting = functions.https.onCall(async (data, context) => {
       return { success: false, error: 'Missing required fields' };
     }
     
-    // Verify subscription is active
+    // Verify subscription is active OR trial is active
     const userDoc = await db.collection('users').doc(data.creator_id).get();
     
     if (!userDoc.exists) {
@@ -27,13 +27,29 @@ exports.create_meeting = functions.https.onCall(async (data, context) => {
       return { success: false, error: 'User profile not found' };
     }
     
-    const subscriptionStatus = userDoc.data()?.subscription;
-    // If subscription field doesn't exist or is not 'active', deny access
-    if (subscriptionStatus !== 'active') {
-      console.error('Subscription not active for user:', data.creator_id, 'Status:', subscriptionStatus || 'not set');
+    const userData = userDoc.data();
+    const subscriptionStatus = userData?.subscription;
+    const trialEndDate = userData?.trial_end_date;
+    
+    // Check if subscription is active
+    const isSubscriptionActive = subscriptionStatus === 'active';
+    
+    // Check if trial is active (trial_end_date exists and hasn't passed)
+    let isTrialActive = false;
+    if (trialEndDate) {
+      const trialEnd = trialEndDate.toDate();
+      const now = new Date();
+      isTrialActive = trialEnd > now;
+    }
+    
+    // Allow if either subscription is active OR trial is active
+    if (!isSubscriptionActive && !isTrialActive) {
+      console.error('No active subscription or trial for user:', data.creator_id, 
+        'Subscription:', subscriptionStatus || 'not set', 
+        'Trial end date:', trialEndDate ? trialEndDate.toDate() : 'not set');
       return { 
         success: false, 
-        error: 'Creating meetings requires an active subscription' 
+        error: 'Creating meetings requires an active subscription or trial' 
       };
     }
     
