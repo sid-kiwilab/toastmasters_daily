@@ -27,7 +27,7 @@ import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
 
 // Cache busting version - increment this when making changes that require browser cache clearing
-const String appVersion = '1.1.15';
+const String appVersion = '1.1.16';
 
 // Custom page transitions builder that removes all animations
 class NoTransitionsBuilder extends PageTransitionsBuilder {
@@ -91,12 +91,36 @@ void main() async {
       
       // 5. Disable Flutter's built-in caching
       html.window.addEventListener('load', (event) {
-        // Force fresh asset loading
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        
+        // Force fresh asset loading for stylesheets
         final links = html.window.document.querySelectorAll('link[rel="stylesheet"]');
         for (final link in links) {
           final href = link.getAttribute('href');
           if (href != null && !href.contains('?')) {
-            link.setAttribute('href', '$href?v=${DateTime.now().millisecondsSinceEpoch}');
+            link.setAttribute('href', '$href?v=$timestamp');
+          }
+        }
+        
+        // Force reload any @font-face rules in style tags
+        final styleTags = html.window.document.querySelectorAll('style');
+        for (final styleTag in styleTags) {
+          final content = styleTag.text;
+          if (content != null && content.contains('@font-face')) {
+            // Add cache buster to font URLs - simple string replacement
+            var updated = content;
+            updated = updated.replaceAll('.woff2)', '.woff2?v=$timestamp)');
+            updated = updated.replaceAll('.woff)', '.woff?v=$timestamp)');
+            styleTag.text = updated;
+          }
+        }
+        
+        // Also add cache buster to any font preload links
+        final fontPreloads = html.window.document.querySelectorAll('link[rel="preload"][as="font"]');
+        for (final preload in fontPreloads) {
+          final href = preload.getAttribute('href');
+          if (href != null && !href.contains('?')) {
+            preload.setAttribute('href', '$href?v=$timestamp');
           }
         }
       });
