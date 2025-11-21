@@ -1,0 +1,28 @@
+# Cloudflare Pages ignore file
+# This ensures only necessary files are deployed
+
+# Flutter build artifacts (keep build/web)
+build/web/**
+!build/web/_redirects
+
+# Source files
+lib/**
+test/**
+android/**
+ios/**
+linux/**
+macos/**
+windows/**
+web/**
+functions/**
+
+# Config files
+.git/**
+.gitignore
+*.md
+firebase.json
+firestore.rules
+storage.rules
+pubspec.lock
+analysis_options.yaml
+
