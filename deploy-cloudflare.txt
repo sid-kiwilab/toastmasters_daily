@@ -1,0 +1,1 @@
+wrangler pages deploy . --project-name=toastmasters-daily --commit-dirty=true
