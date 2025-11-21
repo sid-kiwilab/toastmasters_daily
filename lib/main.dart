@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
-import 'dart:html' as html;
 import 'firebase_options.dart';
 import 'utils/theme.dart';
 import 'screens/home_screen.dart';
@@ -27,7 +25,7 @@ import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
 
 // Cache busting version - increment this when making changes that require browser cache clearing
-const String appVersion = '1.2.1';
+const String appVersion = '1.2.2';
 
 // Custom page transitions builder that removes all animations
 class NoTransitionsBuilder extends PageTransitionsBuilder {
@@ -50,87 +48,6 @@ void main() async {
   
   // Set URL strategy for web
   setUrlStrategy(PathUrlStrategy());
-  
-  // NUCLEAR OPTION: Completely disable all caching for Flutter web
-  if (kIsWeb) {
-    try {
-      // 1. Disable service worker completely
-      final serviceWorker = html.window.navigator.serviceWorker;
-      if (serviceWorker != null) {
-        final registrations = await serviceWorker.getRegistrations();
-        for (final registration in registrations) {
-          await registration.unregister();
-        }
-        print('🚫 Service workers disabled');
-      }
-      
-      // 2. Clear all caches
-      final caches = html.window.caches;
-      if (caches != null) {
-        final cacheNames = await caches.keys();
-        for (final name in cacheNames) {
-          await caches.delete(name);
-        }
-        print('🧹 All caches cleared');
-      }
-      
-      // 3. Disable browser caching headers
-      final head = html.window.document.querySelector('head');
-      if (head != null) {
-        head.appendHtml('''
-          <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
-          <meta http-equiv="Pragma" content="no-cache">
-          <meta http-equiv="Expires" content="-1">
-        ''');
-      }
-      
-      // 4. Force reload on every navigation
-      html.window.addEventListener('beforeunload', (event) {
-        html.window.location.reload();
-      });
-      
-      // 5. Disable Flutter's built-in caching
-      html.window.addEventListener('load', (event) {
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        
-        // Force fresh asset loading for stylesheets
-        final links = html.window.document.querySelectorAll('link[rel="stylesheet"]');
-        for (final link in links) {
-          final href = link.getAttribute('href');
-          if (href != null && !href.contains('?')) {
-            link.setAttribute('href', '$href?v=$timestamp');
-          }
-        }
-        
-        // Force reload any @font-face rules in style tags
-        final styleTags = html.window.document.querySelectorAll('style');
-        for (final styleTag in styleTags) {
-          final content = styleTag.text;
-          if (content != null && content.contains('@font-face')) {
-            // Add cache buster to font URLs - simple string replacement
-            var updated = content;
-            updated = updated.replaceAll('.woff2)', '.woff2?v=$timestamp)');
-            updated = updated.replaceAll('.woff)', '.woff?v=$timestamp)');
-            styleTag.text = updated;
-          }
-        }
-        
-        // Also add cache buster to any font preload links
-        final fontPreloads = html.window.document.querySelectorAll('link[rel="preload"][as="font"]');
-        for (final preload in fontPreloads) {
-          final href = preload.getAttribute('href');
-          if (href != null && !href.contains('?')) {
-            preload.setAttribute('href', '$href?v=$timestamp');
-          }
-        }
-      });
-      
-      print('💥 Nuclear cache disabling complete');
-      
-    } catch (e) {
-      print('Nuclear cache disabling error: $e');
-    }
-  }
   
   // Initialize Firebase
   await Firebase.initializeApp(
