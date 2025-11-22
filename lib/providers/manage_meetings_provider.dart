@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -88,61 +87,111 @@ class ManageMeetingsProvider extends ChangeNotifier {
   
   List<Meeting> _meetings = [];
   bool _isLoading = false;
+  bool _isLoadingMore = false;
   String? _error;
-  StreamSubscription<QuerySnapshot>? _meetingsSubscription;
+  DocumentSnapshot? _lastDocument;
+  bool _hasMoreMeetings = true;
+  static const int _pageSize = 5;
 
   // Getters
   List<Meeting> get meetings => _meetings;
   bool get isLoading => _isLoading;
+  bool get isLoadingMore => _isLoadingMore;
+  bool get hasMoreMeetings => _hasMoreMeetings;
   String? get error => _error;
 
   // Initialize the provider
   void initialize() {
     final user = _auth.currentUser;
     if (user != null) {
-      _startListening(user.uid);
+      _loadInitialMeetings(user.uid);
     }
   }
 
-  // Start listening to meetings
-  void _startListening(String userId) {
-    // Cancel any existing subscription
-    _meetingsSubscription?.cancel();
-    
+  // Load initial 2 meetings only (paginated - not all meetings)
+  Future<void> _loadInitialMeetings(String userId) async {
     _isLoading = true;
     _error = null;
+    _meetings = [];
+    _lastDocument = null;
+    _hasMoreMeetings = true;
     notifyListeners();
 
     try {
-      _meetingsSubscription = _firestore
+      // Only load 2 meetings - true pagination, not loading all
+      final query = _firestore
           .collection('users')
           .doc(userId)
           .collection('meetings')
           .orderBy('created_at', descending: true)
-          .snapshots()
-          .listen(
-        (snapshot) {
-          _isLoading = false;
-          _error = null;
-          
-          _meetings = snapshot.docs.map((doc) => Meeting.fromFirestore(doc)).toList();
-          notifyListeners();
-        },
-        onError: (error) {
-          _isLoading = false;
-          // Check if it's an index error
-          final errorString = error.toString();
-          if (errorString.contains('index') || errorString.contains('requires an index')) {
-            _error = 'Firestore index required. Please create the index as shown in the error message.';
-          } else {
-            _error = 'Error loading meetings: $error';
-          }
-          notifyListeners();
-        },
-      );
+          .limit(_pageSize); // Limits Firestore query to 2 documents only
+
+      final snapshot = await query.get();
+      
+      _isLoading = false;
+      _error = null;
+      
+      if (snapshot.docs.isEmpty) {
+        _meetings = [];
+        _hasMoreMeetings = false;
+      } else {
+        _meetings = snapshot.docs.map((doc) => Meeting.fromFirestore(doc)).toList();
+        _lastDocument = snapshot.docs.last;
+        _hasMoreMeetings = snapshot.docs.length == _pageSize;
+      }
+      
+      notifyListeners();
     } catch (e) {
       _isLoading = false;
-      _error = 'Error initializing meetings listener: $e';
+      // Check if it's an index error
+      final errorString = e.toString();
+      if (errorString.contains('index') || errorString.contains('requires an index')) {
+        _error = 'Firestore index required. Please create the index as shown in the error message.';
+      } else {
+        _error = 'Error loading meetings: $e';
+      }
+      notifyListeners();
+    }
+  }
+
+  // Load previous meetings (next 2 only - paginated)
+  Future<void> loadMoreMeetings() async {
+    if (_isLoadingMore || !_hasMoreMeetings || _lastDocument == null) {
+      return;
+    }
+
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    _isLoadingMore = true;
+    notifyListeners();
+
+    try {
+      // Load only the next 2 meetings - true pagination
+      final query = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('meetings')
+          .orderBy('created_at', descending: true)
+          .startAfterDocument(_lastDocument!) // Start after last loaded document
+          .limit(_pageSize); // Limits Firestore query to 2 documents only
+
+      final snapshot = await query.get();
+      
+      if (snapshot.docs.isEmpty) {
+        _hasMoreMeetings = false;
+      } else {
+        final newMeetings = snapshot.docs.map((doc) => Meeting.fromFirestore(doc)).toList();
+        _meetings.addAll(newMeetings);
+        _lastDocument = snapshot.docs.last;
+        _hasMoreMeetings = snapshot.docs.length == _pageSize;
+      }
+      
+      _isLoadingMore = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoadingMore = false;
+      _error = 'Error loading more meetings: $e';
       notifyListeners();
     }
   }
@@ -150,16 +199,17 @@ class ManageMeetingsProvider extends ChangeNotifier {
   // Stop listening and dispose resources
   @override
   void dispose() {
-    _meetingsSubscription?.cancel();
     super.dispose();
   }
 
   // Clear meetings (for logout)
   void clearMeetings() {
-    _meetingsSubscription?.cancel();
     _meetings = [];
     _isLoading = false;
+    _isLoadingMore = false;
     _error = null;
+    _lastDocument = null;
+    _hasMoreMeetings = true;
     notifyListeners();
   }
 

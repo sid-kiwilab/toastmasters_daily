@@ -1006,6 +1006,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                               isCreatingMeeting: _isCreatingMeeting,
                               uploadingAgendas: _uploadingAgendas,
                               isSubscriptionActive: _isSubscriptionActive,
+                              hasMoreMeetings: meetingsProvider.hasMoreMeetings,
+                              isLoadingMore: meetingsProvider.isLoadingMore,
+                              onLoadMore: () {
+                                meetingsProvider.loadMoreMeetings();
+                              },
                               onCreateMeeting: () {
                                 showDialog(
                                   context: context,

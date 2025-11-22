@@ -12,6 +12,9 @@ class MeetingsListWidget extends StatelessWidget {
   final void Function(BuildContext, Meeting) onPollResults;
   final Future<void> Function(BuildContext, Meeting, String) onDeleteMeeting;
   final bool isSubscriptionActive;
+  final bool hasMoreMeetings;
+  final bool isLoadingMore;
+  final VoidCallback? onLoadMore;
 
   const MeetingsListWidget({
     super.key,
@@ -24,6 +27,9 @@ class MeetingsListWidget extends StatelessWidget {
     required this.onPollResults,
     required this.onDeleteMeeting,
     this.isSubscriptionActive = false,
+    this.hasMoreMeetings = false,
+    this.isLoadingMore = false,
+    this.onLoadMore,
   });
 
   // Helper method to format meeting ID with space for display
@@ -390,6 +396,41 @@ class MeetingsListWidget extends StatelessWidget {
             final isLast = index == meetings.length - 1;
             return _buildMeetingItem(context, meeting, isLast: isLast);
           }),
+          // Load More button
+          if (hasMoreMeetings && onLoadMore != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: isLoadingMore ? null : onLoadMore,
+                icon: isLoadingMore
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.expand_more, size: 18),
+                label: Text(
+                  isLoadingMore ? 'Loading...' : 'Load Previous',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF424242),
+                  side: const BorderSide(color: Color(0xFFE0E0E0)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  minimumSize: const Size(double.infinity, 40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ],
     );
