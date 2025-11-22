@@ -22,6 +22,19 @@ class _HomeScreenState extends State<HomeScreen> {
     _codeController.addListener(_formatCode);
   }
 
+  Future<bool> _checkClubCodeExists(String clubCode) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('club_codes')
+          .doc(clubCode)
+          .get();
+      return doc.exists;
+    } catch (e) {
+      print('Error checking club code existence: $e');
+      return false;
+    }
+  }
+
   @override
   void dispose() {
     _codeController.dispose();
@@ -53,24 +66,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<bool> _checkMeetingExists(String meetingId) async {
-    try {
-      // Remove any spaces and ensure it's exactly 8 digits
-      final cleanMeetingId = meetingId.replaceAll(RegExp(r'[^0-9]'), '');
-      
-      if (cleanMeetingId.length != 8) {
-        return false;
-      }
-      
-      final doc = await FirebaseFirestore.instance
-          .collection('active_meetings')
-          .doc(cleanMeetingId)
-          .get();
-      return doc.exists;
-    } catch (e) {
-      return false;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 24),
                       // Main content
                       Text(
-                        'Enter the code to join',
+                        'Enter club code to join',
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontSize: 28,
                           fontWeight: FontWeight.w600,
@@ -209,31 +204,30 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           child: ElevatedButton(
                             onPressed: _isJoining ? null : () async {
-                            // Navigate to view meeting screen with the entered code
-                            final meetingCode = _codeController.text.trim();
-                            if (meetingCode.isNotEmpty) {
-                              // Convert the formatted code (e.g., "1234 5678") to meeting ID format
-                              final digitsOnly = meetingCode.replaceAll(RegExp(r'[^0-9]'), '');
+                            // Navigate to club page with the entered club code
+                            final clubCode = _codeController.text.trim();
+                            if (clubCode.isNotEmpty) {
+                              // Convert the formatted code (e.g., "1234 5678") to club code format
+                              final digitsOnly = clubCode.replaceAll(RegExp(r'[^0-9]'), '');
                               if (digitsOnly.length == 8) {
                                 setState(() {
                                   _isJoining = true;
                                 });
                                 
-                                final meetingId = digitsOnly;
+                                // Check if club code exists
+                                final clubCodeExists = await _checkClubCodeExists(digitsOnly);
                                 
-                                // Check if meeting exists first
-                                final meetingExists = await _checkMeetingExists(meetingId);
-                                
-                                if (meetingExists) {
-                                  // Navigate to view meeting screen using URL navigation
-                                  await Navigator.pushNamed(context, '/meetings/$meetingId');
+                                if (clubCodeExists) {
+                                  // Navigate to club screen using URL navigation
+                                  await Navigator.pushNamed(context, '/clubs/$digitsOnly');
                                 } else {
-                                  // Show snackbar for meeting not found
+                                  // Show error snackbar
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Meeting not found'),
-                                        duration: Duration(seconds: 2),
+                                        content: Text('Club code not found. Please check and try again.'),
+                                        backgroundColor: Colors.red,
+                                        duration: Duration(seconds: 3),
                                       ),
                                     );
                                   }
@@ -243,19 +237,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                   _isJoining = false;
                                 });
                               } else {
-                                // Show snackbar for incomplete code
+                                // Show error snackbar for incomplete code
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Code must be 8 digits'),
+                                    content: Text('Club code must be 8 digits'),
+                                    backgroundColor: Colors.red,
                                     duration: Duration(seconds: 2),
                                   ),
                                 );
                               }
                             } else {
-                              // Show snackbar for empty code
+                              // Show error snackbar for empty code
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Please enter a meeting code'),
+                                  content: Text('Please enter a club code'),
+                                  backgroundColor: Colors.red,
                                   duration: Duration(seconds: 2),
                                 ),
                               );
