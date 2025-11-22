@@ -15,6 +15,7 @@ class MeetingsListWidget extends StatelessWidget {
   final bool hasMoreMeetings;
   final bool isLoadingMore;
   final VoidCallback? onLoadMore;
+  final Future<void> Function(BuildContext, Meeting, {bool? setDate, bool? setTime}) onSetDateTime;
 
   const MeetingsListWidget({
     super.key,
@@ -30,6 +31,7 @@ class MeetingsListWidget extends StatelessWidget {
     this.hasMoreMeetings = false,
     this.isLoadingMore = false,
     this.onLoadMore,
+    required this.onSetDateTime,
   });
 
   // Helper method to format meeting ID with space for display
@@ -46,6 +48,107 @@ class MeetingsListWidget extends StatelessWidget {
     
     // Return original if not 8 digits
     return meetingId;
+  }
+
+  // Helper function to format date
+  String _formatDate(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}';
+  }
+  
+  // Helper function to format time
+  String _formatTime(DateTime time) {
+    final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.hour < 12 ? 'AM' : 'PM';
+    return '$hour:$minute $period';
+  }
+
+  // Build date and time buttons widget (for mobile - vertically stacked, same design as desktop)
+  Widget _buildDateTimeButtons(BuildContext context, Meeting meeting) {
+    final hasDate = meeting.meetingDate != null;
+    final hasTime = meeting.meetingTime != null;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Date button - same design as desktop
+        GestureDetector(
+          onTap: () => onSetDateTime(context, meeting, setDate: true),
+          child: Container(
+            width: double.infinity,
+            height: 52, // Same height as desktop buttons
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              border: Border.all(
+                color: const Color(0xFFE0E0E0),
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.calendar_today,
+                  size: 16,
+                  color: Color(0xFF757575),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  hasDate ? _formatDate(meeting.meetingDate!) : 'Set Date',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF757575),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Time button - same design as desktop
+        GestureDetector(
+          onTap: () => onSetDateTime(context, meeting, setTime: true),
+          child: Container(
+            width: double.infinity,
+            height: 52, // Same height as desktop buttons
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              border: Border.all(
+                color: const Color(0xFFE0E0E0),
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.access_time,
+                  size: 16,
+                  color: Color(0xFF757575),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  hasTime ? _formatTime(meeting.meetingTime!) : 'Set Time',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF757575),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
 
@@ -144,11 +247,97 @@ class MeetingsListWidget extends StatelessWidget {
                               letterSpacing: 2,
                             ),
                           ),
+                          // Date and Time buttons - only show on mobile (vertically stacked)
+                          if (isMobile) ...[
+                            const SizedBox(height: 8),
+                            _buildDateTimeButtons(context, meeting),
+                          ],
                         ],
                       ),
                     ),
-                    // Delete button - big trash icon with visible hit box (only show on desktop)
-                    if (!isMobile)
+                    // Date/Time and Delete buttons - only show on desktop
+                    if (!isMobile) ...[
+                      // Set Date button - same height as trash icon (12 + 28 + 12 = 52)
+                      GestureDetector(
+                        onTap: () => onSetDateTime(context, meeting, setDate: true),
+                        child: Container(
+                          height: 52, // Match trash icon height (12 padding + 28 icon + 12 padding)
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            border: Border.all(
+                              color: const Color(0xFFE0E0E0),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.calendar_today,
+                                size: 16,
+                                color: Color(0xFF757575),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                meeting.meetingDate != null 
+                                    ? _formatDate(meeting.meetingDate!)
+                                    : 'Set Date',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF757575),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Set Time button - same height as trash icon
+                      GestureDetector(
+                        onTap: () => onSetDateTime(context, meeting, setTime: true),
+                        child: Container(
+                          height: 52, // Match trash icon height
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            border: Border.all(
+                              color: const Color(0xFFE0E0E0),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.access_time,
+                                size: 16,
+                                color: Color(0xFF757575),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                meeting.meetingTime != null 
+                                    ? _formatTime(meeting.meetingTime!)
+                                    : 'Set Time',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF757575),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Delete button
                       GestureDetector(
                         onTap: () {
                           _showDeleteDialog(context, meeting);
@@ -170,6 +359,7 @@ class MeetingsListWidget extends StatelessWidget {
                           ),
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),

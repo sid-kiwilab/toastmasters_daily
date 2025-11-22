@@ -25,8 +25,9 @@ service cloud.firestore {
     // Allow read access to user meetings
     match /users/{userId}/meetings/{meetingId} {
       allow read: if true;
-      // Allow writes to agenda_url field (for agenda uploads)
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['agenda_url']);
+      // Allow creator to update their own meetings (agenda_url, meeting_date, meeting_time)
+      allow update: if request.auth != null && request.auth.uid == userId && 
+        request.resource.data.diff(resource.data).affectedKeys().hasAny(['agenda_url', 'meeting_date', 'meeting_time']);
     }
     
     // Allow read/write access to polls subcollection

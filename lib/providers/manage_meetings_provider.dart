@@ -10,6 +10,8 @@ class Meeting {
   final String description;
   final DateTime? createdAt;
   final String? agendaUrl;
+  final DateTime? meetingDate;
+  final DateTime? meetingTime;
 
   Meeting({
     required this.id,
@@ -17,6 +19,8 @@ class Meeting {
     required this.description,
     this.createdAt,
     this.agendaUrl,
+    this.meetingDate,
+    this.meetingTime,
   });
 
   factory Meeting.fromFirestore(DocumentSnapshot doc) {
@@ -27,6 +31,9 @@ class Meeting {
       description: data['description'] ?? 'No description',
       createdAt: data['created_at']?.toDate(),
       agendaUrl: data['agendaUrl'] ?? data['agenda_url'],
+      // Convert UTC timestamps back to local time for display
+      meetingDate: data['meeting_date']?.toDate()?.toLocal(),
+      meetingTime: data['meeting_time']?.toDate()?.toLocal(),
     );
   }
 }
@@ -211,6 +218,60 @@ class ManageMeetingsProvider extends ChangeNotifier {
     _lastDocument = null;
     _hasMoreMeetings = true;
     notifyListeners();
+  }
+
+  // Update meeting date and time (stored in UTC)
+  Future<void> updateMeetingDateTime(String meetingId, DateTime? date, DateTime? time) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      final meetingRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('meetings')
+          .doc(meetingId);
+
+      // Verify meeting exists
+      final meetingDoc = await meetingRef.get();
+      if (!meetingDoc.exists) {
+        throw Exception('Meeting not found');
+      }
+
+      // Update meeting document with date and time (convert to UTC)
+      final updateData = <String, dynamic>{};
+      if (date != null) {
+        // Convert to UTC
+        final utcDate = date.toUtc();
+        updateData['meeting_date'] = Timestamp.fromDate(utcDate);
+      }
+      if (time != null) {
+        // Convert to UTC
+        final utcTime = time.toUtc();
+        updateData['meeting_time'] = Timestamp.fromDate(utcTime);
+      }
+
+      await meetingRef.update(updateData);
+
+      // Update the specific meeting in the local list without resetting pagination
+      final meetingIndex = _meetings.indexWhere((m) => m.id == meetingId);
+      if (meetingIndex != -1) {
+        final existingMeeting = _meetings[meetingIndex];
+        final updatedMeeting = Meeting(
+          id: existingMeeting.id,
+          title: existingMeeting.title,
+          description: existingMeeting.description,
+          createdAt: existingMeeting.createdAt,
+          agendaUrl: existingMeeting.agendaUrl,
+          meetingDate: date, // Already in local time from picker
+          meetingTime: time, // Already in local time from picker
+        );
+        _meetings[meetingIndex] = updatedMeeting;
+        notifyListeners(); // Only notify listeners, don't reload everything
+      }
+    } catch (e) {
+      throw Exception('Failed to update meeting date/time: $e');
+    }
   }
 
   // View agenda functionality
