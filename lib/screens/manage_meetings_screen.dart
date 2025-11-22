@@ -645,19 +645,48 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
 
       // Check result
       if (result.data['success']) {
-        final meeting = result.data['meeting'];
+        final meetingData = result.data['meeting'];
+        
+        // Add new meeting to the top of the list without reloading
+        final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+        
+        // Convert timestamp from Cloud Function response
+        DateTime? createdAt;
+        if (meetingData['created_at'] != null) {
+          if (meetingData['created_at'] is Timestamp) {
+            createdAt = (meetingData['created_at'] as Timestamp).toDate();
+          } else if (meetingData['created_at'] is Map) {
+            // Handle serialized timestamp from Cloud Function
+            final tsData = meetingData['created_at'] as Map;
+            if (tsData['_seconds'] != null) {
+              createdAt = DateTime.fromMillisecondsSinceEpoch(
+                (tsData['_seconds'] as int) * 1000 + 
+                ((tsData['_nanoseconds'] as int?) ?? 0) ~/ 1000000,
+              );
+            }
+          }
+        }
+        
+        // Convert the meeting data to a Meeting object
+        final newMeeting = Meeting(
+          id: meetingData['id'],
+          title: meetingData['title'] ?? title,
+          description: 'No description',
+          createdAt: createdAt ?? DateTime.now(),
+          agendaUrl: null,
+          meetingDateTime: null,
+        );
+        
+        meetingsProvider.addMeeting(newMeeting);
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Meeting created successfully! ID: ${meeting['id']}'),
+              content: Text('Meeting created successfully! ID: ${meetingData['id']}'),
               backgroundColor: Colors.green,
             ),
           );
         }
-        
-        // Refresh the meetings list
-        final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
-        meetingsProvider.initialize();
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -845,6 +874,10 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
 
       // Check result
       if (result.data['success']) {
+        // Remove meeting from local list without reloading
+        final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+        meetingsProvider.removeMeeting(meetingId);
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -853,10 +886,6 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
             ),
           );
         }
-
-        // Refresh the meetings list
-        final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
-        meetingsProvider.initialize();
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1025,7 +1054,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                               onSetupPolls: _showSetupPollsDialog,
                               onPollResults: _showPollResultsDialog,
                               onDeleteMeeting: _deleteMeeting,
-                              onSetDateTime: (context, meeting, {setDate, setTime}) => _showSetDateTimeDialog(context, meeting, setDate: setDate, setTime: setTime),
+                              onSetDateTime: (context, meeting) => _showSetDateTimeDialog(context, meeting),
                             ),
                             const SizedBox(height: 32),
                             
@@ -1246,95 +1275,58 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     Navigator.of(context).pushNamed('/guest-list');
   }
 
-  Future<void> _showSetDateTimeDialog(BuildContext context, Meeting meeting, {bool? setDate, bool? setTime}) async {
-    DateTime? selectedDate = meeting.meetingDate;
-    TimeOfDay? selectedTime = meeting.meetingTime != null 
-        ? TimeOfDay.fromDateTime(meeting.meetingTime!)
-        : null;
-
-    // If setDate is true, only show date picker
-    if (setDate == true && setTime != true) {
-      final picked = await showDatePicker(
-        context: context,
-        initialDate: selectedDate ?? DateTime.now(),
-        firstDate: DateTime.now(),
-        lastDate: DateTime.now().add(const Duration(days: 365)),
-      );
-      if (picked != null) {
-        try {
-          final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
-          await meetingsProvider.updateMeetingDateTime(
-            meeting.id,
-            picked,
-            null, // Don't update time
-          );
-          
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Meeting date updated successfully'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error updating date: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      }
-      return;
-    }
+  Future<void> _showSetDateTimeDialog(BuildContext context, Meeting meeting) async {
+    final now = DateTime.now();
+    final existingDateTime = meeting.meetingDateTime ?? now;
     
-    // If setTime is true, only show time picker
-    if (setTime == true && setDate != true) {
-      final picked = await showTimePicker(
-        context: context,
-        initialTime: selectedTime ?? TimeOfDay.now(),
-      );
-      if (picked != null) {
-        final now = DateTime.now();
-        final timeDateTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          picked.hour,
-          picked.minute,
+    // Show date picker first
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: existingDateTime,
+      firstDate: existingDateTime.isBefore(now) ? existingDateTime : now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    
+    if (pickedDate == null) return; // User cancelled
+    
+    // Show time picker
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(existingDateTime),
+    );
+    
+    if (pickedTime == null) return; // User cancelled
+    
+    // Combine date and time
+    final combinedDateTime = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+    
+    try {
+      final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+      await meetingsProvider.updateMeetingDateTime(meeting.id, combinedDateTime);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Meeting date and time updated successfully'),
+            backgroundColor: Colors.green,
+          ),
         );
-        
-        try {
-          final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
-          await meetingsProvider.updateMeetingDateTime(
-            meeting.id,
-            null, // Don't update date
-            timeDateTime,
-          );
-          
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Meeting time updated successfully'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error updating time: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
       }
-      return;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating meeting datetime: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

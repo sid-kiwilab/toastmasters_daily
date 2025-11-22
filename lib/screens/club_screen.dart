@@ -231,9 +231,9 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
         .collection('users')
         .doc(_userId!)
         .collection('meetings')
-        .where('meeting_date', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStartUTC))
-        .where('meeting_date', isLessThan: Timestamp.fromDate(todayEndUTC))
-        .orderBy('meeting_date', descending: false)
+        .where('meeting_datetime', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStartUTC))
+        .where('meeting_datetime', isLessThan: Timestamp.fromDate(todayEndUTC))
+        .orderBy('meeting_datetime', descending: false)
         .snapshots()
         .listen((snapshot) {
       if (!mounted) return;
@@ -774,69 +774,34 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                                           color: Color(0xFF757575),
                                                         ),
                                                       ),
-                                                      // Date and Time display - vertically stacked
-                                                      if (meeting.meetingDate != null || meeting.meetingTime != null) ...[
+                                                      // Date and Time display
+                                                      if (meeting.meetingDateTime != null) ...[
                                                         const SizedBox(height: 10),
-                                                        Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                          children: [
-                                                            if (meeting.meetingDate != null)
-                                                              Container(
-                                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                                                decoration: BoxDecoration(
-                                                                  color: const Color(0xFFF5F5F5),
-                                                                  borderRadius: BorderRadius.circular(6),
-                                                                ),
-                                                                child: Row(
-                                                                  mainAxisSize: MainAxisSize.min,
-                                                                  children: [
-                                                                    const Icon(
-                                                                      Icons.calendar_today,
-                                                                      size: 16,
-                                                                      color: Color(0xFF424242),
-                                                                    ),
-                                                                    const SizedBox(width: 6),
-                                                                    Text(
-                                                                      _formatDate(meeting.meetingDate!),
-                                                                      style: const TextStyle(
-                                                                        fontSize: 13,
-                                                                        color: Color(0xFF424242),
-                                                                        fontWeight: FontWeight.w600,
-                                                                      ),
-                                                                    ),
-                                                                  ],
+                                                        Container(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                          decoration: BoxDecoration(
+                                                            color: const Color(0xFFF5F5F5),
+                                                            borderRadius: BorderRadius.circular(6),
+                                                          ),
+                                                          child: Row(
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            children: [
+                                                              const Icon(
+                                                                Icons.event,
+                                                                size: 16,
+                                                                color: Color(0xFF424242),
+                                                              ),
+                                                              const SizedBox(width: 6),
+                                                              Text(
+                                                                '${_formatDate(meeting.meetingDateTime!)} • ${_formatTime(meeting.meetingDateTime!)}',
+                                                                style: const TextStyle(
+                                                                  fontSize: 13,
+                                                                  color: Color(0xFF424242),
+                                                                  fontWeight: FontWeight.w600,
                                                                 ),
                                                               ),
-                                                            if (meeting.meetingDate != null && meeting.meetingTime != null)
-                                                              const SizedBox(height: 6),
-                                                            if (meeting.meetingTime != null)
-                                                              Container(
-                                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                                                decoration: BoxDecoration(
-                                                                  color: const Color(0xFFF5F5F5),
-                                                                  borderRadius: BorderRadius.circular(6),
-                                                                ),
-                                                                child: Row(
-                                                                  mainAxisSize: MainAxisSize.min,
-                                                                  children: [
-                                                                    const Icon(
-                                                                      Icons.access_time,
-                                                                      size: 16,
-                                                                      color: Color(0xFF424242),
-                                                                    ),
-                                                                    const SizedBox(width: 6),
-                                                                    Text(
-                                                                      _formatTime(meeting.meetingTime!),
-                                                                      style: const TextStyle(
-                                                                        fontSize: 13,
-                                                                        color: Color(0xFF424242),
-                                                                        fontWeight: FontWeight.w600,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                          ],
+                                                            ],
+                                                          ),
                                                         ),
                                                       ],
                                                     ],

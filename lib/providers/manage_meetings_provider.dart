@@ -10,8 +10,7 @@ class Meeting {
   final String description;
   final DateTime? createdAt;
   final String? agendaUrl;
-  final DateTime? meetingDate;
-  final DateTime? meetingTime;
+  final DateTime? meetingDateTime;
 
   Meeting({
     required this.id,
@@ -19,21 +18,37 @@ class Meeting {
     required this.description,
     this.createdAt,
     this.agendaUrl,
-    this.meetingDate,
-    this.meetingTime,
+    this.meetingDateTime,
   });
 
   factory Meeting.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    // Support both old format (meeting_date + meeting_time) and new format (meeting_datetime)
+    DateTime? meetingDateTime;
+    if (data['meeting_datetime'] != null) {
+      meetingDateTime = data['meeting_datetime']?.toDate()?.toLocal();
+    } else if (data['meeting_date'] != null && data['meeting_time'] != null) {
+      // Combine old separate date and time fields
+      final date = data['meeting_date']?.toDate()?.toLocal();
+      final time = data['meeting_time']?.toDate()?.toLocal();
+      if (date != null && time != null) {
+        meetingDateTime = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          time.hour,
+          time.minute,
+        );
+      }
+    }
+    
     return Meeting(
       id: doc.id,
       title: data['title'] ?? 'Untitled Meeting',
       description: data['description'] ?? 'No description',
       createdAt: data['created_at']?.toDate(),
       agendaUrl: data['agendaUrl'] ?? data['agenda_url'],
-      // Convert UTC timestamps back to local time for display
-      meetingDate: data['meeting_date']?.toDate()?.toLocal(),
-      meetingTime: data['meeting_time']?.toDate()?.toLocal(),
+      meetingDateTime: meetingDateTime,
     );
   }
 }
@@ -220,8 +235,20 @@ class ManageMeetingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Remove a meeting from the local list without reloading
+  void removeMeeting(String meetingId) {
+    _meetings.removeWhere((meeting) => meeting.id == meetingId);
+    notifyListeners();
+  }
+
+  // Add a new meeting to the top of the list without reloading
+  void addMeeting(Meeting meeting) {
+    _meetings.insert(0, meeting);
+    notifyListeners();
+  }
+
   // Update meeting date and time (stored in UTC)
-  Future<void> updateMeetingDateTime(String meetingId, DateTime? date, DateTime? time) async {
+  Future<void> updateMeetingDateTime(String meetingId, DateTime? meetingDateTime) async {
     try {
       final user = _auth.currentUser;
       if (user == null) throw Exception('User not authenticated');
@@ -238,17 +265,15 @@ class ManageMeetingsProvider extends ChangeNotifier {
         throw Exception('Meeting not found');
       }
 
-      // Update meeting document with date and time (convert to UTC)
+      // Update meeting document with datetime (convert to UTC)
       final updateData = <String, dynamic>{};
-      if (date != null) {
-        // Convert to UTC
-        final utcDate = date.toUtc();
-        updateData['meeting_date'] = Timestamp.fromDate(utcDate);
-      }
-      if (time != null) {
-        // Convert to UTC
-        final utcTime = time.toUtc();
-        updateData['meeting_time'] = Timestamp.fromDate(utcTime);
+      if (meetingDateTime != null) {
+        updateData['meeting_datetime'] = Timestamp.fromDate(meetingDateTime.toUtc());
+        // Remove old fields if they exist
+        updateData['meeting_date'] = FieldValue.delete();
+        updateData['meeting_time'] = FieldValue.delete();
+      } else {
+        updateData['meeting_datetime'] = FieldValue.delete();
       }
 
       await meetingRef.update(updateData);
@@ -263,14 +288,13 @@ class ManageMeetingsProvider extends ChangeNotifier {
           description: existingMeeting.description,
           createdAt: existingMeeting.createdAt,
           agendaUrl: existingMeeting.agendaUrl,
-          meetingDate: date, // Already in local time from picker
-          meetingTime: time, // Already in local time from picker
+          meetingDateTime: meetingDateTime,
         );
         _meetings[meetingIndex] = updatedMeeting;
-        notifyListeners(); // Only notify listeners, don't reload everything
+        notifyListeners();
       }
     } catch (e) {
-      throw Exception('Failed to update meeting date/time: $e');
+      throw Exception('Failed to update meeting datetime: $e');
     }
   }
 
