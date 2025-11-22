@@ -42,24 +42,6 @@ class MeetingsListWidget extends StatelessWidget {
     return meetingId;
   }
 
-  // Helper method to format expiry date (createdAt + 7 days)
-  String _formatExpiryDate(DateTime createdAt) {
-    final expiryDate = createdAt.add(const Duration(days: 7));
-    final now = DateTime.now();
-    final daysUntilExpiry = expiryDate.difference(now).inDays;
-    
-    if (daysUntilExpiry < 0) {
-      return 'Expired';
-    } else if (daysUntilExpiry == 0) {
-      return 'Expires today';
-    } else if (daysUntilExpiry == 1) {
-      return 'Expires tomorrow';
-    } else {
-      // Format as "MMM dd, yyyy" (e.g., "Nov 27, 2025")
-      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
-    }
-  }
 
   Widget _buildSectionHeader(String title, String description) {
     return Padding(
@@ -156,17 +138,6 @@ class MeetingsListWidget extends StatelessWidget {
                               letterSpacing: 2,
                             ),
                           ),
-                          if (meeting.createdAt != null) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              'Expires: ${_formatExpiryDate(meeting.createdAt!)}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.orange[700],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -362,7 +333,7 @@ class MeetingsListWidget extends StatelessWidget {
         // Meetings Section
         _buildSectionHeader(
           'Meetings',
-          'Create and manage your meetings. Meetings expire after 7 days.',
+          'Create and manage your meetings.',
         ),
         const SizedBox(height: 12),
         // Create Meeting button - simple style like logout
