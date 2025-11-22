@@ -25,30 +25,63 @@ exports.create_user_document = functions.auth.user().onCreate(async (user) => {
       const existingClubCode = existingClubCodesQuery.docs[0].id;
       await userDocRef.set({
         created_at: admin.firestore.FieldValue.serverTimestamp(),
-        club_code: existingClubCode,
+        club_code: parseInt(existingClubCode, 10),
       }, { merge: true });
       console.log(`Synced existing club code ${existingClubCode} to user document for user ${user.uid}`);
       return;
     }
     
-    // Create a new club code document
-    const clubCodeRef = db.collection('club_codes').doc();
-    const clubCode = clubCodeRef.id;
+    // Generate unique 8-digit club code
+    let clubCode;
+    let attempts = 0;
+    const maxAttempts = 20; // Increased for extra safety (probability of failure: ~10^-80 even with 1M codes)
     
-    // Use batch write to ensure both operations happen atomically
-    const batch = db.batch();
+    do {
+      clubCode = Math.floor(10000000 + Math.random() * 90000000).toString();
+      
+      // Check if code exists as document ID in club_codes collection
+      const existingClubCodeDoc = await db.collection('club_codes').doc(clubCode).get();
+      
+      // Also check if any user already has this club_code value (as number)
+      const existingUserWithCode = await db.collection('users')
+        .where('club_code', '==', parseInt(clubCode, 10))
+        .limit(1)
+        .get();
+      
+      if (!existingClubCodeDoc.exists && existingUserWithCode.empty) {
+        break; // Code is available
+      }
+      
+      attempts++;
+      if (attempts >= maxAttempts) {
+        console.error('Failed to generate unique club code after', maxAttempts, 'attempts');
+        throw new Error('Failed to generate unique club code');
+      }
+    } while (attempts < maxAttempts);
     
-    // Create club_codes document
-    batch.set(clubCodeRef, { uid: user.uid });
-    
-    // Create user document with club_code and created_at
-    batch.set(userDocRef, {
-      created_at: admin.firestore.FieldValue.serverTimestamp(),
-      club_code: clubCode,
+    // Use transaction to ensure atomicity - ALL READS FIRST, THEN ALL WRITES
+    await db.runTransaction(async (transaction) => {
+      // Read new club_code document to verify it doesn't exist
+      const clubCodeRef = db.collection('club_codes').doc(clubCode);
+      const clubCodeDoc = await transaction.get(clubCodeRef);
+      
+      if (clubCodeDoc.exists) {
+        throw new Error('Club code collision detected during transaction');
+      }
+      
+      // Read user document to check if it already exists
+      const userDocSnap = await transaction.get(userDocRef);
+      
+      // NOW DO ALL WRITES (after all reads)
+      // Create club_codes document with the generated 8-digit code
+      transaction.set(clubCodeRef, { uid: user.uid });
+      
+      // Create user document with club_code as number and created_at
+      transaction.set(userDocRef, {
+        created_at: admin.firestore.FieldValue.serverTimestamp(),
+        club_code: parseInt(clubCode, 10), // Store as number, not string
+      });
     });
-    
-    // Commit the batch - both operations succeed or both fail
-    await batch.commit();
     
     console.log(`Created user document and club code ${clubCode} for user ${user.uid}`);
   } catch (error) {
@@ -72,9 +105,11 @@ exports.delete_user_document = functions.auth.user().onDelete(async (user) => {
       
       if (clubCode) {
         try {
-          const clubCodeRef = db.collection('club_codes').doc(clubCode);
+          // Convert to string for document ID (club_code is stored as number)
+          const clubCodeString = typeof clubCode === 'number' ? clubCode.toString() : clubCode;
+          const clubCodeRef = db.collection('club_codes').doc(clubCodeString);
           await clubCodeRef.delete();
-          console.log(`Deleted club code ${clubCode} for user ${user.uid}`);
+          console.log(`Deleted club code ${clubCodeString} for user ${user.uid}`);
         } catch (clubCodeError) {
           console.error(`Error deleting club code ${clubCode} for user ${user.uid}:`, clubCodeError);
           // Continue with user deletion even if club code deletion fails

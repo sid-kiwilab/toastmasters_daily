@@ -14,6 +14,7 @@ import 'package:printing/printing.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'dart:math';
 import '../providers/auth_provider.dart';
 import '../providers/manage_meetings_provider.dart';
 import '../dialogs/create_meeting_dialog.dart';
@@ -49,7 +50,8 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
   bool _isSavingClubInfo = false;
   
   // Club code state
-  String? _clubCode;
+  String? _clubCode; // Display as string, but stored as number in Firestore
+  StreamSubscription<DocumentSnapshot>? _clubCodeSubscription;
   bool _isLoadingClubCode = false;
   bool _isRegeneratingClubCode = false;
   
@@ -77,6 +79,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     _clubNameController.dispose();
     _clubInfoController.dispose();
     _guestsSubscription?.cancel();
+    _clubCodeSubscription?.cancel();
     super.dispose();
   }
 
@@ -131,6 +134,38 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     });
   }
 
+  void _setupClubCodeListener(String userId) {
+    _clubCodeSubscription?.cancel();
+    _clubCodeSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .snapshots()
+        .listen((snapshot) {
+      if (!mounted) return;
+      
+      if (snapshot.exists) {
+        final data = snapshot.data();
+        final clubCodeValue = data?['club_code'] as int?;
+        
+        if (clubCodeValue != null) {
+          final clubCodeString = clubCodeValue.toString();
+          
+          if (clubCodeString != _clubCode) {
+            setState(() {
+              _clubCode = clubCodeString;
+            });
+          }
+        } else {
+          setState(() {
+            _clubCode = null;
+          });
+        }
+      }
+    }, onError: (error) {
+      print('Error in club code listener: $error');
+    });
+  }
+
   Future<void> _loadClubCode() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.currentUser == null) return;
@@ -150,27 +185,16 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
       
       String? clubCode;
       
-      // Only load existing club_code from user document
-      // Club code should have been created by cloud function on user creation
-      if (userDocSnap.exists && userDocSnap.data()?['club_code'] != null) {
-        clubCode = userDocSnap.data()!['club_code'] as String;
-      } else {
-        // Fallback: Check if a club_codes document already exists for this user
-        // (This handles edge cases where the cloud function might have failed)
-        final clubCodesQuery = await db.collection('club_codes')
-            .where('uid', isEqualTo: userId)
-            .limit(1)
-            .get();
-        
-        if (clubCodesQuery.docs.isNotEmpty) {
-          // Use existing document ID and sync to user document
-          clubCode = clubCodesQuery.docs[0].id;
-          await userDocRef.set({'club_code': clubCode}, SetOptions(merge: true));
-        } else {
-          // Club code should have been created by cloud function on user creation
-          print('Warning: Club code not found for user $userId. It should have been created on signup.');
-          clubCode = null;
+      // Load club_code from user document (should always exist after user creation)
+      if (userDocSnap.exists) {
+        final codeValue = userDocSnap.data()?['club_code'] as int?;
+        if (codeValue != null) {
+          clubCode = codeValue.toString();
         }
+      }
+      
+      if (clubCode == null) {
+        print('Warning: Club code not found for user $userId. It should have been created on signup.');
       }
       
       if (mounted) {
@@ -178,6 +202,9 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
           _clubCode = clubCode;
           _isLoadingClubCode = false;
         });
+        
+        // Set up real-time listener for club_code changes
+        _setupClubCodeListener(userId);
       }
     } catch (e) {
       print('Error loading club code: $e');
@@ -203,36 +230,78 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     }
     
     try {
+      // Generate unique 8-digit club code before transaction
+      String newClubCode;
+      int attempts = 0;
+      const maxAttempts = 20;
+      final random = Random();
+      
+      do {
+        // Generate random 8-digit number (10000000 to 99999999)
+        final codeValue = 10000000 + random.nextInt(90000000);
+        newClubCode = codeValue.toString();
+        
+        // Check if code exists as document ID in club_codes collection
+        final existingCodeSnap = await db.collection('club_codes').doc(newClubCode).get();
+        
+        // Also check if any user already has this club_code value (as number)
+        final existingUserWithCode = await db.collection('users')
+            .where('club_code', isEqualTo: int.parse(newClubCode))
+            .limit(1)
+            .get();
+        
+        if (!existingCodeSnap.exists && existingUserWithCode.docs.isEmpty) {
+          break; // Code is available
+        }
+        
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw Exception('Failed to generate unique club code after $maxAttempts attempts');
+        }
+      } while (attempts < maxAttempts);
+      
+      // Now run transaction - ALL READS FIRST, THEN ALL WRITES
       await db.runTransaction((transaction) async {
         final userDocRef = db.collection('users').doc(userId);
         final userDocSnap = await transaction.get(userDocRef);
         
         String? oldClubCode;
-        if (userDocSnap.exists && userDocSnap.data()?['club_code'] != null) {
-          oldClubCode = userDocSnap.data()!['club_code'] as String;
-        }
-        
-        // Delete old club_codes document if it exists
-        if (oldClubCode != null && oldClubCode.isNotEmpty) {
-          final oldClubCodeRef = db.collection('club_codes').doc(oldClubCode);
-          final oldDocSnap = await transaction.get(oldClubCodeRef);
-          if (oldDocSnap.exists) {
-            transaction.delete(oldClubCodeRef);
+        if (userDocSnap.exists) {
+          final oldCodeValue = userDocSnap.data()?['club_code'] as int?;
+          if (oldCodeValue != null) {
+            oldClubCode = oldCodeValue.toString();
           }
         }
         
-        // Create new document reference in club_codes collection
-        final newClubCodeRef = db.collection('club_codes').doc();
-        final newClubCode = newClubCodeRef.id;
+        // Read old club_code document if it exists
+        DocumentSnapshot? oldClubCodeSnap;
+        if (oldClubCode != null && oldClubCode.isNotEmpty) {
+          final oldClubCodeRef = db.collection('club_codes').doc(oldClubCode);
+          oldClubCodeSnap = await transaction.get(oldClubCodeRef);
+        }
         
-        // Set both documents in the transaction
+        // Read new club_code document to verify it doesn't exist
+        final newClubCodeRef = db.collection('club_codes').doc(newClubCode);
+        final newClubCodeSnap = await transaction.get(newClubCodeRef);
+        
+        if (newClubCodeSnap.exists) {
+          throw Exception('Club code collision detected during transaction');
+        }
+        
+        // NOW DO ALL WRITES (after all reads)
+        // Delete old club_codes document if it exists
+        if (oldClubCodeSnap != null && oldClubCodeSnap.exists) {
+          transaction.delete(db.collection('club_codes').doc(oldClubCode));
+        }
+        
+        // Create new club_codes document with 8-digit code
         transaction.set(newClubCodeRef, {'uid': userId});
-        transaction.set(userDocRef, {'club_code': newClubCode}, SetOptions(merge: true));
+        
+        // Update user document with new 8-digit club_code as number
+        transaction.set(userDocRef, {'club_code': int.parse(newClubCode)}, SetOptions(merge: true));
       });
       
-      // Reload the club code
-      await _loadClubCode();
-      
+      // Listener will automatically update _clubCode, no need to reload
       if (mounted) {
         setState(() {
           _isRegeneratingClubCode = false;
@@ -1139,83 +1208,144 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
         color: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.qr_code,
-                  size: 22,
-                  color: Color(0xFF424242),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Club QR Code',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF212121),
-                      ),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _isLoadingClubCode
-                          ? 'Loading...'
-                          : (_clubCode ?? 'Refresh to load code'),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF757575),
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                    child: const Icon(
+                      Icons.qr_code,
+                      size: 22,
+                      color: Color(0xFF424242),
                     ),
-                  ],
-                ),
-              ),
-              if (_clubCode != null && !_isLoadingClubCode) ...[
-                // Download QR Code button
-                IconButton(
-                  icon: const Icon(Icons.download, size: 20),
-                  color: const Color(0xFF757575),
-                  onPressed: _downloadQRCode,
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(
-                    minWidth: 40,
-                    minHeight: 40,
                   ),
-                  tooltip: 'Download QR code',
-                ),
-                const SizedBox(width: 12),
-                // Regenerate button
-                _isRegeneratingClubCode
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF757575)),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Club Code',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF212121),
+                          ),
                         ),
-                      )
-                    : IconButton(
-                        icon: const Icon(Icons.refresh, size: 20),
-                        color: const Color(0xFF757575),
-                        onPressed: _showRegenerateCodeDialog,
-                        padding: const EdgeInsets.all(8),
-                        constraints: const BoxConstraints(
-                          minWidth: 40,
-                          minHeight: 40,
+                        const SizedBox(height: 2),
+                        Text(
+                          _isLoadingClubCode
+                              ? 'Loading...'
+                              : (_clubCode ?? 'Refresh to load code'),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF757575),
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        tooltip: 'Generate new code',
+                      ],
+                    ),
+                  ),
+                  if (_clubCode != null && !_isLoadingClubCode) ...[
+                    // Download QR Code button
+                    IconButton(
+                      icon: const Icon(Icons.download, size: 20),
+                      color: const Color(0xFF757575),
+                      onPressed: _downloadQRCode,
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
                       ),
+                      tooltip: 'Download QR code',
+                    ),
+                    const SizedBox(width: 12),
+                    // Regenerate button
+                    _isRegeneratingClubCode
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF757575)),
+                            ),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.refresh, size: 20),
+                            color: const Color(0xFF757575),
+                            onPressed: _showRegenerateCodeDialog,
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(
+                              minWidth: 40,
+                              minHeight: 40,
+                            ),
+                            tooltip: 'Generate new code',
+                          ),
+                  ],
+                ],
+              ),
+              // QR Code display - updates in real-time
+              if (_clubCode != null && !_isLoadingClubCode) ...[
+                const SizedBox(height: 16),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE0E0E0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: QrImageView(
+                      data: '${Uri.base.origin}/clubs/$_clubCode',
+                      version: QrVersions.auto,
+                      size: 200.0,
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      errorStateBuilder: (context, error) {
+                        return Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.grey[600],
+                                size: 48,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'QR Code Error',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
