@@ -1220,7 +1220,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                 const SizedBox(width: 16),
                                                 const Expanded(
                                                   child: Text(
-                                                    'Guests List',
+                                                    'Club Guests',
                                                     style: TextStyle(
                                                       fontSize: 16,
                                                       fontWeight: FontWeight.w500,
