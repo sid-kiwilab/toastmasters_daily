@@ -1,5 +1,11 @@
 const admin = require('firebase-admin');
 const functions = require('firebase-functions');
+const { rateLimit } = require('./rate_limiter_functions');
+
+// Rate limit configuration for poll functions
+const RATE_LIMITS = {
+  submit_vote: { max_calls: 10, window_seconds: 60 }, // 60 per minute (voting can be frequent)
+};
 
 /**
  * Submits a vote for a poll
@@ -11,7 +17,7 @@ const functions = require('firebase-functions');
  * @param {Object} context - Firebase Functions context
  * @returns {Promise<Object>} Success status
  */
-exports.submit_vote = functions.https.onCall(async (data, context) => {
+const submit_vote_handler = async (data, context) => {
   try {
     const db = admin.firestore();
     
@@ -105,5 +111,13 @@ exports.submit_vote = functions.https.onCall(async (data, context) => {
       error: error.message || 'Failed to submit vote' 
     };
   }
-});
+};
+
+// Wrap with rate limiting
+exports.submit_vote = functions.https.onCall(
+  rateLimit(submit_vote_handler, {
+    ...RATE_LIMITS.submit_vote,
+    function_name: 'submit_vote'
+  })
+);
 

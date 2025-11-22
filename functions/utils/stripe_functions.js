@@ -1,11 +1,19 @@
 const admin = require('firebase-admin');
 const functions = require('firebase-functions');
 const stripe = require('stripe')(functions.config().stripe?.secret_key || process.env.STRIPE_SECRET_KEY);
+const { rateLimit } = require('./rate_limiter_functions');
 
 const db = admin.firestore();
 
+// Rate limit configuration for Stripe functions
+const RATE_LIMITS = {
+  create_checkout_session: { max_calls: 5, window_seconds: 60 }, // 5 per minute (payment operations)
+  cancel_subscription: { max_calls: 10, window_seconds: 60 }, // 10 per minute
+  resume_subscription: { max_calls: 10, window_seconds: 60 }, // 10 per minute
+};
+
 // Create Stripe checkout session
-exports.create_checkout_session = functions.https.onCall(async (data, context) => {
+const create_checkout_session_handler = async (data, context) => {
   // Verify authentication
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
@@ -67,10 +75,18 @@ exports.create_checkout_session = functions.https.onCall(async (data, context) =
     console.error('Error creating checkout session:', error);
     throw new functions.https.HttpsError('internal', 'Failed to create checkout session', error.message);
   }
-});
+};
+
+// Wrap with rate limiting
+exports.create_checkout_session = functions.https.onCall(
+  rateLimit(create_checkout_session_handler, {
+    ...RATE_LIMITS.create_checkout_session,
+    function_name: 'create_checkout_session'
+  })
+);
 
 // Cancel subscription auto-renewal
-exports.cancel_subscription = functions.https.onCall(async (data, context) => {
+const cancel_subscription_handler = async (data, context) => {
   // Verify authentication
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
@@ -127,10 +143,18 @@ exports.cancel_subscription = functions.https.onCall(async (data, context) => {
     }
     throw new functions.https.HttpsError('internal', 'Failed to cancel subscription', error.message);
   }
-});
+};
+
+// Wrap with rate limiting
+exports.cancel_subscription = functions.https.onCall(
+  rateLimit(cancel_subscription_handler, {
+    ...RATE_LIMITS.cancel_subscription,
+    function_name: 'cancel_subscription'
+  })
+);
 
 // Resume subscription auto-renewal
-exports.resume_subscription = functions.https.onCall(async (data, context) => {
+const resume_subscription_handler = async (data, context) => {
   // Verify authentication
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
@@ -187,7 +211,15 @@ exports.resume_subscription = functions.https.onCall(async (data, context) => {
     }
     throw new functions.https.HttpsError('internal', 'Failed to resume subscription', error.message);
   }
-});
+};
+
+// Wrap with rate limiting
+exports.resume_subscription = functions.https.onCall(
+  rateLimit(resume_subscription_handler, {
+    ...RATE_LIMITS.resume_subscription,
+    function_name: 'resume_subscription'
+  })
+);
 
 // Stripe webhook handler
 exports.handle_stripe_webhook = functions.https.onRequest(async (req, res) => {

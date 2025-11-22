@@ -1,5 +1,12 @@
 const admin = require('firebase-admin');
 const functions = require('firebase-functions');
+const { rateLimit } = require('./rate_limiter_functions');
+
+// Rate limit configuration for meeting functions
+const RATE_LIMITS = {
+  create_meeting: { max_calls: 10, window_seconds: 60 }, // 10 per minute
+  delete_meeting: { max_calls: 20, window_seconds: 60 }, // 20 per minute
+};
 
 /**
  * Creates a new live meeting in Firestore
@@ -9,7 +16,7 @@ const functions = require('firebase-functions');
  * @param {Object} context - Firebase Functions context
  * @returns {Promise<Object>} The created meeting document
  */
-exports.create_meeting = functions.https.onCall(async (data, context) => {
+const create_meeting_handler = async (data, context) => {
   try {
     const db = admin.firestore();
     
@@ -129,7 +136,15 @@ exports.create_meeting = functions.https.onCall(async (data, context) => {
     console.error('Error creating meeting:', error);
     return { success: false, error: 'Failed to create meeting' };
   }
-});
+};
+
+// Wrap with rate limiting
+exports.create_meeting = functions.https.onCall(
+  rateLimit(create_meeting_handler, {
+    ...RATE_LIMITS.create_meeting,
+    function_name: 'create_meeting'
+  })
+);
 
 /**
  * Deletes a meeting from both active_meetings and user's meetings collection
@@ -139,7 +154,7 @@ exports.create_meeting = functions.https.onCall(async (data, context) => {
  * @param {Object} context - Firebase Functions context
  * @returns {Promise<Object>} Success status
  */
-exports.delete_meeting = functions.https.onCall(async (data, context) => {
+const delete_meeting_handler = async (data, context) => {
   try {
     const db = admin.firestore();
     
@@ -211,5 +226,13 @@ exports.delete_meeting = functions.https.onCall(async (data, context) => {
       error: error.message || 'Failed to delete meeting' 
     };
   }
-});
+};
+
+// Wrap with rate limiting
+exports.delete_meeting = functions.https.onCall(
+  rateLimit(delete_meeting_handler, {
+    ...RATE_LIMITS.delete_meeting,
+    function_name: 'delete_meeting'
+  })
+);
 

@@ -12,38 +12,68 @@ class GuestListScreen extends StatefulWidget {
 }
 
 class _GuestListScreenState extends State<GuestListScreen> {
-  StreamSubscription<QuerySnapshot>? _guestsSubscription;
   List<Map<String, dynamic>> _guests = [];
   Set<String> _selectedGuestIds = {};
   bool _isDeleting = false;
+  bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  DocumentSnapshot? _lastDocument;
+  final ScrollController _scrollController = ScrollController();
+  static const int _pageSize = 20;
 
   @override
   void initState() {
     super.initState();
-    _setupGuestsListener();
+    _loadGuests();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _guestsSubscription?.cancel();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _setupGuestsListener() {
+  void _onScroll() {
+    if (_scrollController.position.pixels >= 
+        _scrollController.position.maxScrollExtent - 200) {
+      // Load more when within 200 pixels of bottom
+      if (!_isLoadingMore && _hasMore) {
+        _loadMoreGuests();
+      }
+    }
+  }
+
+  Future<void> _loadGuests() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.currentUser == null) return;
+    if (authProvider.currentUser == null) {
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
     
     final userId = authProvider.currentUser!.uid;
     
-    _guestsSubscription?.cancel();
-    _guestsSubscription = FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('guests')
-        .orderBy('created_at', descending: true)
-        .limit(100) // Limit to most recent 100 guests
-        .snapshots()
-        .listen((snapshot) {
+    setState(() {
+      _isLoading = true;
+      _guests = [];
+      _lastDocument = null;
+      _hasMore = true;
+    });
+    
+    try {
+      final query = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('guests')
+          .orderBy('created_at', descending: true)
+          .limit(_pageSize);
+      
+      final snapshot = await query.get();
+      
       if (!mounted) return;
       
       setState(() {
@@ -58,10 +88,72 @@ class _GuestListScreenState extends State<GuestListScreen> {
             'created_at': data['created_at'],
           };
         }).toList();
+        
+        _lastDocument = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+        _hasMore = snapshot.docs.length == _pageSize;
+        _isLoading = false;
       });
-    }, onError: (error) {
+    } catch (error) {
       print('Error loading guests: $error');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadMoreGuests() async {
+    if (_isLoadingMore || !_hasMore || _lastDocument == null) return;
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser == null) return;
+    
+    final userId = authProvider.currentUser!.uid;
+    
+    setState(() {
+      _isLoadingMore = true;
     });
+    
+    try {
+      final query = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('guests')
+          .orderBy('created_at', descending: true)
+          .startAfterDocument(_lastDocument!)
+          .limit(_pageSize);
+      
+      final snapshot = await query.get();
+      
+      if (!mounted) return;
+      
+      setState(() {
+        final newGuests = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return {
+            'id': doc.id,
+            'name': data['name'] ?? '',
+            'email': data['email'] ?? '',
+            'phone': data['phone'] ?? '',
+            'comments': data['comments'] ?? '',
+            'created_at': data['created_at'],
+          };
+        }).toList();
+        
+        _guests.addAll(newGuests);
+        _lastDocument = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+        _hasMore = snapshot.docs.length == _pageSize;
+        _isLoadingMore = false;
+      });
+    } catch (error) {
+      print('Error loading more guests: $error');
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
+    }
   }
 
   List<Map<String, dynamic>> get _displayedGuests {
@@ -163,6 +255,9 @@ class _GuestListScreenState extends State<GuestListScreen> {
         _isDeleting = false;
       });
       
+      // Reload guests after deletion
+      await _loadGuests();
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -208,7 +303,6 @@ class _GuestListScreenState extends State<GuestListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final groupedGuests = _groupGuestsByDate();
     
     return Scaffold(
       backgroundColor: Colors.white,
@@ -291,86 +385,118 @@ class _GuestListScreenState extends State<GuestListScreen> {
           ],
         ],
       ),
-      body: _guests.isEmpty
+      body: _isLoading && _guests.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.people_outline,
-                    size: 48,
-                    color: Colors.grey[400],
-                  ),
+                  const CircularProgressIndicator(),
                   const SizedBox(height: 16),
                   Text(
-                    'No guests yet',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Guests who enter their information will appear here',
+                    'Loading guests...',
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w400,
                       color: Colors.grey[600],
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
             )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 800),
+          : _guests.isEmpty
+              ? Center(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      ...groupedGuests.entries.map((entry) {
-                        final dayCount = entry.value.length;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12, top: 8),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    _formatDateHeader(entry.key),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF212121),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '($dayCount ${dayCount == 1 ? 'guest' : 'guests'})',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Color(0xFF757575),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            ...entry.value.map((guest) => _buildGuestCard(guest)),
-                            const SizedBox(height: 8),
-                          ],
-                        );
-                      }),
+                      Icon(
+                        Icons.people_outline,
+                        size: 48,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No guests yet',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Guests who enter their information will appear here',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
+                )
+              : _buildGuestList(),
+    );
+  }
+
+  Widget _buildGuestList() {
+    final groupedGuests = _groupGuestsByDate();
+    
+    return SingleChildScrollView(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ...groupedGuests.entries.map((entry) {
+                final dayCount = entry.value.length;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12, top: 8),
+                      child: Row(
+                        children: [
+                          Text(
+                            _formatDateHeader(entry.key),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF212121),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '($dayCount ${dayCount == 1 ? 'guest' : 'guests'})',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF757575),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...entry.value.map((guest) => _buildGuestCard(guest)),
+                    const SizedBox(height: 8),
+                  ],
+                );
+              }),
+              // Loading indicator at bottom when loading more
+              if (_isLoadingMore)
+                const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
-              ),
-            ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

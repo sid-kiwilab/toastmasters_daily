@@ -1,5 +1,11 @@
 const admin = require('firebase-admin');
 const functions = require('firebase-functions');
+const { rateLimit } = require('./rate_limiter_functions');
+
+// Rate limit configuration for agenda functions
+const RATE_LIMITS = {
+  upload_agenda: { max_calls: 10, window_seconds: 60 }, // 10 per minute (file uploads)
+};
 
 /**
  * Uploads an agenda PDF to Firebase Storage
@@ -10,7 +16,7 @@ const functions = require('firebase-functions');
  * @param {Object} context - Firebase Functions context
  * @returns {Promise<Object>} Upload result with download URL
  */
-exports.upload_agenda = functions.https.onCall(async (data, context) => {
+const upload_agenda_handler = async (data, context) => {
   try {
     // Validate required fields
     if (!data.meetingId || !data.fileData || !data.fileName) {
@@ -100,6 +106,14 @@ exports.upload_agenda = functions.https.onCall(async (data, context) => {
       error: 'Failed to upload agenda: ' + error.message 
     };
   }
-});
+};
+
+// Wrap with rate limiting
+exports.upload_agenda = functions.https.onCall(
+  rateLimit(upload_agenda_handler, {
+    ...RATE_LIMITS.upload_agenda,
+    function_name: 'upload_agenda'
+  })
+);
 
 
