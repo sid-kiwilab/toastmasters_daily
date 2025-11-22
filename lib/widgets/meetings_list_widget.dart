@@ -367,9 +367,9 @@ class MeetingsListWidget extends StatelessWidget {
         const SizedBox(height: 12),
         // Create Meeting button - simple style like logout
         Opacity(
-          opacity: (isCreatingMeeting || !isSubscriptionActive) ? 0.5 : 1.0,
+          opacity: (isCreatingMeeting || !isSubscriptionActive || meetings.length >= 5) ? 0.5 : 1.0,
           child: TextButton.icon(
-            onPressed: (isCreatingMeeting || !isSubscriptionActive) ? null : onCreateMeeting,
+            onPressed: (isCreatingMeeting || !isSubscriptionActive || meetings.length >= 5) ? null : onCreateMeeting,
             icon: isCreatingMeeting
                 ? const SizedBox(
                     width: 16,
@@ -391,7 +391,9 @@ class MeetingsListWidget extends StatelessWidget {
                   ? 'Creating Meeting...'
                   : (!isSubscriptionActive
                       ? 'Create Meeting (Subscription Required)'
-                      : 'Create Meeting'),
+                      : (meetings.length >= 5
+                          ? 'Create Meeting (Limit: 5 meetings)'
+                          : 'Create Meeting')),
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -410,6 +412,32 @@ class MeetingsListWidget extends StatelessWidget {
             ),
           ),
         ),
+        // Show meeting count info
+        if (meetings.length >= 5)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'You have reached the limit of 5 meetings. Please delete a meeting to create a new one.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.orange[700],
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          )
+        else if (meetings.length > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              '${meetings.length} of 5 meetings',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF757575),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
         // Existing meetings - separate card
         if (meetings.isNotEmpty) ...[
           const SizedBox(height: 12),

@@ -53,8 +53,43 @@ exports.create_meeting = functions.https.onCall(async (data, context) => {
       };
     }
     
-    // Generate random 8-digit meeting code
-    const meeting_code = Math.floor(10000000 + Math.random() * 90000000).toString();
+    // Check meeting limit (5 meetings max)
+    const userMeetingsSnapshot = await db
+      .collection('users')
+      .doc(data.creator_id)
+      .collection('meetings')
+      .get();
+    
+    if (userMeetingsSnapshot.size >= 5) {
+      console.error('Meeting limit reached for user:', data.creator_id);
+      return {
+        success: false,
+        error: 'You can only have 5 active meetings. Please delete a meeting before creating a new one.'
+      };
+    }
+    
+    // Generate random 8-digit meeting code and check for collisions
+    let meeting_code;
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    do {
+      meeting_code = Math.floor(10000000 + Math.random() * 90000000).toString();
+      const existingMeeting = await db.collection('active_meetings').doc(meeting_code).get();
+      
+      if (!existingMeeting.exists) {
+        break; // Code is available
+      }
+      
+      attempts++;
+      if (attempts >= maxAttempts) {
+        console.error('Failed to generate unique meeting code after', maxAttempts, 'attempts');
+        return {
+          success: false,
+          error: 'Failed to generate unique meeting code. Please try again.'
+        };
+      }
+    } while (attempts < maxAttempts);
     
     // Create meeting document with minimal required fields
     const meeting_doc = {
