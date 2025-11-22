@@ -215,11 +215,25 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
 
     _meetingsSubscription?.cancel();
 
+    // Calculate UTC range for "today" in local timezone
+    // This ensures we query server-side efficiently
+    final now = DateTime.now();
+    final todayStartLocal = DateTime(now.year, now.month, now.day);
+    final todayEndLocal = todayStartLocal.add(const Duration(days: 1));
+    
+    // Convert to UTC for Firestore query (since dates are stored in UTC)
+    final todayStartUTC = todayStartLocal.toUtc();
+    final todayEndUTC = todayEndLocal.toUtc();
+
+    // Query Firestore server-side to only get today's meetings
+    // This is much more efficient than loading all meetings and filtering client-side
     _meetingsSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(_userId!)
         .collection('meetings')
-        .orderBy('created_at', descending: true)
+        .where('meeting_date', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStartUTC))
+        .where('meeting_date', isLessThan: Timestamp.fromDate(todayEndUTC))
+        .orderBy('meeting_date', descending: false)
         .snapshots()
         .listen((snapshot) {
       if (!mounted) return;
@@ -261,6 +275,20 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
       chunks.add(meetingId.substring(i, end));
     }
     return chunks.join(' ');
+  }
+
+  // Helper function to format date
+  String _formatDate(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}';
+  }
+  
+  // Helper function to format time
+  String _formatTime(DateTime time) {
+    final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.hour < 12 ? 'AM' : 'PM';
+    return '$hour:$minute $period';
   }
 
   @override
@@ -660,7 +688,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                           ),
                                           const SizedBox(height: 20),
                                           const Text(
-                                            'No meetings available',
+                                            'No meetings today',
                                             style: TextStyle(
                                               fontSize: 18,
                                               fontWeight: FontWeight.w600,
@@ -670,7 +698,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                           ),
                                           const SizedBox(height: 8),
                                           const Text(
-                                            'Check back later for upcoming meetings',
+                                            'There are no meetings scheduled for today',
                                             style: TextStyle(
                                               fontSize: 14,
                                               color: Color(0xFF757575),
@@ -746,6 +774,71 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                                           color: Color(0xFF757575),
                                                         ),
                                                       ),
+                                                      // Date and Time display - vertically stacked
+                                                      if (meeting.meetingDate != null || meeting.meetingTime != null) ...[
+                                                        const SizedBox(height: 10),
+                                                        Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          children: [
+                                                            if (meeting.meetingDate != null)
+                                                              Container(
+                                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                                decoration: BoxDecoration(
+                                                                  color: const Color(0xFFF5F5F5),
+                                                                  borderRadius: BorderRadius.circular(6),
+                                                                ),
+                                                                child: Row(
+                                                                  mainAxisSize: MainAxisSize.min,
+                                                                  children: [
+                                                                    const Icon(
+                                                                      Icons.calendar_today,
+                                                                      size: 16,
+                                                                      color: Color(0xFF424242),
+                                                                    ),
+                                                                    const SizedBox(width: 6),
+                                                                    Text(
+                                                                      _formatDate(meeting.meetingDate!),
+                                                                      style: const TextStyle(
+                                                                        fontSize: 13,
+                                                                        color: Color(0xFF424242),
+                                                                        fontWeight: FontWeight.w600,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            if (meeting.meetingDate != null && meeting.meetingTime != null)
+                                                              const SizedBox(height: 6),
+                                                            if (meeting.meetingTime != null)
+                                                              Container(
+                                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                                decoration: BoxDecoration(
+                                                                  color: const Color(0xFFF5F5F5),
+                                                                  borderRadius: BorderRadius.circular(6),
+                                                                ),
+                                                                child: Row(
+                                                                  mainAxisSize: MainAxisSize.min,
+                                                                  children: [
+                                                                    const Icon(
+                                                                      Icons.access_time,
+                                                                      size: 16,
+                                                                      color: Color(0xFF424242),
+                                                                    ),
+                                                                    const SizedBox(width: 6),
+                                                                    Text(
+                                                                      _formatTime(meeting.meetingTime!),
+                                                                      style: const TextStyle(
+                                                                        fontSize: 13,
+                                                                        color: Color(0xFF424242),
+                                                                        fontWeight: FontWeight.w600,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                          ],
+                                                        ),
+                                                      ],
                                                     ],
                                                   ),
                                                 ),
