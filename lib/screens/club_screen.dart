@@ -266,17 +266,6 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
     Navigator.pushNamed(context, '/meetings/$meetingId');
   }
 
-  String _formatMeetingCode(String meetingId) {
-    // Format meeting code with spaces for readability (e.g., "1234 5678")
-    if (meetingId.length <= 4) return meetingId;
-    final chunks = <String>[];
-    for (int i = 0; i < meetingId.length; i += 4) {
-      final end = (i + 4 < meetingId.length) ? i + 4 : meetingId.length;
-      chunks.add(meetingId.substring(i, end));
-    }
-    return chunks.join(' ');
-  }
-
   // Helper function to format date
   String _formatDate(DateTime date) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -762,16 +751,6 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                                           fontWeight: FontWeight.w600,
                                                           color: Color(0xFF212121),
                                                           letterSpacing: -0.3,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 6),
-                                                      Text(
-                                                        _formatMeetingCode(meeting.id),
-                                                        style: const TextStyle(
-                                                          fontSize: 14,
-                                                          fontWeight: FontWeight.w500,
-                                                          letterSpacing: 2,
-                                                          color: Color(0xFF757575),
                                                         ),
                                                       ),
                                                       // Date and Time display

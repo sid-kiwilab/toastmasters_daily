@@ -60,29 +60,6 @@ const create_meeting_handler = async (data, context) => {
       };
     }
     
-    // Generate random 8-digit meeting code and check for collisions
-    let meeting_code;
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    do {
-      meeting_code = Math.floor(10000000 + Math.random() * 90000000).toString();
-      const existingMeeting = await db.collection('active_meetings').doc(meeting_code).get();
-      
-      if (!existingMeeting.exists) {
-        break; // Code is available
-      }
-      
-      attempts++;
-      if (attempts >= maxAttempts) {
-        console.error('Failed to generate unique meeting code after', maxAttempts, 'attempts');
-        return {
-          success: false,
-          error: 'Failed to generate unique meeting code. Please try again.'
-        };
-      }
-    } while (attempts < maxAttempts);
-    
     // Create meeting document with minimal required fields
     const meeting_doc = {
       title: data.title,
@@ -93,16 +70,17 @@ const create_meeting_handler = async (data, context) => {
     // Use batch write to ensure both operations happen atomically
     const batch = db.batch();
     
-    // Add meeting to active_meetings collection
-    const active_meeting_ref = db.collection('active_meetings').doc(meeting_code);
+    // Create meeting in active_meetings collection with auto-generated ID
+    const active_meeting_ref = db.collection('active_meetings').doc(); // Firestore auto-generates the ID
+    const meeting_id = active_meeting_ref.id; // Get the auto-generated ID
     batch.set(active_meeting_ref, meeting_doc);
     
-    // Add meeting to user's meetings collection
+    // Add meeting to user's meetings collection (use same auto-generated ID)
     const user_meeting_ref = db
       .collection('users')
       .doc(data.creator_id)
       .collection('meetings')
-      .doc(meeting_code);
+      .doc(meeting_id); // Use the same auto-generated ID
     batch.set(user_meeting_ref, meeting_doc);
     
     // Commit the batch - both operations succeed or both fail
@@ -112,7 +90,7 @@ const create_meeting_handler = async (data, context) => {
     return {
       success: true,
       meeting: {
-        id: meeting_code,
+        id: meeting_id, // Return the auto-generated ID
         ...meeting_doc
       }
     };

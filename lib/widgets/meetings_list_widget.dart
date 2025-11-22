@@ -40,22 +40,6 @@ class MeetingsListWidget extends StatelessWidget {
     return meeting.meetingDateTime!.isBefore(DateTime.now());
   }
 
-  // Helper method to format meeting ID with space for display
-  String _formatMeetingId(String meetingId) {
-    if (meetingId == 'Unknown ID') return meetingId;
-    
-    // Remove any existing spaces and non-digit characters
-    final digits = meetingId.replaceAll(RegExp(r'[^0-9]'), '');
-    
-    // If it's 8 digits, add space in the middle
-    if (digits.length == 8) {
-      return '${digits.substring(0, 4)} ${digits.substring(4)}';
-    }
-    
-    // Return original if not 8 digits
-    return meetingId;
-  }
-
   // Helper function to format date
   String _formatDate(DateTime date) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -223,16 +207,6 @@ class MeetingsListWidget extends StatelessWidget {
                                 ),
                               ],
                             ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _formatMeetingId(meeting.id),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF757575),
-                              fontFamily: 'monospace',
-                              letterSpacing: 2,
-                            ),
                           ),
                           // Date and Time buttons - only show on mobile (vertically stacked)
                           if (isMobile) ...[

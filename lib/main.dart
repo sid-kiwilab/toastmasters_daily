@@ -291,9 +291,9 @@ class SignUpAuthGate extends StatelessWidget {
 
 // Helper function to convert URL meeting ID to actual meeting ID
 String _convertUrlToMeetingId(String urlMeetingId) {
-  // Remove any non-digit characters and return the clean meeting ID
-  // This should match exactly what's stored in the active_meetings collection
-  return urlMeetingId.replaceAll(RegExp(r'[^0-9]'), '');
+  // Return the meeting ID as-is (Firestore auto-generated IDs can contain letters, numbers, etc.)
+  // This matches what's stored in the active_meetings collection
+  return urlMeetingId;
 }
 
 // Helper function to convert URL format back to role name (proper capitalization)
