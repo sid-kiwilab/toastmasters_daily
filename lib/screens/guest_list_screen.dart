@@ -12,15 +12,17 @@ class GuestListScreen extends StatefulWidget {
 }
 
 class _GuestListScreenState extends State<GuestListScreen> {
-  List<Map<String, dynamic>> _guests = [];
-  Set<String> _selectedGuestIds = {};
+  List<Map<String, dynamic>> _allGuestEntries = []; // All individual entries
+  List<Map<String, dynamic>> _uniqueGuests = []; // Grouped by device_id with counts
+  Set<String> _selectedEntryIds = {}; // Track selection by entry ID (each entry independently)
+  Set<String> _expandedDeviceIds = {}; // Track which guests have expanded attendance lists
   bool _isDeleting = false;
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   DocumentSnapshot? _lastDocument;
   final ScrollController _scrollController = ScrollController();
-  static const int _pageSize = 20;
+  static const int _pageSize = 50; // Load more entries per page for grouping
 
   @override
   void initState() {
@@ -59,7 +61,8 @@ class _GuestListScreenState extends State<GuestListScreen> {
     
     setState(() {
       _isLoading = true;
-      _guests = [];
+      _allGuestEntries = [];
+      _uniqueGuests = [];
       _lastDocument = null;
       _hasMore = true;
     });
@@ -77,20 +80,25 @@ class _GuestListScreenState extends State<GuestListScreen> {
       if (!mounted) return;
       
       setState(() {
-        _guests = snapshot.docs.map((doc) {
+        _allGuestEntries = snapshot.docs.map((doc) {
           final data = doc.data();
           return {
             'id': doc.id,
+            'device_id': data['device_id'] ?? '',
             'name': data['name'] ?? '',
             'email': data['email'] ?? '',
             'phone': data['phone'] ?? '',
             'comments': data['comments'] ?? '',
             'created_at': data['created_at'],
+            'entry_date': data['entry_date'] ?? '',
           };
         }).toList();
         
         _lastDocument = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
         _hasMore = snapshot.docs.length == _pageSize;
+        
+        // Group by device_id and count attendances
+        _uniqueGuests = _groupGuestsByDeviceId(_allGuestEntries);
         _isLoading = false;
       });
     } catch (error) {
@@ -129,21 +137,26 @@ class _GuestListScreenState extends State<GuestListScreen> {
       if (!mounted) return;
       
       setState(() {
-        final newGuests = snapshot.docs.map((doc) {
+        final newEntries = snapshot.docs.map((doc) {
           final data = doc.data();
           return {
             'id': doc.id,
+            'device_id': data['device_id'] ?? '',
             'name': data['name'] ?? '',
             'email': data['email'] ?? '',
             'phone': data['phone'] ?? '',
             'comments': data['comments'] ?? '',
             'created_at': data['created_at'],
+            'entry_date': data['entry_date'] ?? '',
           };
         }).toList();
         
-        _guests.addAll(newGuests);
+        _allGuestEntries.addAll(newEntries);
         _lastDocument = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
         _hasMore = snapshot.docs.length == _pageSize;
+        
+        // Re-group all entries by device_id
+        _uniqueGuests = _groupGuestsByDeviceId(_allGuestEntries);
         _isLoadingMore = false;
       });
     } catch (error) {
@@ -156,28 +169,129 @@ class _GuestListScreenState extends State<GuestListScreen> {
     }
   }
 
-  List<Map<String, dynamic>> get _displayedGuests {
-    return _guests;
+  /// Groups guest entries by device_id and counts attendances
+  /// Returns list of unique guests with their most recent info and attendance count
+  List<Map<String, dynamic>> _groupGuestsByDeviceId(List<Map<String, dynamic>> entries) {
+    final grouped = <String, List<Map<String, dynamic>>>{};
+    
+    // Group all entries by device_id
+    for (final entry in entries) {
+      final deviceId = entry['device_id'] as String? ?? '';
+      if (deviceId.isEmpty) continue;
+      
+      if (!grouped.containsKey(deviceId)) {
+        grouped[deviceId] = [];
+      }
+      grouped[deviceId]!.add(entry);
+    }
+    
+    // Create unique guest list with most recent info and attendance count
+    final uniqueGuests = <Map<String, dynamic>>[];
+    
+    for (final entry in grouped.entries) {
+      final deviceId = entry.key;
+      final entries = entry.value;
+      
+      // Sort by created_at to get most recent entry first
+      entries.sort((a, b) {
+        final aTime = a['created_at'] as Timestamp?;
+        final bTime = b['created_at'] as Timestamp?;
+        if (aTime == null && bTime == null) return 0;
+        if (aTime == null) return 1;
+        if (bTime == null) return -1;
+        return bTime.compareTo(aTime); // Descending (most recent first)
+      });
+      
+      // Use most recent entry's info
+      final mostRecent = entries.first;
+      
+      uniqueGuests.add({
+        'device_id': deviceId,
+        'name': mostRecent['name'] ?? '',
+        'email': mostRecent['email'] ?? '',
+        'phone': mostRecent['phone'] ?? '',
+        'comments': mostRecent['comments'] ?? '',
+        'created_at': mostRecent['created_at'], // Most recent attendance
+        'attendance_count': entries.length, // Total number of attendances
+        'all_entry_ids': entries.map((e) => e['id'] as String).toList(), // For deletion
+        'all_attendances': entries, // Store all attendance entries for display
+      });
+    }
+    
+    // Sort by most recent attendance (descending)
+    uniqueGuests.sort((a, b) {
+      final aTime = a['created_at'] as Timestamp?;
+      final bTime = b['created_at'] as Timestamp?;
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      return bTime.compareTo(aTime); // Descending
+    });
+    
+    return uniqueGuests;
+  }
+  
+  void _toggleAttendanceExpansion(String expansionKey) {
+    setState(() {
+      if (_expandedDeviceIds.contains(expansionKey)) {
+        _expandedDeviceIds.remove(expansionKey);
+      } else {
+        _expandedDeviceIds.add(expansionKey);
+      }
+    });
   }
 
   Map<String, List<Map<String, dynamic>>> _groupGuestsByDate() {
     final grouped = <String, List<Map<String, dynamic>>>{};
     
-    for (final guest in _displayedGuests) {
-      final createdAt = guest['created_at'] as Timestamp?;
+    // Group all entries by their entry_date (not just unique guests)
+    // This way, if a guest attended on multiple dates, they appear in each date section
+    for (final entry in _allGuestEntries) {
       String dateKey;
       
-      if (createdAt != null) {
-        final date = createdAt.toDate();
-        dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      // Try to use entry_date first (more reliable)
+      final entryDate = entry['entry_date'] as String?;
+      if (entryDate != null && entryDate.isNotEmpty) {
+        dateKey = entryDate;
       } else {
-        dateKey = 'Unknown';
+        // Fallback to created_at
+        final createdAt = entry['created_at'] as Timestamp?;
+        if (createdAt != null) {
+          final date = createdAt.toDate();
+          dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        } else {
+          dateKey = 'Unknown';
+        }
       }
       
       if (!grouped.containsKey(dateKey)) {
         grouped[dateKey] = [];
       }
-      grouped[dateKey]!.add(guest);
+      
+      // For each entry, get the unique guest info to show attendance count
+      final deviceId = entry['device_id'] as String? ?? '';
+      final uniqueGuest = _uniqueGuests.firstWhere(
+        (g) => g['device_id'] == deviceId,
+        orElse: () => {
+          'device_id': deviceId,
+          'name': entry['name'] ?? '',
+          'email': entry['email'] ?? '',
+          'phone': entry['phone'] ?? '',
+          'comments': entry['comments'] ?? '',
+          'created_at': entry['created_at'],
+          'attendance_count': 1,
+          'all_entry_ids': [entry['id']],
+          'all_attendances': [entry],
+        },
+      );
+      
+      // Create a card entry with this specific attendance's info
+      grouped[dateKey]!.add({
+        ...uniqueGuest,
+        'current_entry': entry, // The specific entry for this date
+        'current_entry_id': entry['id'],
+        'current_created_at': entry['created_at'],
+      });
     }
     
     final sortedKeys = grouped.keys.toList()..sort((a, b) {
@@ -224,13 +338,14 @@ class _GuestListScreenState extends State<GuestListScreen> {
   }
 
   Future<void> _deleteSelectedGuests() async {
-    if (_selectedGuestIds.isEmpty) return;
+    if (_selectedEntryIds.isEmpty) return;
     
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.currentUser == null) return;
     
-    final count = _selectedGuestIds.length;
-    final guestIdsToDelete = _selectedGuestIds.toList();
+    // Delete selected entry IDs directly
+    final entryIdsToDelete = _selectedEntryIds.toList();
+    final count = entryIdsToDelete.length;
     
     setState(() {
       _isDeleting = true;
@@ -239,19 +354,20 @@ class _GuestListScreenState extends State<GuestListScreen> {
     try {
       final batch = FirebaseFirestore.instance.batch();
       
-      for (final guestId in guestIdsToDelete) {
+      // Delete all entries for selected guests
+      for (final entryId in entryIdsToDelete) {
         final guestRef = FirebaseFirestore.instance
             .collection('users')
             .doc(authProvider.currentUser!.uid)
             .collection('guests')
-            .doc(guestId);
+            .doc(entryId);
         batch.delete(guestRef);
       }
       
       await batch.commit();
       
       setState(() {
-        _selectedGuestIds.clear();
+        _selectedEntryIds.clear();
         _isDeleting = false;
       });
       
@@ -261,7 +377,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$count ${count == 1 ? 'guest' : 'guests'} deleted'),
+            content: Text('$count ${count == 1 ? 'entry' : 'entries'} deleted'),
             backgroundColor: Colors.green,
           ),
         );
@@ -282,12 +398,12 @@ class _GuestListScreenState extends State<GuestListScreen> {
     }
   }
 
-  void _toggleGuestSelection(String guestId) {
+  void _toggleGuestSelection(String entryId) {
     setState(() {
-      if (_selectedGuestIds.contains(guestId)) {
-        _selectedGuestIds.remove(guestId);
+      if (_selectedEntryIds.contains(entryId)) {
+        _selectedEntryIds.remove(entryId);
       } else {
-        _selectedGuestIds.add(guestId);
+        _selectedEntryIds.add(entryId);
       }
     });
   }
@@ -312,15 +428,15 @@ class _GuestListScreenState extends State<GuestListScreen> {
         foregroundColor: const Color(0xFF212121),
         elevation: 0,
         actions: [
-          if (_selectedGuestIds.isNotEmpty) ...[
+          if (_selectedEntryIds.isNotEmpty) ...[
             InkWell(
               onTap: _isDeleting ? null : () async {
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Delete Guests'),
+                    title: const Text('Delete Entries'),
                     content: Text(
-                      'Are you sure you want to delete ${_selectedGuestIds.length} ${_selectedGuestIds.length == 1 ? 'guest' : 'guests'}?',
+                      'Are you sure you want to delete ${_selectedEntryIds.length} ${_selectedEntryIds.length == 1 ? 'entry' : 'entries'}?',
                     ),
                     actions: [
                       TextButton(
@@ -385,7 +501,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
           ],
         ],
       ),
-      body: _isLoading && _guests.isEmpty
+      body: _isLoading && _uniqueGuests.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -402,7 +518,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
                 ],
               ),
             )
-          : _guests.isEmpty
+          : _uniqueGuests.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -501,16 +617,27 @@ class _GuestListScreenState extends State<GuestListScreen> {
   }
 
   Widget _buildGuestCard(Map<String, dynamic> guest) {
-    final guestId = guest['id'] as String;
-    final isSelected = _selectedGuestIds.contains(guestId);
-    final createdAt = guest['created_at'] as Timestamp?;
+    final deviceId = guest['device_id'] as String;
+    final currentEntryId = guest['current_entry_id'] as String? ?? guest['id'] as String? ?? '';
+    
+    // Use a unique key for expansion: device_id + entry_id
+    // This ensures each entry card expands independently
+    final expansionKey = '$deviceId-$currentEntryId';
+    // Use entry ID for selection so each entry is selected independently
+    final isSelected = _selectedEntryIds.contains(currentEntryId);
+    final isExpanded = _expandedDeviceIds.contains(expansionKey);
+    
+    // Use current entry's time if available (for entries shown on specific dates)
+    final currentCreatedAt = guest['current_created_at'] as Timestamp?;
+    final createdAt = currentCreatedAt ?? (guest['created_at'] as Timestamp?);
     final dateStr = createdAt != null
         ? _formatTime(createdAt.toDate())
         : '';
+    final attendanceCount = guest['attendance_count'] as int? ?? 1;
+    final allAttendances = guest['all_attendances'] as List<dynamic>? ?? [];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isSelected ? const Color(0xFFF5F5F5) : Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -534,109 +661,336 @@ class _GuestListScreenState extends State<GuestListScreen> {
                 ),
               ],
       ),
-      child: InkWell(
-        onTap: () => _toggleGuestSelection(guestId),
-        borderRadius: BorderRadius.circular(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              margin: const EdgeInsets.only(top: 2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? const Color(0xFF424242) : const Color(0xFFE0E0E0),
-                  width: 2,
-                ),
-                color: isSelected ? const Color(0xFF424242) : Colors.white,
-              ),
-              child: isSelected
-                  ? const Icon(
-                      Icons.check,
-                      size: 16,
-                      color: Colors.white,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
+      child: Column(
+        children: [
+          // Main guest info
+          InkWell(
+            onTap: () => _toggleGuestSelection(currentEntryId),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    guest['name'] ?? 'No name',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF212121),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    guest['email'] ?? 'No email',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  if (guest['phone'] != null && guest['phone'].toString().isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      guest['phone'],
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
+                  Container(
+                    width: 24,
+                    height: 24,
+                    margin: const EdgeInsets.only(top: 2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected ? const Color(0xFF424242) : const Color(0xFFE0E0E0),
+                        width: 2,
                       ),
+                      color: isSelected ? const Color(0xFF424242) : Colors.white,
                     ),
-                  ],
-                  if (guest['comments'] != null && guest['comments'].toString().isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.comment_outlined,
+                    child: isSelected
+                        ? const Icon(
+                            Icons.check,
                             size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              guest['comments'],
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[700],
-                                fontStyle: FontStyle.italic,
+                            color: Colors.white,
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Name and badge row - left aligned
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              guest['name'] ?? 'No name',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF212121),
                               ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Attendance badge - positioned next to name
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE3F2FD),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.event_available,
+                                    size: 16,
+                                    color: Colors.blue[700],
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '$attendanceCount',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.blue[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          guest['email'] ?? 'No email',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        if (guest['phone'] != null && guest['phone'].toString().isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            guest['phone'],
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
                             ),
                           ),
                         ],
-                      ),
+                        if (guest['comments'] != null && guest['comments'].toString().isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.comment_outlined,
+                                  size: 16,
+                                  color: Colors.grey[600],
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    guest['comments'],
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[700],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
+                  // Time and expand button column
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (dateStr.isNotEmpty)
+                        Text(
+                          dateStr,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      if (attendanceCount > 1) ...[
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: () => _toggleAttendanceExpansion(expansionKey),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'View attendances',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                                  size: 16,
+                                  color: Colors.grey[700],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ),
-            if (dateStr.isNotEmpty)
-              Text(
-                dateStr,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[500],
+          ),
+          // Expanded attendance list
+          if (isExpanded && attendanceCount > 1 && allAttendances.isNotEmpty)
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAFAFA),
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.grey[300]!,
+                    width: 1,
+                  ),
+                ),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(12),
                 ),
               ),
-          ],
-        ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'All Attendances ($attendanceCount)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...allAttendances.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final attendance = entry.value as Map<String, dynamic>;
+                      final attendanceTime = attendance['created_at'] as Timestamp?;
+                      final attendanceDate = attendance['entry_date'] as String?;
+                      
+                      return Container(
+                        margin: EdgeInsets.only(bottom: index < allAttendances.length - 1 ? 8 : 0),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.grey[200]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE3F2FD),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blue[700],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (attendanceDate != null)
+                                    Text(
+                                      _formatAttendanceDate(attendanceDate),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF212121),
+                                      ),
+                                    ),
+                                  if (attendanceTime != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatTime(attendanceTime.toDate()),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            if (index == 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Latest',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.green[700],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
+  }
+  
+  String _formatAttendanceDate(String dateString) {
+    try {
+      final parts = dateString.split('-');
+      if (parts.length != 3) return dateString;
+      
+      final year = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final day = int.parse(parts[2]);
+      final date = DateTime(year, month, day);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final dateOnly = DateTime(date.year, date.month, date.day);
+      
+      if (dateOnly == today) {
+        return 'Today';
+      } else if (dateOnly == today.subtract(const Duration(days: 1))) {
+        return 'Yesterday';
+      } else {
+        final months = [
+          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+        return '${months[month - 1]} ${day}, ${year}';
+      }
+    } catch (e) {
+      return dateString;
+    }
   }
 }
 
