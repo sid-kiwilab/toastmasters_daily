@@ -28,7 +28,8 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
   String? _errorMessage;
   String? _deviceId;
   bool _hasCheckedDevice = false;
-  bool _hasExistingEntry = false;
+  bool _hasExistingEntryToday = false;
+  int _totalAttendances = 0;
 
   @override
   void initState() {
@@ -39,6 +40,18 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
   Future<void> _initialize() async {
     await _getDeviceId();
     await _checkExistingEntry();
+    await _countTotalAttendances();
+  }
+  
+  /// Formats a DateTime to a date string (YYYY-MM-DD) for efficient querying
+  static String _formatDateString(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+  
+  /// Gets today's date string in local timezone
+  static String _getTodayDateString() {
+    final now = DateTime.now();
+    return _formatDateString(now);
   }
 
   Future<void> _getDeviceId() async {
@@ -67,21 +80,103 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
       }
       if (creatorId == null) return;
 
+      // Check for entry on today's date (same device_id + same date)
+      // This query scales efficiently with a composite index on (device_id, entry_date)
+      final todayDateString = _getTodayDateString();
+      
       final querySnapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(creatorId)
           .collection('guests')
           .where('device_id', isEqualTo: _deviceId)
+          .where('entry_date', isEqualTo: todayDateString)
           .limit(1)
           .get();
 
       if (mounted) {
         setState(() {
-          _hasExistingEntry = querySnapshot.docs.isNotEmpty;
+          _hasExistingEntryToday = querySnapshot.docs.isNotEmpty;
         });
       }
     } catch (e) {
       print('Error checking existing entry: $e');
+      // If query fails (e.g., missing index), fallback to checking all entries
+      // and filtering by date client-side (less efficient but works)
+      try {
+        String? creatorId = widget.creatorId;
+        if (creatorId == null && widget.meetingId != null) {
+          creatorId = await MeetingUtils.getCreatorId(widget.meetingId!);
+        }
+        if (creatorId == null) return;
+        
+        final allEntries = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(creatorId)
+            .collection('guests')
+            .where('device_id', isEqualTo: _deviceId)
+            .get();
+        
+        final todayDateString = _getTodayDateString();
+        final hasEntryToday = allEntries.docs.any((doc) {
+          final entryDate = doc.data()['entry_date'] as String?;
+          return entryDate == todayDateString;
+        });
+        
+        if (mounted) {
+          setState(() {
+            _hasExistingEntryToday = hasEntryToday;
+          });
+        }
+      } catch (e2) {
+        print('Error in fallback check: $e2');
+      }
+    }
+  }
+  
+  Future<void> _countTotalAttendances() async {
+    if (_deviceId == null) return;
+
+    try {
+      String? creatorId = widget.creatorId;
+      if (creatorId == null && widget.meetingId != null) {
+        creatorId = await MeetingUtils.getCreatorId(widget.meetingId!);
+      }
+      if (creatorId == null) return;
+
+      // Count all entries for this device_id
+      // Use count() for efficiency with large collections (no document reads)
+      try {
+        final countSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(creatorId)
+            .collection('guests')
+            .where('device_id', isEqualTo: _deviceId)
+            .count()
+            .get();
+
+        if (mounted) {
+          setState(() {
+            _totalAttendances = countSnapshot.count ?? 0;
+          });
+        }
+      } catch (e) {
+        // Fallback: if count() is not available, get all docs and count
+        print('Count query not available, using fallback: $e');
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(creatorId)
+            .collection('guests')
+            .where('device_id', isEqualTo: _deviceId)
+            .get();
+        
+        if (mounted) {
+          setState(() {
+            _totalAttendances = querySnapshot.docs.length;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error counting total attendances: $e');
     }
   }
 
@@ -99,9 +194,9 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
       return;
     }
 
-    if (_hasExistingEntry) {
+    if (_hasExistingEntryToday) {
       setState(() {
-        _errorMessage = 'You have already submitted your information for this meeting.';
+        _errorMessage = 'You have already submitted your information for today.';
       });
       return;
     }
@@ -133,29 +228,32 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
         return;
       }
 
-      // Double-check for existing entry before saving
+      // Double-check for existing entry on today's date before saving
+      final todayDateString = _getTodayDateString();
       final existingCheck = await FirebaseFirestore.instance
           .collection('users')
           .doc(creatorId)
           .collection('guests')
           .where('device_id', isEqualTo: _deviceId)
+          .where('entry_date', isEqualTo: todayDateString)
           .limit(1)
           .get();
 
       if (existingCheck.docs.isNotEmpty) {
         setState(() {
-          _errorMessage = 'You have already submitted your information for this meeting.';
+          _errorMessage = 'You have already submitted your information for today.';
           _isSaving = false;
-          _hasExistingEntry = true;
+          _hasExistingEntryToday = true;
         });
         return;
       }
 
-      // Prepare guest data
+      // Prepare guest data (reuse todayDateString from above)
       final guestData = <String, dynamic>{
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'device_id': _deviceId,
+        'entry_date': todayDateString, // Store date string for efficient same-day queries
         'created_at': FieldValue.serverTimestamp(),
       };
 
@@ -180,8 +278,12 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
 
       setState(() {
         _isSaving = false;
-        _hasExistingEntry = true;
+        _hasExistingEntryToday = true;
+        _totalAttendances = _totalAttendances + 1;
       });
+      
+      // Refresh attendance count to ensure accuracy
+      await _countTotalAttendances();
 
       // Clear form
       _nameController.clear();
@@ -375,7 +477,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                               ),
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) {
-                                if (!_isSaving && !_hasExistingEntry) {
+                                if (!_isSaving && !_hasExistingEntryToday) {
                                   _saveGuestInfo();
                                 }
                               },
@@ -401,7 +503,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                             ),
                           
                           // Already Submitted Message
-                          if (_hasExistingEntry && _errorMessage == null)
+                          if (_hasExistingEntryToday && _errorMessage == null)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 16),
                               child: Container(
@@ -415,21 +517,37 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                                     width: 1,
                                   ),
                                 ),
-                                child: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(Icons.check_circle_outline, 
-                                      color: Colors.green[700], 
-                                      size: 20,
+                                    Row(
+                                      children: [
+                                        Icon(Icons.check_circle_outline, 
+                                          color: Colors.green[700], 
+                                          size: 20,
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            'Your information has been submitted for today.',
+                                            style: TextStyle(
+                                              color: Colors.green[700],
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    Expanded(
-                                      child: Text(
-                                        'Your information has been submitted.',
-                                        style: TextStyle(
-                                          color: Colors.green[700],
-                                          fontSize: 14,
+                                    if (_totalAttendances > 0)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(
+                                          'Total attendances: $_totalAttendances',
+                                          style: TextStyle(
+                                            color: Colors.green[600],
+                                            fontSize: 12,
+                                          ),
                                         ),
                                       ),
-                                    ),
                                   ],
                                 ),
                               ),
@@ -470,7 +588,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                                 width: 140,
                                 height: 48,
                                 child: ElevatedButton(
-                                  onPressed: (_isSaving || _hasExistingEntry || !_hasCheckedDevice) 
+                                  onPressed: (_isSaving || _hasExistingEntryToday || !_hasCheckedDevice) 
                                       ? null 
                                       : _saveGuestInfo,
                                   style: ElevatedButton.styleFrom(
