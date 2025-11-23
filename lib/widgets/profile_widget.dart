@@ -977,7 +977,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                     !_isCancellingSubscription &&
                     !_isResumingSubscription;
                 final buttonText = isActive 
-                    ? (_subscriptionCancelAtPeriodEnd == true ? 'Resume Renewal' : 'Cancel Renewal')
+                    ? (_subscriptionCancelAtPeriodEnd == true ? 'Resume Subscription' : 'Stop Subscription')
                     : (hasTrialEndDate ? 'Subscribe' : 'Start Trial');
                 
                 String tooltipMessage = '';
@@ -987,61 +987,120 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                   tooltipMessage = 'Please verify your email to ${hasTrialEndDate ? "subscribe" : "start trial"}';
                 }
                 
-                return _buildItem(
-                  icon: Icons.payment,
-                  label: 'Subscription',
-                  value: subscriptionValue,
-                  onTap: null, // Disable the main tap, use trailing button instead
-                  isLast: true, // Remove bottom border to show card's rounded corners
-                  trailing: Tooltip(
-                    message: tooltipMessage,
-                    child: ElevatedButton(
-                      onPressed: isButtonEnabled
-                          ? () {
-                              if (isActive) {
-                                // Cancel or Resume renewal based on current state
-                                if (_subscriptionCancelAtPeriodEnd == true) {
-                                  _resumeSubscription(context);
-                                } else {
-                                  _stopSubscription(context);
-                                }
-                              } else {
-                                // Subscribe or Start Trial
-                                _subscribe(context);
-                              }
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isActive 
-                            ? (_subscriptionCancelAtPeriodEnd == true ? Colors.green[600] : Colors.red[600])
-                            : Colors.green[600],
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.grey[400],
-                        disabledForegroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        minimumSize: const Size(80, 36),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                return Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: const Color(0xFFF5F5F5),
+                        width: 1,
                       ),
-                      child: (_isCreatingCheckoutSession || _isCancellingSubscription || _isResumingSubscription)
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF5F5F5),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.payment,
+                                  size: 22,
+                                  color: Color(0xFF424242),
+                                ),
                               ),
-                            )
-                          : Text(
-                              buttonText,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Subscription',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF212121),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      subscriptionValue,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF757575),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Tooltip(
+                            message: tooltipMessage,
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: isButtonEnabled
+                                    ? () {
+                                        if (isActive) {
+                                          // Cancel or Resume renewal based on current state
+                                          if (_subscriptionCancelAtPeriodEnd == true) {
+                                            _resumeSubscription(context);
+                                          } else {
+                                            _stopSubscription(context);
+                                          }
+                                        } else {
+                                          // Subscribe or Start Trial
+                                          _subscribe(context);
+                                        }
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isActive 
+                                      ? (_subscriptionCancelAtPeriodEnd == true ? Colors.green[600] : Colors.red[600])
+                                      : Colors.green[600],
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor: Colors.grey[400],
+                                  disabledForegroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: (_isCreatingCheckoutSession || _isCancellingSubscription || _isResumingSubscription)
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : Text(
+                                        buttonText,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
                               ),
                             ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );

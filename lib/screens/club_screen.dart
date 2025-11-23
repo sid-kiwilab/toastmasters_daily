@@ -753,7 +753,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                                           letterSpacing: -0.3,
                                                         ),
                                                       ),
-                                                      // Date and Time display
+                                                      // Date and Time display - vertically stacked
                                                       if (meeting.meetingDateTime != null) ...[
                                                         const SizedBox(height: 10),
                                                         Container(
@@ -762,22 +762,48 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                                             color: const Color(0xFFF5F5F5),
                                                             borderRadius: BorderRadius.circular(6),
                                                           ),
-                                                          child: Row(
+                                                          child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
                                                             mainAxisSize: MainAxisSize.min,
                                                             children: [
-                                                              const Icon(
-                                                                Icons.event,
-                                                                size: 16,
-                                                                color: Color(0xFF424242),
+                                                              Row(
+                                                                mainAxisSize: MainAxisSize.min,
+                                                                children: [
+                                                                  const Icon(
+                                                                    Icons.event,
+                                                                    size: 16,
+                                                                    color: Color(0xFF424242),
+                                                                  ),
+                                                                  const SizedBox(width: 6),
+                                                                  Text(
+                                                                    _formatDate(meeting.meetingDateTime!),
+                                                                    style: const TextStyle(
+                                                                      fontSize: 13,
+                                                                      color: Color(0xFF424242),
+                                                                      fontWeight: FontWeight.w600,
+                                                                    ),
+                                                                  ),
+                                                                ],
                                                               ),
-                                                              const SizedBox(width: 6),
-                                                              Text(
-                                                                '${_formatDate(meeting.meetingDateTime!)} • ${_formatTime(meeting.meetingDateTime!)}',
-                                                                style: const TextStyle(
-                                                                  fontSize: 13,
-                                                                  color: Color(0xFF424242),
-                                                                  fontWeight: FontWeight.w600,
-                                                                ),
+                                                              const SizedBox(height: 6),
+                                                              Row(
+                                                                mainAxisSize: MainAxisSize.min,
+                                                                children: [
+                                                                  const Icon(
+                                                                    Icons.access_time,
+                                                                    size: 16,
+                                                                    color: Color(0xFF424242),
+                                                                  ),
+                                                                  const SizedBox(width: 6),
+                                                                  Text(
+                                                                    _formatTime(meeting.meetingDateTime!),
+                                                                    style: const TextStyle(
+                                                                      fontSize: 13,
+                                                                      color: Color(0xFF424242),
+                                                                      fontWeight: FontWeight.w600,
+                                                                    ),
+                                                                  ),
+                                                                ],
                                                               ),
                                                             ],
                                                           ),
