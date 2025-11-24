@@ -837,7 +837,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
               onTap: _showClubInfoDialog,
             ),
             _buildItem(
-              icon: Icons.location_on,
+              icon: Icons.location_on_outlined,
               label: 'Club Location',
               value: _clubLocation ?? 'Not set',
               onTap: _showClubLocationDialog,

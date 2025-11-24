@@ -771,7 +771,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(
-                                          Icons.location_on,
+                                          Icons.location_on_outlined,
                                           size: isMobile ? 18 : 20,
                                           color: const Color(0xFF757575),
                                         ),
