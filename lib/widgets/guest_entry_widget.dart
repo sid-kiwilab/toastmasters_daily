@@ -24,12 +24,22 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
   final _phoneController = TextEditingController();
   final _commentsController = TextEditingController();
   
+  String? _hearAboutUs; // Selected value for "Where did you hear about us?"
+  
   bool _isSaving = false;
   String? _errorMessage;
   String? _deviceId;
   bool _hasCheckedDevice = false;
   bool _hasExistingEntryToday = false;
   int _totalAttendances = 0;
+  
+  // Options for "Where did you hear about us?"
+  static const List<String> _hearAboutUsOptions = [
+    'Flyers',
+    'Website',
+    'Word of Mouth',
+    'Other',
+  ];
 
   @override
   void initState() {
@@ -259,9 +269,13 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
 
       // Add phone only if provided
       final phone = _phoneController.text.trim();
+      final hearAboutUs = _hearAboutUs;
       if (phone.isNotEmpty) {
         guestData['phone'] = phone;
       }
+
+      // Add hearAboutUs (required field)
+      guestData['hear_about_us'] = hearAboutUs ?? '';
 
       // Add comments only if provided
       final comments = _commentsController.text.trim();
@@ -290,6 +304,9 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
       _emailController.clear();
       _phoneController.clear();
       _commentsController.clear();
+      setState(() {
+        _hearAboutUs = null;
+      });
 
       // Show success message
       if (mounted) {
@@ -423,6 +440,47 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                                 }
                                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                                   return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          
+                          // Where did you hear about us? (Required)
+                          SizedBox(
+                            width: 320,
+                            child: DropdownButtonFormField<String>(
+                              value: _hearAboutUs,
+                              decoration: InputDecoration(
+                                labelText: 'Where did you hear about us? *',
+                                prefixIcon: const Icon(Icons.info_outline),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFF2F1F0),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                              ),
+                              items: _hearAboutUsOptions.map((String option) {
+                                return DropdownMenuItem<String>(
+                                  value: option,
+                                  child: Text(option),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _hearAboutUs = newValue;
+                                  _errorMessage = null; // Clear error when selection is made
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please select how you heard about us';
                                 }
                                 return null;
                               },
