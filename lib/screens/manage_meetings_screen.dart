@@ -436,9 +436,53 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Regenerate Club Code'),
-        content: const Text(
-          'Are you sure you want to generate a new club code? The old code will no longer work.',
+        title: const Text('⚠️ Regenerate Club Code'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: const Text(
+            'WARNING: Generating a new club code will immediately invalidate your current code!\n\n'
+            'The old code will stop working instantly, and anyone trying to use it will be unable to access your club.\n\n'
+            'You MUST update ALL physical QR codes that have been printed, displayed, or shared. This includes:\n'
+            '• Printed posters and flyers\n'
+            '• Digital displays\n'
+            '• Shared links and bookmarks\n'
+            '• Any other materials with the old code\n\n'
+            'Are you absolutely sure you want to proceed?',
+            style: TextStyle(fontSize: 14, height: 1.5),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showFinalConfirmationDialog();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Regenerate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFinalConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Final Confirmation'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: const Text(
+            'Are you absolutely sure you want to regenerate your club code? This action cannot be undone.',
+            style: TextStyle(fontSize: 14, height: 1.5),
+          ),
         ),
         actions: [
           TextButton(
@@ -454,7 +498,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
               backgroundColor: Colors.red[600],
               foregroundColor: Colors.white,
             ),
-            child: const Text('Regenerate'),
+            child: const Text('Yes, Regenerate'),
           ),
         ],
       ),
@@ -1343,6 +1387,24 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                           ),
                         );
                       },
+                    ),
+                  ),
+                ),
+                // Visit My Club button
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/clubs/$_clubCode');
+                    },
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: const Text('Visit My Club'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
