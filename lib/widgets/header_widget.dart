@@ -174,7 +174,7 @@ class HeaderWidget extends StatelessWidget {
                     SizedBox(width: isMobile ? 12 : 16),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).pushNamed('/login');
+                        Navigator.of(context).pushNamed('/club-login');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.grey[800],

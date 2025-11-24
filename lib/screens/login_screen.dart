@@ -117,12 +117,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                      padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(),
-                    ),
+                     child: IconButton(
+                       icon: const Icon(Icons.close),
+                       onPressed: () {
+                         Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                       },
+                       padding: const EdgeInsets.all(8),
+                       constraints: const BoxConstraints(),
+                     ),
                   ),
                 ],
               ),
@@ -144,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           // Title
                           Text(
-                            'Login',
+                            'Club Login',
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontSize: 28,
                               fontWeight: FontWeight.w600,
@@ -253,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     )
                                   : const Text(
-                                      'Login',
+                                      'Club Login',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w500,
@@ -291,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  Navigator.of(context).pushNamed('/signup');
+                                  Navigator.of(context).pushNamed('/club-signup');
                                 },
                                 child: const Text('Sign Up'),
                               ),
