@@ -211,9 +211,11 @@ class AuthProvider extends ChangeNotifier {
       case 'email-already-in-use':
         return 'The email address is already in use by another account.';
       case 'user-not-found':
-        return 'No user found for that email.';
+        return 'Invalid email or password.';
       case 'wrong-password':
-        return 'Wrong password provided.';
+        return 'Invalid email or password.';
+      case 'invalid-credential':
+        return 'Invalid email or password.';
       case 'invalid-email':
         return 'The email address is invalid.';
       case 'user-disabled':

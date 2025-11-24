@@ -523,7 +523,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
               ],
             ),
             content: SizedBox(
-              width: double.maxFinite,
+              width: 400,
               child: TextField(
                 controller: _clubNameController,
                 autofocus: true,
@@ -636,13 +636,13 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
               ],
             ),
             content: SizedBox(
-              width: double.maxFinite,
+              width: 500,
               child: TextField(
                 controller: _clubInfoController,
                 autofocus: true,
                 enabled: !_isSavingClubInfo,
-                maxLines: 10,
-                minLines: 5,
+                maxLines: 12,
+                minLines: 8,
                 decoration: const InputDecoration(
                   hintText: 'Add information about your club...',
                   border: OutlineInputBorder(),
