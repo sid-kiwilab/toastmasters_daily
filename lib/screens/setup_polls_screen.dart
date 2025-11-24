@@ -380,6 +380,7 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: _questionControllers[pollId],
+                    maxLength: 200,
                     decoration: InputDecoration(
                       hintText: 'Enter poll question',
                       filled: true,
@@ -397,6 +398,7 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
                         borderSide: const BorderSide(color: Color(0xFF424242), width: 2),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      counterText: '',
                     ),
                     style: const TextStyle(fontSize: 14),
                   ),
@@ -440,6 +442,7 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
                             Expanded(
                               child: TextField(
                                 controller: controller,
+                                maxLength: 100,
                                 decoration: InputDecoration(
                                   hintText: 'Option ${optionIndex + 1}',
                                   filled: true,
@@ -452,6 +455,7 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
                                   ),
+                                  counterText: '',
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: const BorderSide(color: Color(0xFF424242), width: 2),

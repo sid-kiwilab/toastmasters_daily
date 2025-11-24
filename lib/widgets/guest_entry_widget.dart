@@ -367,6 +367,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                             width: 320,
                             child: TextFormField(
                               controller: _nameController,
+                              maxLength: 100,
                               decoration: InputDecoration(
                                 labelText: 'Full Name',
                                 prefixIcon: const Icon(Icons.person_outline),
@@ -380,6 +381,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                                   horizontal: 20,
                                   vertical: 16,
                                 ),
+                                counterText: '',
                               ),
                               textInputAction: TextInputAction.next,
                               validator: (value) {
@@ -398,6 +400,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                             child: TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
+                              maxLength: 255,
                               decoration: InputDecoration(
                                 labelText: 'Email',
                                 prefixIcon: const Icon(Icons.email_outlined),
@@ -411,6 +414,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                                   horizontal: 20,
                                   vertical: 16,
                                 ),
+                                counterText: '',
                               ),
                               textInputAction: TextInputAction.next,
                               validator: (value) {
@@ -432,6 +436,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                             child: TextFormField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
+                              maxLength: 20,
                               decoration: InputDecoration(
                                 labelText: 'Phone (Optional)',
                                 prefixIcon: const Icon(Icons.phone_outlined),
@@ -445,6 +450,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                                   horizontal: 20,
                                   vertical: 16,
                                 ),
+                                counterText: '',
                               ),
                               textInputAction: TextInputAction.next,
                             ),
@@ -457,6 +463,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                             child: TextFormField(
                               controller: _commentsController,
                               maxLines: 4,
+                              maxLength: 500,
                               decoration: InputDecoration(
                                 labelText: 'Comments (Optional)',
                                 prefixIcon: const Padding(
@@ -474,6 +481,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                                   horizontal: 20,
                                   vertical: 16,
                                 ),
+                                counterText: '',
                               ),
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) {

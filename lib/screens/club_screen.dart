@@ -20,6 +20,7 @@ class ClubScreen extends StatefulWidget {
 class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateMixin {
   String? _clubName;
   String? _clubInfo;
+  String? _clubLocation;
   String? _userId;
   List<Meeting> _meetings = [];
   List<Meeting> _todayMeetings = [];
@@ -183,6 +184,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
           setState(() {
             _clubName = data?['club_name'] as String? ?? 'Unnamed Club';
             _clubInfo = data?['club_info'] as String?;
+            _clubLocation = data?['club_location'] as String?;
             _isLoading = false;
           });
           // Show welcome screen with animation after club name is loaded
@@ -762,6 +764,34 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
+                                  // Club location
+                                  if (_clubLocation != null && _clubLocation!.isNotEmpty) ...[
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.location_on,
+                                          size: isMobile ? 18 : 20,
+                                          color: const Color(0xFF757575),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            _clubLocation!,
+                                            style: TextStyle(
+                                              fontSize: isMobile ? 14 : 16,
+                                              fontWeight: FontWeight.w400,
+                                              color: const Color(0xFF757575),
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                   const SizedBox(height: 16),
                                   
                                   // Decorative line with Toastmasters colors

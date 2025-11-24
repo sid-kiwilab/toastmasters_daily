@@ -34,6 +34,11 @@ class _MyClubWidgetState extends State<MyClubWidget> {
   final TextEditingController _clubInfoController = TextEditingController();
   bool _isSavingClubInfo = false;
   
+  // Club location state
+  String? _clubLocation;
+  final TextEditingController _clubLocationController = TextEditingController();
+  bool _isSavingClubLocation = false;
+  
   // Club code state
   String? _clubCode; // Display as string, but stored as number in Firestore
   StreamSubscription<DocumentSnapshot>? _clubCodeSubscription;
@@ -53,6 +58,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
   void dispose() {
     _clubNameController.dispose();
     _clubInfoController.dispose();
+    _clubLocationController.dispose();
     _clubCodeSubscription?.cancel();
     super.dispose();
   }
@@ -72,6 +78,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
         setState(() {
           _clubName = data['club_name'] as String?;
           _clubInfo = data['club_info'] as String?;
+          _clubLocation = data['club_location'] as String?;
         });
       }
     } catch (e) {
@@ -502,7 +509,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Toastmasters Club Name'),
+                const Text('Club Name'),
                 IconButton(
                   icon: const Icon(Icons.close, size: 20),
                   onPressed: _isSavingClubName ? null : () => Navigator.of(dialogContext).pop(),
@@ -517,9 +524,11 @@ class _MyClubWidgetState extends State<MyClubWidget> {
                 controller: _clubNameController,
                 autofocus: true,
                 enabled: !_isSavingClubName,
+                maxLength: 100,
                 decoration: const InputDecoration(
                   hintText: 'Enter club name...',
                   border: OutlineInputBorder(),
+                  counterText: '',
                 ),
               ),
             ),
@@ -632,9 +641,11 @@ class _MyClubWidgetState extends State<MyClubWidget> {
                 enabled: !_isSavingClubInfo,
                 maxLines: 12,
                 minLines: 8,
+                maxLength: 2000,
                 decoration: const InputDecoration(
                   hintText: 'Add information about your club...',
                   border: OutlineInputBorder(),
+                  counterText: '',
                 ),
               ),
             ),
@@ -678,6 +689,121 @@ class _MyClubWidgetState extends State<MyClubWidget> {
     });
   }
 
+  Future<void> _saveClubLocation(String newValue) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser == null) return;
+    
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authProvider.currentUser!.uid)
+          .set({
+        'club_location': newValue.isEmpty ? '' : newValue,
+      }, SetOptions(merge: true));
+      
+      if (mounted) {
+        setState(() {
+          _clubLocation = newValue.isEmpty ? null : newValue;
+          _isSavingClubLocation = false;
+        });
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(newValue.isEmpty ? 'Club location cleared' : 'Club location saved successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSavingClubLocation = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving club location. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showClubLocationDialog() {
+    _clubLocationController.text = _clubLocation ?? '';
+    _isSavingClubLocation = false;
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Club Location'),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: _isSavingClubLocation ? null : () => Navigator.of(dialogContext).pop(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: 400,
+              child: TextField(
+                controller: _clubLocationController,
+                autofocus: true,
+                enabled: !_isSavingClubLocation,
+                maxLength: 200,
+                decoration: const InputDecoration(
+                  hintText: 'Enter club location...',
+                  border: OutlineInputBorder(),
+                  counterText: '',
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: _isSavingClubLocation ? null : () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: _isSavingClubLocation ? null : () async {
+                  setState(() {
+                    _isSavingClubLocation = true;
+                  });
+                  setDialogState(() {});
+                  
+                  final newValue = _clubLocationController.text.trim();
+                  await _saveClubLocation(newValue);
+                },
+                child: _isSavingClubLocation
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    ).then((_) {
+      // Reset state when dialog closes
+      if (mounted && _isSavingClubLocation) {
+        setState(() {
+          _isSavingClubLocation = false;
+        });
+      }
+    });
+  }
+
   void _showGuestsScreen() {
     Navigator.of(context).pushNamed('/guest-list');
   }
@@ -696,7 +822,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
           children: [
             _buildItem(
               icon: Icons.groups,
-              label: 'Toastmasters Club Name',
+              label: 'Club Name',
               value: _clubName ?? 'Not set',
               onTap: _showClubNameDialog,
             ),
@@ -709,6 +835,12 @@ class _MyClubWidgetState extends State<MyClubWidget> {
                       : _clubInfo!)
                   : 'Not set',
               onTap: _showClubInfoDialog,
+            ),
+            _buildItem(
+              icon: Icons.location_on,
+              label: 'Club Location',
+              value: _clubLocation ?? 'Not set',
+              onTap: _showClubLocationDialog,
             ),
             // Club Code with buttons
             _buildClubCodeItem(),
