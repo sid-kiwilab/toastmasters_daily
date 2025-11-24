@@ -235,12 +235,10 @@ class WebDeviceIdentifier {
   /// Performance fingerprint
   static Future<String> _getPerformanceFingerprint() async {
     try {
-      final perf = html.window.performance;
-      if (perf == null) return 'perf_not_supported';
-      
+      html.window.performance;
       return 'perf_supported';
     } catch (e) {
-      return 'perf_error_${e.toString().hashCode}';
+      return 'perf_not_supported';
     }
   }
   

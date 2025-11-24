@@ -68,32 +68,45 @@ class _GuestListScreenState extends State<GuestListScreen> {
     });
     
     try {
+      // Query main guest documents: users/{userId}/guests/
       final query = FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .collection('guests')
-          .orderBy('created_at', descending: true)
+          .orderBy('last_updated', descending: true)
           .limit(_pageSize);
       
       final snapshot = await query.get();
       
       if (!mounted) return;
       
-      setState(() {
-        _allGuestEntries = snapshot.docs.map((doc) {
-          final data = doc.data();
-          return {
-            'id': doc.id,
-            'device_id': data['device_id'] ?? '',
-            'name': data['name'] ?? '',
-            'email': data['email'] ?? '',
-            'phone': data['phone'] ?? '',
-            'comments': data['comments'] ?? '',
-            'created_at': data['created_at'],
-            'entry_date': data['entry_date'] ?? '',
-          };
-        }).toList();
+      // Load all attendances for all guests
+      final allEntries = <Map<String, dynamic>>[];
+      for (final guestDoc in snapshot.docs) {
+        final guestData = guestDoc.data();
+        final deviceId = guestDoc.id;
+        final attendances = await guestDoc.reference.collection('attendances').get();
         
+        for (final attDoc in attendances.docs) {
+          final attData = attDoc.data();
+          allEntries.add({
+            'id': '${deviceId}_${attDoc.id}',
+            'device_id': deviceId,
+            'name': guestData['name'] ?? '',
+            'email': guestData['email'] ?? '',
+            'phone': guestData['phone'] ?? '',
+            'comments': attData['comments'] ?? '',
+            'hear_about_us': guestData['hear_about_us'] ?? '',
+            'created_at': attData['created_at'],
+            'entry_date': attData['entry_date'] ?? attDoc.id,
+            'attendance_doc_id': attDoc.id,
+            'device_doc_id': deviceId,
+          });
+        }
+      }
+      
+      setState(() {
+        _allGuestEntries = allEntries;
         _lastDocument = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
         _hasMore = snapshot.docs.length == _pageSize;
         
@@ -124,11 +137,12 @@ class _GuestListScreenState extends State<GuestListScreen> {
     });
     
     try {
+      // Query next page of main guest documents
       final query = FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
           .collection('guests')
-          .orderBy('created_at', descending: true)
+          .orderBy('last_updated', descending: true)
           .startAfterDocument(_lastDocument!)
           .limit(_pageSize);
       
@@ -136,21 +150,32 @@ class _GuestListScreenState extends State<GuestListScreen> {
       
       if (!mounted) return;
       
-      setState(() {
-        final newEntries = snapshot.docs.map((doc) {
-          final data = doc.data();
-          return {
-            'id': doc.id,
-            'device_id': data['device_id'] ?? '',
-            'name': data['name'] ?? '',
-            'email': data['email'] ?? '',
-            'phone': data['phone'] ?? '',
-            'comments': data['comments'] ?? '',
-            'created_at': data['created_at'],
-            'entry_date': data['entry_date'] ?? '',
-          };
-        }).toList();
+      // Load attendances for new guests
+      final newEntries = <Map<String, dynamic>>[];
+      for (final guestDoc in snapshot.docs) {
+        final guestData = guestDoc.data();
+        final deviceId = guestDoc.id;
+        final attendances = await guestDoc.reference.collection('attendances').get();
         
+        for (final attDoc in attendances.docs) {
+          final attData = attDoc.data();
+          newEntries.add({
+            'id': '${deviceId}_${attDoc.id}',
+            'device_id': deviceId,
+            'name': guestData['name'] ?? '',
+            'email': guestData['email'] ?? '',
+            'phone': guestData['phone'] ?? '',
+            'comments': attData['comments'] ?? '',
+            'hear_about_us': guestData['hear_about_us'] ?? '',
+            'created_at': attData['created_at'],
+            'entry_date': attData['entry_date'] ?? attDoc.id,
+            'attendance_doc_id': attDoc.id,
+            'device_doc_id': deviceId,
+          });
+        }
+      }
+      
+      setState(() {
         _allGuestEntries.addAll(newEntries);
         _lastDocument = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
         _hasMore = snapshot.docs.length == _pageSize;
@@ -211,10 +236,12 @@ class _GuestListScreenState extends State<GuestListScreen> {
         'email': mostRecent['email'] ?? '',
         'phone': mostRecent['phone'] ?? '',
         'comments': mostRecent['comments'] ?? '',
+        'hear_about_us': mostRecent['hear_about_us'] ?? '',
         'created_at': mostRecent['created_at'], // Most recent attendance
         'attendance_count': entries.length, // Total number of attendances
         'all_entry_ids': entries.map((e) => e['id'] as String).toList(), // For deletion
         'all_attendances': entries, // Store all attendance entries for display
+        'device_doc_id': mostRecent['device_doc_id'] ?? deviceId, // For deletion
       });
     }
     
@@ -278,6 +305,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
           'email': entry['email'] ?? '',
           'phone': entry['phone'] ?? '',
           'comments': entry['comments'] ?? '',
+          'hear_about_us': entry['hear_about_us'] ?? '',
           'created_at': entry['created_at'],
           'attendance_count': 1,
           'all_entry_ids': [entry['id']],
@@ -343,9 +371,12 @@ class _GuestListScreenState extends State<GuestListScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.currentUser == null) return;
     
-    // Delete selected entry IDs directly
-    final entryIdsToDelete = _selectedEntryIds.toList();
-    final count = entryIdsToDelete.length;
+    // Get selected entries with their device_doc_id and attendance_doc_id
+    final entriesToDelete = _allGuestEntries.where((entry) {
+      return _selectedEntryIds.contains(entry['id']);
+    }).toList();
+    
+    final count = entriesToDelete.length;
     
     setState(() {
       _isDeleting = true;
@@ -353,15 +384,28 @@ class _GuestListScreenState extends State<GuestListScreen> {
     
     try {
       final batch = FirebaseFirestore.instance.batch();
+      final deviceCounts = <String, int>{};
+      final userId = authProvider.currentUser!.uid;
       
-      // Delete all entries for selected guests
-      for (final entryId in entryIdsToDelete) {
-        final guestRef = FirebaseFirestore.instance
-            .collection('users')
-            .doc(authProvider.currentUser!.uid)
-            .collection('guests')
-            .doc(entryId);
-        batch.delete(guestRef);
+      for (final entry in entriesToDelete) {
+        final deviceId = entry['device_doc_id'] as String?;
+        final attDocId = entry['attendance_doc_id'] as String?;
+        if (deviceId == null || attDocId == null) continue;
+        
+        batch.delete(FirebaseFirestore.instance
+            .collection('users').doc(userId)
+            .collection('guests').doc(deviceId)
+            .collection('attendances').doc(attDocId));
+        
+        deviceCounts[deviceId] = (deviceCounts[deviceId] ?? 0) + 1;
+      }
+      
+      for (final e in deviceCounts.entries) {
+        batch.update(FirebaseFirestore.instance
+            .collection('users').doc(userId)
+            .collection('guests').doc(e.key), {
+          'attendance_count': FieldValue.increment(-e.value),
+        });
       }
       
       await batch.commit();
@@ -755,6 +799,26 @@ class _GuestListScreenState extends State<GuestListScreen> {
                               fontSize: 14,
                               color: Colors.grey[700],
                             ),
+                          ),
+                        ],
+                        if (guest['hear_about_us'] != null && guest['hear_about_us'].toString().isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Heard about us: ${guest['hear_about_us']}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                         if (guest['comments'] != null && guest['comments'].toString().isNotEmpty) ...[

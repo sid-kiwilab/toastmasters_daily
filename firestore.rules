@@ -38,15 +38,24 @@ service cloud.firestore {
     }
     
     // Allow guests to create entries in guests subcollection (for guest entry form)
-    match /users/{userId}/guests/{guestId} {
+    match /users/{userId}/guests/{deviceId} {
       // Allow authenticated users (meeting creators) to read all guest entries
       allow read: if request.auth != null && request.auth.uid == userId;
-      // Allow unauthenticated users to query by device_id to check for duplicates
-      // Since queries filter by device_id, users can only see entries matching their own device_id
-      allow list: if true; // Needed for duplicate checking - queries filter by device_id anyway
+      // Allow unauthenticated users to read their own entry (by deviceId)
+      allow get: if true; // Needed to check if entry exists today
+      allow list: if true; // Needed for listing guests
       allow create: if true; // Anyone can create (guests don't need auth)
-      allow update: if false; // No updates allowed
+      allow update: if true; // Allow updates for attendance_count and last_entry_date
       allow delete: if request.auth != null && request.auth.uid == userId; // Only creator can delete
+      
+      // Allow creating/reading attendances subcollection
+      match /attendances/{entryDate} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow get: if true; // Allow checking if attendance exists
+        allow create: if true; // Anyone can create attendance entries
+        allow update: if false; // No updates allowed
+        allow delete: if request.auth != null && request.auth.uid == userId; // Only creator can delete
+      }
     }
     
     // Active meetings - allow read only (to get creator_id), no writes (only Cloud Functions can write)

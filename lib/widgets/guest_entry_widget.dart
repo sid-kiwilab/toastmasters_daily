@@ -32,6 +32,8 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
   bool _hasCheckedDevice = false;
   bool _hasExistingEntryToday = false;
   int _totalAttendances = 0;
+  Map<String, dynamic>? _previousGuestData; // Previous guest info if they've been before
+  bool _showNormalForm = false; // If true, show normal form even if previous data exists
   
   // Options for "Where did you hear about us?"
   static const List<String> _hearAboutUsOptions = [
@@ -49,8 +51,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
 
   Future<void> _initialize() async {
     await _getDeviceId();
-    await _checkExistingEntry();
-    await _countTotalAttendances();
+    await _loadGuestData();
   }
   
   /// Formats a DateTime to a date string (YYYY-MM-DD) for efficient querying
@@ -80,7 +81,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
     }
   }
 
-  Future<void> _checkExistingEntry() async {
+  Future<void> _loadGuestData() async {
     if (_deviceId == null) return;
 
     try {
@@ -90,103 +91,44 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
       }
       if (creatorId == null) return;
 
-      // Check for entry on today's date (same device_id + same date)
-      // This query scales efficiently with a composite index on (device_id, entry_date)
       final todayDateString = _getTodayDateString();
-      
-      final querySnapshot = await FirebaseFirestore.instance
+      final guestDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(creatorId)
           .collection('guests')
-          .where('device_id', isEqualTo: _deviceId)
-          .where('entry_date', isEqualTo: todayDateString)
-          .limit(1)
+          .doc(_deviceId)
           .get();
 
       if (mounted) {
+        final data = guestDoc.data();
+        final lastEntryDate = data?['last_entry_date'] as String?;
+        final hasEntryToday = lastEntryDate == todayDateString;
+        
         setState(() {
-          _hasExistingEntryToday = querySnapshot.docs.isNotEmpty;
+          _hasExistingEntryToday = hasEntryToday;
+          _totalAttendances = (data?['attendance_count'] as int?) ?? 0;
+          // Store previous data if they've been before but not today
+          if (!hasEntryToday && data != null && _totalAttendances > 0) {
+            _previousGuestData = {
+              'name': data['name'] ?? '',
+              'email': data['email'] ?? '',
+              'phone': data['phone'] ?? '',
+              'hear_about_us': data['hear_about_us'] ?? '',
+            };
+          } else {
+            _previousGuestData = null;
+          }
         });
       }
     } catch (e) {
-      print('Error checking existing entry: $e');
-      // If query fails (e.g., missing index), fallback to checking all entries
-      // and filtering by date client-side (less efficient but works)
-      try {
-        String? creatorId = widget.creatorId;
-        if (creatorId == null && widget.meetingId != null) {
-          creatorId = await MeetingUtils.getCreatorId(widget.meetingId!);
-        }
-        if (creatorId == null) return;
-        
-        final allEntries = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(creatorId)
-            .collection('guests')
-            .where('device_id', isEqualTo: _deviceId)
-            .get();
-        
-        final todayDateString = _getTodayDateString();
-        final hasEntryToday = allEntries.docs.any((doc) {
-          final entryDate = doc.data()['entry_date'] as String?;
-          return entryDate == todayDateString;
+      print('Error loading guest data: $e');
+      if (mounted) {
+        setState(() {
+          _hasExistingEntryToday = false;
+          _totalAttendances = 0;
+          _previousGuestData = null;
         });
-        
-        if (mounted) {
-          setState(() {
-            _hasExistingEntryToday = hasEntryToday;
-          });
-        }
-      } catch (e2) {
-        print('Error in fallback check: $e2');
       }
-    }
-  }
-  
-  Future<void> _countTotalAttendances() async {
-    if (_deviceId == null) return;
-
-    try {
-      String? creatorId = widget.creatorId;
-      if (creatorId == null && widget.meetingId != null) {
-        creatorId = await MeetingUtils.getCreatorId(widget.meetingId!);
-      }
-      if (creatorId == null) return;
-
-      // Count all entries for this device_id
-      // Use count() for efficiency with large collections (no document reads)
-      try {
-        final countSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(creatorId)
-            .collection('guests')
-            .where('device_id', isEqualTo: _deviceId)
-            .count()
-            .get();
-
-        if (mounted) {
-          setState(() {
-            _totalAttendances = countSnapshot.count ?? 0;
-          });
-        }
-      } catch (e) {
-        // Fallback: if count() is not available, get all docs and count
-        print('Count query not available, using fallback: $e');
-        final querySnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(creatorId)
-            .collection('guests')
-            .where('device_id', isEqualTo: _deviceId)
-            .get();
-        
-        if (mounted) {
-          setState(() {
-            _totalAttendances = querySnapshot.docs.length;
-          });
-        }
-      }
-    } catch (e) {
-      print('Error counting total attendances: $e');
     }
   }
 
@@ -238,66 +180,47 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
         return;
       }
 
-      // Double-check for existing entry on today's date before saving
       final todayDateString = _getTodayDateString();
-      final existingCheck = await FirebaseFirestore.instance
+      final guestDocRef = FirebaseFirestore.instance
           .collection('users')
           .doc(creatorId)
           .collection('guests')
-          .where('device_id', isEqualTo: _deviceId)
-          .where('entry_date', isEqualTo: todayDateString)
-          .limit(1)
-          .get();
-
-      if (existingCheck.docs.isNotEmpty) {
-        setState(() {
-          _errorMessage = 'You have already submitted your information for today.';
-          _isSaving = false;
-          _hasExistingEntryToday = true;
-        });
-        return;
-      }
-
-      // Prepare guest data (reuse todayDateString from above)
-      final guestData = <String, dynamic>{
+          .doc(_deviceId);
+      
+      final phone = _phoneController.text.trim();
+      final comments = _commentsController.text.trim();
+      
+      final batch = FirebaseFirestore.instance.batch();
+      
+      // Update main document
+      final mainData = <String, dynamic>{
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
-        'device_id': _deviceId,
-        'entry_date': todayDateString, // Store date string for efficient same-day queries
+        'hear_about_us': _hearAboutUs ?? '',
+        'last_entry_date': todayDateString,
+        'last_updated': FieldValue.serverTimestamp(),
+        'attendance_count': FieldValue.increment(1),
+      };
+      if (phone.isNotEmpty) mainData['phone'] = phone;
+      batch.set(guestDocRef, mainData, SetOptions(merge: true));
+      
+      // Create attendance document
+      final attendanceData = <String, dynamic>{
+        'entry_date': todayDateString,
         'created_at': FieldValue.serverTimestamp(),
       };
-
-      // Add phone only if provided
-      final phone = _phoneController.text.trim();
-      final hearAboutUs = _hearAboutUs;
-      if (phone.isNotEmpty) {
-        guestData['phone'] = phone;
-      }
-
-      // Add hearAboutUs (required field)
-      guestData['hear_about_us'] = hearAboutUs ?? '';
-
-      // Add comments only if provided
-      final comments = _commentsController.text.trim();
-      if (comments.isNotEmpty) {
-        guestData['comments'] = comments;
-      }
-
-      // Save to Firestore: users/{creatorId}/guests/{autoId}
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(creatorId)
-          .collection('guests')
-          .add(guestData);
-
+      if (comments.isNotEmpty) attendanceData['comments'] = comments;
+      batch.set(guestDocRef.collection('attendances').doc(todayDateString), attendanceData);
+      
+      await batch.commit();
+      
+      // Refresh data
+      await _loadGuestData();
+      
       setState(() {
         _isSaving = false;
         _hasExistingEntryToday = true;
-        _totalAttendances = _totalAttendances + 1;
       });
-      
-      // Refresh attendance count to ensure accuracy
-      await _countTotalAttendances();
 
       // Clear form
       _nameController.clear();
@@ -334,9 +257,251 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
     }
   }
 
+  Widget _buildIsThisYouView() {
+    if (_previousGuestData == null) return const SizedBox.shrink();
+    
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: Container(
+        key: const ValueKey('isThisYou'),
+        padding: const EdgeInsets.all(32),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.person_outline, size: 32, color: Colors.blue.shade700),
+              ),
+              const SizedBox(height: 24),
+              
+              // Title
+              Text(
+                'Is this you?',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'We found your previous information',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // Info Card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoItem(Icons.person, 'Name', _previousGuestData!['name'] ?? ''),
+                    if (_previousGuestData!['email']?.toString().isNotEmpty == true) ...[
+                      const SizedBox(height: 16),
+                      _buildInfoItem(Icons.email, 'Email', _previousGuestData!['email'] ?? ''),
+                    ],
+                    if (_previousGuestData!['phone']?.toString().isNotEmpty == true) ...[
+                      const SizedBox(height: 16),
+                      _buildInfoItem(Icons.phone, 'Phone', _previousGuestData!['phone']),
+                    ],
+                    if (_previousGuestData!['hear_about_us']?.toString().isNotEmpty == true) ...[
+                      const SizedBox(height: 16),
+                      _buildInfoItem(Icons.info_outline, 'Heard about us', _previousGuestData!['hear_about_us']),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() => _showNormalForm = true);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      child: const Text('No, change info'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _usePreviousInfoAndSave,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: Colors.blue.shade700,
+                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                            )
+                          : const Text('Yes, use this'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: Colors.grey.shade600),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade900,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _usePreviousInfoAndSave() async {
+    if (_previousGuestData == null || _deviceId == null) return;
+    
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      String? creatorId = widget.creatorId;
+      if (creatorId == null && widget.meetingId != null) {
+        creatorId = await MeetingUtils.getCreatorId(widget.meetingId!);
+      }
+      if (creatorId == null) {
+        setState(() {
+          _errorMessage = 'Could not find creator information.';
+          _isSaving = false;
+        });
+        return;
+      }
+
+      final todayDateString = _getTodayDateString();
+      final guestDocRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(creatorId)
+          .collection('guests')
+          .doc(_deviceId);
+      
+      final batch = FirebaseFirestore.instance.batch();
+      
+      // Update main document with previous info
+      final mainData = <String, dynamic>{
+        'name': _previousGuestData!['name'] ?? '',
+        'email': _previousGuestData!['email'] ?? '',
+        'hear_about_us': _previousGuestData!['hear_about_us'] ?? '',
+        'last_entry_date': todayDateString,
+        'last_updated': FieldValue.serverTimestamp(),
+        'attendance_count': FieldValue.increment(1),
+      };
+      if (_previousGuestData!['phone']?.toString().isNotEmpty == true) {
+        mainData['phone'] = _previousGuestData!['phone'];
+      }
+      batch.set(guestDocRef, mainData, SetOptions(merge: true));
+      
+      // Create attendance document
+      batch.set(guestDocRef.collection('attendances').doc(todayDateString), {
+        'entry_date': todayDateString,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      
+      await batch.commit();
+      
+      // Refresh data
+      await _loadGuestData();
+      
+      setState(() {
+        _isSaving = false;
+        _hasExistingEntryToday = true;
+      });
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Thank you! Your information has been saved.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
+          ),
+        );
+        
+        // Close the widget after 1 second
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        });
+      }
+    } catch (e) {
+      print('Error saving: $e');
+      setState(() {
+        _errorMessage = 'Failed to save. Please try again.';
+        _isSaving = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Show loading only while checking device
+    if (!_hasCheckedDevice || _deviceId == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    
     final theme = Theme.of(context);
+    
+    // Show "Is this you?" view if previous data exists and not showing normal form
+    final showIsThisYou = !_hasExistingEntryToday && _previousGuestData != null && !_showNormalForm;
     
     return Scaffold(
       body: SafeArea(
@@ -346,14 +511,19 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
             Expanded(
               child: Align(
                 alignment: const Alignment(0, -0.15),
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  padding: const EdgeInsets.all(32),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: showIsThisYou
+                      ? _buildIsThisYouView()
+                      : SingleChildScrollView(
+                          key: const ValueKey('form'),
+                          physics: const ClampingScrollPhysics(),
+                          padding: const EdgeInsets.all(32),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 400),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -692,6 +862,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                 ),
               ),
             ),
+          ),
           ],
         ),
       ),
