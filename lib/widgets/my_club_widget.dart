@@ -317,39 +317,110 @@ class _MyClubWidgetState extends State<MyClubWidget> {
       // Convert to PDF image
       final qrImage = pw.MemoryImage(pngBytes);
       
-      // Create PDF document
+      // Create PDF document with professional card design
       final pdf = pw.Document();
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(50),
+          margin: const pw.EdgeInsets.all(40),
           build: (pw.Context context) {
-            return pw.Column(
-              mainAxisAlignment: pw.MainAxisAlignment.center,
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
-              children: [
-                // QR Code
-                pw.Center(
-                  child: pw.Image(
-                    qrImage,
-                    width: 400,
-                    height: 400,
-                  ),
+            return pw.Center(
+              child: pw.Container(
+                padding: const pw.EdgeInsets.all(40),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey400, width: 2),
+                  borderRadius: pw.BorderRadius.circular(20),
                 ),
-                pw.SizedBox(height: 30),
-                // Club Name
-                if (clubName != null && clubName.isNotEmpty)
-                  pw.Center(
-                    child: pw.Text(
-                      clubName,
+                child: pw.Column(
+                  mainAxisSize: pw.MainAxisSize.min,
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    // Toastmasters Header
+                    pw.Text(
+                      'TOASTMASTERS',
                       style: pw.TextStyle(
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.red900,
+                        letterSpacing: 2.5,
+                      ),
+                    ),
+                    pw.SizedBox(height: 24),
+                    
+                    // Club Name
+                    if (clubName != null && clubName.isNotEmpty) ...[
+                      pw.Text(
+                        clubName,
+                        style: pw.TextStyle(
+                          fontSize: 26,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey900,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                      pw.SizedBox(height: 24),
+                    ],
+                    
+                    // QR Code in bordered container
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(24),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.white,
+                        border: pw.Border.all(color: PdfColors.grey300, width: 1.5),
+                        borderRadius: pw.BorderRadius.circular(16),
+                      ),
+                      child: pw.Image(
+                        qrImage,
+                        width: 350,
+                        height: 350,
+                      ),
+                    ),
+                    pw.SizedBox(height: 24),
+                    
+                    // Instructions
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.grey100,
+                        borderRadius: pw.BorderRadius.circular(10),
+                      ),
+                      child: pw.Column(
+                        children: [
+                          pw.Text(
+                            'Scan to join our meeting',
+                            style: pw.TextStyle(
+                              fontSize: 16,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.grey900,
+                            ),
+                            textAlign: pw.TextAlign.center,
+                          ),
+                          pw.SizedBox(height: 6),
+                          pw.Text(
+                            'Guests welcome!',
+                            style: pw.TextStyle(
+                              fontSize: 13,
+                              color: PdfColors.grey700,
+                            ),
+                            textAlign: pw.TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(height: 16),
+                    
+                    // Club Code
+                    pw.Text(
+                      'Club Code: $_clubCode',
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        color: PdfColors.grey600,
                       ),
                       textAlign: pw.TextAlign.center,
                     ),
-                  ),
-              ],
+                  ],
+                ),
+              ),
             );
           },
         ),
