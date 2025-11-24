@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'firebase_options.dart';
 import 'utils/theme.dart';
 import 'screens/home_screen.dart';
@@ -26,11 +24,8 @@ import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
 
-// Web-specific imports
-import 'dart:html' as html if (dart.library.html) 'dart:html';
-
 // Cache busting version - increment this when making changes that require browser cache clearing
-const String appVersion = '1.3.0';
+const String appVersion = '1.3.1';
 
 // Custom page transitions builder that removes all animations
 class NoTransitionsBuilder extends PageTransitionsBuilder {
@@ -62,63 +57,11 @@ void main() async {
   runApp(const MainApp());
 }
 
-class MainApp extends StatefulWidget {
+class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
   @override
-  State<MainApp> createState() => _MainAppState();
-}
-
-class _MainAppState extends State<MainApp> {
-  bool _shouldRefresh = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkVersion();
-  }
-
-  Future<void> _checkVersion() async {
-    try {
-      final versionDoc = await FirebaseFirestore.instance
-          .collection('app')
-          .doc('version')
-          .get();
-      
-      if (versionDoc.exists) {
-        final latestVersion = versionDoc.data()?['latest'] as String?;
-        if (latestVersion != null && latestVersion != appVersion) {
-          // Version mismatch - refresh once
-          if (mounted) {
-            setState(() {
-              _shouldRefresh = true;
-            });
-            
-            // Refresh the page on web
-            if (kIsWeb) {
-              html.window.location.reload();
-            }
-          }
-          return;
-        }
-      }
-    } catch (e) {
-      // If there's an error checking version, continue normally
-      print('Error checking app version: $e');
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // If version check indicates refresh needed, show loading
-    if (_shouldRefresh) {
-      return const MaterialApp(
-        home: Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
-      );
-    }
-    
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AuthProvider()),
