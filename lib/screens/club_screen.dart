@@ -22,6 +22,8 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
   String? _clubInfo;
   String? _userId;
   List<Meeting> _meetings = [];
+  List<Meeting> _todayMeetings = [];
+  List<Meeting> _upcomingMeetings = [];
   bool _isLoading = true;
   String? _error;
   bool _showWelcomeDialog = false;
@@ -215,33 +217,55 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
 
     _meetingsSubscription?.cancel();
 
-    // Calculate UTC range for "today" in local timezone
-    // This ensures we query server-side efficiently
+    // Calculate UTC for "today" start in local timezone
+    // Query all future meetings (today and upcoming) for efficiency
     final now = DateTime.now();
     final todayStartLocal = DateTime(now.year, now.month, now.day);
-    final todayEndLocal = todayStartLocal.add(const Duration(days: 1));
     
     // Convert to UTC for Firestore query (since dates are stored in UTC)
     final todayStartUTC = todayStartLocal.toUtc();
-    final todayEndUTC = todayEndLocal.toUtc();
 
-    // Query Firestore server-side to only get today's meetings
-    // This is much more efficient than loading all meetings and filtering client-side
+    // Query Firestore server-side to get all future meetings (today and upcoming)
+    // Limit to next 100 meetings for production scale efficiency
+    // Using orderBy with limit ensures we only fetch what we need
     _meetingsSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(_userId!)
         .collection('meetings')
         .where('meeting_datetime', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStartUTC))
-        .where('meeting_datetime', isLessThan: Timestamp.fromDate(todayEndUTC))
         .orderBy('meeting_datetime', descending: false)
+        .limit(100) // Limit for production scale - 100 future meetings should be plenty
         .snapshots()
         .listen((snapshot) {
       if (!mounted) return;
 
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final todayEnd = todayStart.add(const Duration(days: 1));
+
+      final allMeetings = snapshot.docs
+          .map((doc) => Meeting.fromFirestore(doc))
+          .toList();
+
+      // Separate into today and upcoming meetings
+      final todayMeetings = <Meeting>[];
+      final upcomingMeetings = <Meeting>[];
+
+      for (final meeting in allMeetings) {
+        if (meeting.meetingDateTime != null) {
+          final meetingDate = meeting.meetingDateTime!;
+          if (meetingDate.isAfter(todayStart) && meetingDate.isBefore(todayEnd)) {
+            todayMeetings.add(meeting);
+          } else if (meetingDate.isAfter(todayEnd)) {
+            upcomingMeetings.add(meeting);
+          }
+        }
+      }
+
       setState(() {
-        _meetings = snapshot.docs
-            .map((doc) => Meeting.fromFirestore(doc))
-            .toList();
+        _meetings = allMeetings;
+        _todayMeetings = todayMeetings;
+        _upcomingMeetings = upcomingMeetings;
       });
     }, onError: (error) {
       if (mounted) {
@@ -264,6 +288,160 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
   void _navigateToMeeting(String meetingId) {
     // Use Navigator.pushNamed to update URL in browser without full reload
     Navigator.pushNamed(context, '/meetings/$meetingId');
+  }
+
+  Widget _buildMeetingTile(Meeting meeting, {required bool isClickable}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFE0E0E0),
+          width: 2,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isClickable ? () => _navigateToMeeting(meeting.id) : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Opacity(
+            opacity: isClickable ? 1.0 : 0.6,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                children: [
+                  // Meeting icon with gradient background
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFFC41E3A),
+                          Color(0xFF003366),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.event,
+                      size: 28,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          meeting.title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF212121),
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        // Date and Time display - vertically stacked
+                        if (meeting.meetingDateTime != null) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F5F5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.calendar_today,
+                                      size: 16,
+                                      color: Color(0xFF424242),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _formatDate(meeting.meetingDateTime!),
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF424242),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.access_time,
+                                      size: 16,
+                                      color: Color(0xFF424242),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _formatTime(meeting.meetingDateTime!),
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF424242),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (isClickable)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right,
+                        color: Color(0xFF424242),
+                        size: 24,
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'Upcoming',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF757575),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   // Helper function to format date
@@ -643,19 +821,65 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                // Meetings Section
-                                Text(
-                                  'Join Meetings',
-                                  style: TextStyle(
-                                    fontSize: isMobile ? 20 : 24,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF212121),
-                                    letterSpacing: -0.5,
+                                // Today's Meetings Section
+                                if (_todayMeetings.isNotEmpty || _upcomingMeetings.isNotEmpty) ...[
+                                  Text(
+                                    'Today\'s Meetings',
+                                    style: TextStyle(
+                                      fontSize: isMobile ? 20 : 24,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF212121),
+                                      letterSpacing: -0.5,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                if (_meetings.isEmpty)
+                                  const SizedBox(height: 16),
+                                  
+                                  if (_todayMeetings.isEmpty)
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(32),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(0xFFE0E0E0),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'No meetings scheduled for today',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    ...(_todayMeetings.map((meeting) {
+                                      return _buildMeetingTile(meeting, isClickable: true);
+                                    })),
+                                  
+                                  // Upcoming Meetings Section (max 3)
+                                  if (_upcomingMeetings.isNotEmpty) ...[
+                                    const SizedBox(height: 32),
+                                    Text(
+                                      'Upcoming Meetings',
+                                      style: TextStyle(
+                                        fontSize: isMobile ? 20 : 24,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF212121),
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ...(_upcomingMeetings.take(3).map((meeting) {
+                                      return _buildMeetingTile(meeting, isClickable: false);
+                                    })),
+                                  ],
+                                ]
+                                else
                                   Container(
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(48),
@@ -677,7 +901,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                           ),
                                           const SizedBox(height: 20),
                                           const Text(
-                                            'No meetings today',
+                                            'No meetings scheduled',
                                             style: TextStyle(
                                               fontSize: 18,
                                               fontWeight: FontWeight.w600,
@@ -687,7 +911,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                           ),
                                           const SizedBox(height: 8),
                                           const Text(
-                                            'There are no meetings scheduled for today',
+                                            'There are no upcoming meetings',
                                             style: TextStyle(
                                               fontSize: 14,
                                               color: Color(0xFF757575),
@@ -696,141 +920,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
                                         ],
                                       ),
                                     ),
-                                  )
-                                else
-                                  ...(_meetings.map((meeting) {
-                                    return Container(
-                                      margin: const EdgeInsets.only(bottom: 16),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: const Color(0xFFE0E0E0),
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          onTap: () => _navigateToMeeting(meeting.id),
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(24),
-                                            child: Row(
-                                              children: [
-                                                // Meeting icon with gradient background
-                                                Container(
-                                                  width: 56,
-                                                  height: 56,
-                                                  decoration: BoxDecoration(
-                                                    gradient: const LinearGradient(
-                                                      colors: [
-                                                        Color(0xFFC41E3A),
-                                                        Color(0xFF003366),
-                                                      ],
-                                                      begin: Alignment.topLeft,
-                                                      end: Alignment.bottomRight,
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(12),
-                                                  ),
-                                                  child: const Icon(
-                                                    Icons.event,
-                                                    size: 28,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 20),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        meeting.title,
-                                                        style: const TextStyle(
-                                                          fontSize: 18,
-                                                          fontWeight: FontWeight.w600,
-                                                          color: Color(0xFF212121),
-                                                          letterSpacing: -0.3,
-                                                        ),
-                                                      ),
-                                                      // Date and Time display - vertically stacked
-                                                      if (meeting.meetingDateTime != null) ...[
-                                                        const SizedBox(height: 10),
-                                                        Container(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                                          decoration: BoxDecoration(
-                                                            color: const Color(0xFFF5F5F5),
-                                                            borderRadius: BorderRadius.circular(6),
-                                                          ),
-                                                          child: Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                            mainAxisSize: MainAxisSize.min,
-                                                            children: [
-                                                              Row(
-                                                                mainAxisSize: MainAxisSize.min,
-                                                                children: [
-                                                                  const Icon(
-                                                                    Icons.event,
-                                                                    size: 16,
-                                                                    color: Color(0xFF424242),
-                                                                  ),
-                                                                  const SizedBox(width: 6),
-                                                                  Text(
-                                                                    _formatDate(meeting.meetingDateTime!),
-                                                                    style: const TextStyle(
-                                                                      fontSize: 13,
-                                                                      color: Color(0xFF424242),
-                                                                      fontWeight: FontWeight.w600,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                              const SizedBox(height: 6),
-                                                              Row(
-                                                                mainAxisSize: MainAxisSize.min,
-                                                                children: [
-                                                                  const Icon(
-                                                                    Icons.access_time,
-                                                                    size: 16,
-                                                                    color: Color(0xFF424242),
-                                                                  ),
-                                                                  const SizedBox(width: 6),
-                                                                  Text(
-                                                                    _formatTime(meeting.meetingDateTime!),
-                                                                    style: const TextStyle(
-                                                                      fontSize: 13,
-                                                                      color: Color(0xFF424242),
-                                                                      fontWeight: FontWeight.w600,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ],
-                                                  ),
-                                                ),
-                                                Container(
-                                                  padding: const EdgeInsets.all(8),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(0xFFF5F5F5),
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: const Icon(
-                                                    Icons.chevron_right,
-                                                    color: Color(0xFF424242),
-                                                    size: 24,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  })),
+                                  ),
                                 
                                 // Club Info Section (if info exists)
                                 if (_clubInfo != null && _clubInfo!.isNotEmpty) ...[
