@@ -22,7 +22,6 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _commentsController = TextEditingController();
   
   String? _hearAboutUs; // Selected value for "Where did you hear about us?"
   
@@ -137,7 +136,6 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _commentsController.dispose();
     super.dispose();
   }
 
@@ -188,7 +186,6 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
           .doc(_deviceId);
       
       final phone = _phoneController.text.trim();
-      final comments = _commentsController.text.trim();
       
       final batch = FirebaseFirestore.instance.batch();
       
@@ -209,7 +206,6 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
         'entry_date': todayDateString,
         'created_at': FieldValue.serverTimestamp(),
       };
-      if (comments.isNotEmpty) attendanceData['comments'] = comments;
       batch.set(guestDocRef.collection('attendances').doc(todayDateString), attendanceData);
       
       await batch.commit();
@@ -226,7 +222,6 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
       _nameController.clear();
       _emailController.clear();
       _phoneController.clear();
-      _commentsController.clear();
       setState(() {
         _hearAboutUs = null;
       });
@@ -681,42 +676,6 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
                                 counterText: '',
                               ),
                               textInputAction: TextInputAction.next,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          
-                          // Comments Field (Optional)
-                          SizedBox(
-                            width: 320,
-                            child: TextFormField(
-                              controller: _commentsController,
-                              maxLines: 4,
-                              maxLength: 500,
-                              decoration: InputDecoration(
-                                labelText: 'Comments (Optional)',
-                                prefixIcon: const Padding(
-                                  padding: EdgeInsets.only(bottom: 60),
-                                  child: Icon(Icons.comment_outlined),
-                                ),
-                                alignLabelWithHint: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: const Color(0xFFF2F1F0),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                                counterText: '',
-                              ),
-                              textInputAction: TextInputAction.done,
-                              onFieldSubmitted: (_) {
-                                if (!_isSaving && !_hasExistingEntryToday) {
-                                  _saveGuestInfo();
-                                }
-                              },
                             ),
                           ),
                           const SizedBox(height: 20),
