@@ -375,11 +375,50 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                 children: [
                   const HeaderWidget(),
                   
+                  // Base banner
+                  Center(
+                    child: Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF6366F1), // Indigo
+                            Color(0xFF8B5CF6), // Purple
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: const Text(
+                        'Base',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -1.5,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
                   // Main content
-                  Container(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.symmetric(vertical: 32),
+                  Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(vertical: 32),
                     child: Consumer<ManageMeetingsProvider>(
                       builder: (context, meetingsProvider, child) {
                         return Column(
@@ -429,6 +468,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                           ],
                         );
                       },
+                    ),
                     ),
                   ),
                   const SizedBox(height: 40),
