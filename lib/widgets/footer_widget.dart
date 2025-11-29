@@ -10,8 +10,15 @@ class FooterWidget extends StatelessWidget {
     
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Color(0xFF212121),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF1E1B4B), // Dark indigo
+            Color(0xFF312E81), // Darker purple
+          ],
+        ),
       ),
       padding: EdgeInsets.symmetric(
         vertical: isMobile ? 32 : 48,
@@ -141,8 +148,8 @@ class FooterWidget extends StatelessWidget {
                     ],
                   ),
             SizedBox(height: isMobile ? 24 : 32),
-            const Divider(
-              color: Color(0xFF424242),
+            Divider(
+              color: Colors.white.withOpacity(0.2),
               thickness: 1,
             ),
             SizedBox(height: isMobile ? 16 : 24),
@@ -155,15 +162,15 @@ class FooterWidget extends StatelessWidget {
                         'Made with ❤️ for Toastmasters',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF9E9E9E),
+                          color: Color(0xFFA5B4FC),
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '© ${DateTime.now().year} Kiwi Lab. All rights reserved.',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF9E9E9E),
+                          color: Colors.white.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -173,16 +180,16 @@ class FooterWidget extends StatelessWidget {
                     children: [
                       Text(
                         '© ${DateTime.now().year} Kiwi Lab. All rights reserved.',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF9E9E9E),
+                          color: Colors.white.withOpacity(0.7),
                         ),
                       ),
                       const Text(
                         'Made with ❤️ for Toastmasters',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF9E9E9E),
+                          color: Color(0xFFA5B4FC),
                         ),
                       ),
                     ],
@@ -196,13 +203,15 @@ class FooterWidget extends StatelessWidget {
   Widget _buildFooterLink(String text, Future<void> Function()? onTap) {
     return InkWell(
       onTap: onTap,
+      hoverColor: Colors.white.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(4),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
         child: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Color(0xFFBDBDBD),
+            color: Colors.white.withOpacity(0.8),
             decoration: TextDecoration.none,
           ),
         ),
@@ -210,4 +219,3 @@ class FooterWidget extends StatelessWidget {
     );
   }
 }
-

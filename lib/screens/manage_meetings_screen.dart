@@ -17,6 +17,7 @@ import '../widgets/meetings_list_widget.dart';
 import '../widgets/profile_widget.dart';
 import '../widgets/app_info_widget.dart';
 import '../widgets/my_club_widget.dart';
+import '../widgets/header_widget.dart';
 
 class ManageMeetingsScreen extends StatefulWidget {
   const ManageMeetingsScreen({super.key});
@@ -372,48 +373,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // Header with Base title and logout button - full width
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF0F0F0), // Same as HeaderWidget
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Base',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF212121),
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pushNamed('/');
-                          },
-                          icon: const Icon(Icons.home, size: 18),
-                          label: const Text(
-                            'Home',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey[800],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const HeaderWidget(),
                   
                   // Main content
                   Container(
