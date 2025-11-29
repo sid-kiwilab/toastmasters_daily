@@ -23,9 +23,11 @@ import 'screens/payment_cancelled_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
+import 'providers/version_provider.dart';
+import 'widgets/version_banner_widget.dart';
 
 // Cache busting version - increment this when making changes that require browser cache clearing
-const String appVersion = '1.3.4';
+const String appVersion = '1.3.5';
 
 // Custom page transitions builder that removes all animations
 class NoTransitionsBuilder extends PageTransitionsBuilder {
@@ -67,6 +69,7 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => AuthProvider()),
         ChangeNotifierProvider(create: (context) => ManageMeetingsProvider()),
         ChangeNotifierProvider(create: (context) => ViewMeetingProvider()),
+        ChangeNotifierProvider(create: (context) => VersionProvider()),
       ],
       child: MaterialApp(
         title: 'Toastmasters Daily',
@@ -94,6 +97,9 @@ class MainApp extends StatelessWidget {
           ),
         ),
         themeMode: ThemeMode.light,
+        builder: (context, child) {
+          return VersionBannerWidget(child: child!);
+        },
         initialRoute: '/',
         routes: {
           '/': (context) => const AuthWrapper(),
