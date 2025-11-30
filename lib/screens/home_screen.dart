@@ -3,6 +3,7 @@ import '../widgets/footer_widget.dart';
 import '../widgets/header_widget.dart';
 import '../widgets/home_banner_widget.dart';
 import '../widgets/action_tiles_widget.dart';
+import '../widgets/daily_challenge_widget.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,7 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     const HomeBannerWidget(),
                     const ActionTilesWidget(),
+                    const DailyChallengeWidget(),
                   ],
                 ),
               ),

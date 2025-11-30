@@ -20,51 +20,89 @@ class HeaderWidget extends StatelessWidget {
                   width: double.infinity,
                   constraints: const BoxConstraints(maxWidth: 1200),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Home button pill
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(50),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pushNamed('/');
-                              },
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              ),
-                              child: const Text(
-                                'Home',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1E1B4B),
+                      Row(
+                        children: [
+                          // Home button pill
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(50),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pushNamed('/');
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  ),
+                                  child: const Text(
+                                    'Home',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1E1B4B),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          // Create Meeting button pill
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(50),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                child: TextButton(
+                                  onPressed: () {
+                                    if (authProvider.isLoggedIn) {
+                                      Navigator.of(context).pushNamed('/base');
+                                    } else {
+                                      Navigator.of(context).pushNamed('/club-login');
+                                    }
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  ),
+                                  child: const Text(
+                                    'Create Meeting',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1E1B4B),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      // Create Meeting button pill
+                      // Login button pill
                       ClipRRect(
                         borderRadius: BorderRadius.circular(50),
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.2),
+                              color: const Color(0xFF1E1B4B).withOpacity(0.9),
                               borderRadius: BorderRadius.circular(50),
                             ),
                             child: TextButton(
                               onPressed: () {
                                 if (authProvider.isLoggedIn) {
+                                  // Navigate to base/profile
                                   Navigator.of(context).pushNamed('/base');
                                 } else {
                                   Navigator.of(context).pushNamed('/club-login');
@@ -73,12 +111,12 @@ class HeaderWidget extends StatelessWidget {
                               style: TextButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                               ),
-                              child: const Text(
-                                'Create Meeting',
-                                style: TextStyle(
+                              child: Text(
+                                authProvider.isLoggedIn ? 'Profile' : 'Login',
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1E1B4B),
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
