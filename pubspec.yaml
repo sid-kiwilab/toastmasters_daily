@@ -39,3 +39,6 @@ flutter:
         - asset: assets/fonts/OldschoolGroteskVar.ttf
   assets:
     - assets/images/logo.png
+    - assets/images/join_meeting.webp
+    - assets/images/create_meeting.webp
+    - assets/images/daily_challenge.webp

@@ -31,9 +31,9 @@ class ActionTilesWidget extends StatelessWidget {
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  // Calculate tile height: image (320/1.618 ≈ 198) + spacing (12) + title (~24 with line height) + spacing (4) + description (~20 with line height) + buffer (10)
+                  // Calculate tile height: image (320 square) + spacing (12) + title (~24 with line height) + spacing (4) + description (~20 with line height) + buffer (10)
                   final maxCardWidth = constraints.maxWidth > 320 ? 320.0 : constraints.maxWidth;
-                  final cardHeight = maxCardWidth / 1.618;
+                  final cardHeight = maxCardWidth; // Square aspect ratio
                   final tileHeight = cardHeight + 12 + 24 + 4 + 20 + 10; // Image + spacing + title + spacing + description + buffer
                   
                   return SizedBox(
@@ -43,7 +43,7 @@ class ActionTilesWidget extends StatelessWidget {
                       children: [
                         _buildTile(
                           context: context,
-                          imageUrl: 'https://firebasestorage.googleapis.com/v0/b/toastmasters-daily.firebasestorage.app/o/images%2Fjoin_meeting.webp?alt=media&token=6bdd28ab-26d8-4d3a-898f-2bad2d1db12c',
+                          imageAsset: 'assets/images/join_meeting.webp',
                           title: 'Join Meeting',
                           description: 'Enter club code to join',
                           onTap: () => _showJoinMeetingDialog(context),
@@ -51,7 +51,7 @@ class ActionTilesWidget extends StatelessWidget {
                         const SizedBox(width: 16),
                         _buildTile(
                           context: context,
-                          imageUrl: 'https://firebasestorage.googleapis.com/v0/b/toastmasters-daily.firebasestorage.app/o/images%2Fcreate_meeting.webp?alt=media&token=e28774a7-6ae6-409e-8f23-724aae15f9b3',
+                          imageAsset: 'assets/images/create_meeting.webp',
                           title: 'Create Meeting',
                           description: 'Start a new meeting',
                           onTap: () => _navigateToCreateMeeting(context),
@@ -59,7 +59,7 @@ class ActionTilesWidget extends StatelessWidget {
                         const SizedBox(width: 16),
                         _buildTile(
                           context: context,
-                          imageUrl: 'https://firebasestorage.googleapis.com/v0/b/toastmasters-daily.firebasestorage.app/o/images%2Fdaily_challenge.webp?alt=media&token=e9ebcb6d-78db-4fc5-ba16-3413fd30f398',
+                          imageAsset: 'assets/images/daily_challenge.webp',
                           title: 'Daily Challenge',
                           description: 'Practice & grow your skills',
                           onTap: () => _navigateToDailyChallenge(context),
@@ -78,7 +78,7 @@ class ActionTilesWidget extends StatelessWidget {
 
   Widget _buildTile({
     required BuildContext context,
-    required String imageUrl,
+    required String imageAsset,
     required String title,
     required String description,
     required VoidCallback onTap,
@@ -87,8 +87,8 @@ class ActionTilesWidget extends StatelessWidget {
       builder: (context, constraints) {
         // Calculate width (use most of available space, max 320px)
         final maxCardWidth = constraints.maxWidth > 320 ? 320.0 : constraints.maxWidth;
-        // Golden ratio landscape: height = width / 1.618
-        final cardHeight = maxCardWidth / 1.618;
+        // Square aspect ratio
+        final cardHeight = maxCardWidth;
         
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,13 +113,10 @@ class ActionTilesWidget extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: _NetworkImageWithShimmer(
-                      imageUrl: imageUrl,
+                    child: _AssetImageWithShimmer(
+                      imageAsset: imageAsset,
                       width: maxCardWidth,
                       height: cardHeight,
-                      onLoadingStateChanged: (isLoading) {
-                        // This will be handled by the state
-                      },
                     ),
                   ),
                 ),
@@ -133,7 +130,7 @@ class ActionTilesWidget extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF212121),
               ),
-              imageUrl: imageUrl,
+              imageAsset: imageAsset,
             ),
             const SizedBox(height: 4),
             _ShimmerText(
@@ -143,7 +140,7 @@ class ActionTilesWidget extends StatelessWidget {
                 fontWeight: FontWeight.w400,
                 color: Color(0xFF6B7280),
               ),
-              imageUrl: imageUrl,
+              imageAsset: imageAsset,
             ),
           ],
         );
@@ -193,112 +190,6 @@ class ActionTilesWidget extends StatelessWidget {
         content: Text('Daily Challenge coming soon!'),
         duration: Duration(seconds: 2),
       ),
-    );
-  }
-}
-
-class _NetworkImageWithShimmer extends StatefulWidget {
-  final String imageUrl;
-  final double width;
-  final double height;
-  final ValueChanged<bool>? onLoadingStateChanged;
-
-  const _NetworkImageWithShimmer({
-    required this.imageUrl,
-    required this.width,
-    required this.height,
-    this.onLoadingStateChanged,
-  });
-
-  @override
-  State<_NetworkImageWithShimmer> createState() => _NetworkImageWithShimmerState();
-}
-
-class _NetworkImageWithShimmerState extends State<_NetworkImageWithShimmer>
-    with SingleTickerProviderStateMixin {
-  bool _isLoading = true;
-  bool _hasError = false;
-  late AnimationController _shimmerController;
-
-  @override
-  void initState() {
-    super.initState();
-    _shimmerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat();
-    _loadImage();
-  }
-
-  Future<void> _loadImage() async {
-    try {
-      final image = NetworkImage(widget.imageUrl);
-      final completer = image.resolve(ImageConfiguration.empty);
-      completer.addListener(ImageStreamListener(
-        (ImageInfo info, bool synchronousCall) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            widget.onLoadingStateChanged?.call(false);
-          }
-        },
-        onError: (exception, stackTrace) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-              _hasError = true;
-            });
-            widget.onLoadingStateChanged?.call(false);
-          }
-        },
-      ));
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _hasError = true;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _shimmerController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_hasError) {
-      return Container(
-        width: widget.width,
-        height: widget.height,
-        color: Colors.grey.shade200,
-        child: const Icon(
-          Icons.broken_image,
-          color: Colors.grey,
-          size: 48,
-        ),
-      );
-    }
-
-    if (_isLoading) {
-      return _ShimmerLoader(
-        width: widget.width,
-        height: widget.height,
-        controller: _shimmerController,
-      );
-    }
-
-    return Image.network(
-      widget.imageUrl,
-      fit: BoxFit.cover,
-      width: widget.width,
-      height: widget.height,
-      filterQuality: FilterQuality.high,
-      isAntiAlias: true,
     );
   }
 }
@@ -370,15 +261,110 @@ class _ShimmerLoader extends StatelessWidget {
   }
 }
 
+class _AssetImageWithShimmer extends StatefulWidget {
+  final String imageAsset;
+  final double width;
+  final double height;
+
+  const _AssetImageWithShimmer({
+    required this.imageAsset,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  State<_AssetImageWithShimmer> createState() => _AssetImageWithShimmerState();
+}
+
+class _AssetImageWithShimmerState extends State<_AssetImageWithShimmer>
+    with SingleTickerProviderStateMixin {
+  bool _isLoading = true;
+  late AnimationController _shimmerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+    _loadImage();
+  }
+
+  Future<void> _loadImage() async {
+    try {
+      final image = AssetImage(widget.imageAsset);
+      final completer = image.resolve(ImageConfiguration.empty);
+      completer.addListener(ImageStreamListener(
+        (ImageInfo info, bool synchronousCall) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            _shimmerController.stop();
+          }
+        },
+        onError: (exception, stackTrace) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            _shimmerController.stop();
+          }
+        },
+      ));
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _shimmerController.stop();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return _ShimmerLoader(
+        width: widget.width,
+        height: widget.height,
+        controller: _shimmerController,
+      );
+    }
+
+    final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final cacheWidth = (widget.width * devicePixelRatio).round();
+    final cacheHeight = (widget.height * devicePixelRatio).round();
+
+    return Image.asset(
+      widget.imageAsset,
+      width: widget.width,
+      height: widget.height,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.none,
+      isAntiAlias: false,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+    );
+  }
+}
+
 class _ShimmerText extends StatefulWidget {
   final String text;
   final TextStyle style;
-  final String imageUrl;
+  final String imageAsset;
 
   const _ShimmerText({
     required this.text,
     required this.style,
-    required this.imageUrl,
+    required this.imageAsset,
   });
 
   @override
@@ -402,7 +388,7 @@ class _ShimmerTextState extends State<_ShimmerText>
 
   Future<void> _checkImageLoaded() async {
     try {
-      final image = NetworkImage(widget.imageUrl);
+      final image = AssetImage(widget.imageAsset);
       final completer = image.resolve(ImageConfiguration.empty);
       completer.addListener(ImageStreamListener(
         (ImageInfo info, bool synchronousCall) {
