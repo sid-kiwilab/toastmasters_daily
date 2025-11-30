@@ -16,7 +16,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               
               // Content
               Container(
-                constraints: const BoxConstraints(maxWidth: 800),
+                constraints: const BoxConstraints(maxWidth: 1200),
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 padding: const EdgeInsets.symmetric(vertical: 32),
                 child: Column(

@@ -80,6 +80,10 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
         if (clubCodeExists) {
           // Navigate to club screen using URL navigation
           if (mounted) {
+            // Close dialog if we're in one
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
             await Navigator.pushNamed(context, '/clubs/$digitsOnly');
           }
         } else {
@@ -136,8 +140,8 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
-                Color(0xFFC41E3A),
-                Color(0xFF003366),
+                Color(0xFF6366F1), // Indigo
+                Color(0xFF8B5CF6), // Purple
               ],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
@@ -152,7 +156,7 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
           style: theme.textTheme.headlineMedium?.copyWith(
             fontSize: 28,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: const Color(0xFF212121),
           ),
           textAlign: TextAlign.center,
         ),
@@ -161,7 +165,7 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
           "Best speeches coming your way!",
           style: theme.textTheme.bodyMedium?.copyWith(
             fontSize: 16,
-            color: Colors.grey[600],
+            color: const Color(0xFF6B7280),
           ),
           textAlign: TextAlign.center,
         ),
@@ -179,16 +183,20 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
             decoration: InputDecoration(
               hintText: _isTyping ? '' : '1234 5678',
               hintStyle: TextStyle(
-                color: Colors.grey[500],
+                color: const Color(0xFF9CA3AF),
                 letterSpacing: 8.0,
                 fontWeight: FontWeight.w500,
                 fontSize: 16,
               ),
               filled: true,
-              fillColor: const Color(0xFFF2F1F0),
+              fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 20,
@@ -221,17 +229,17 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [
-                  Color(0xFFC41E3A),
-                  Color(0xFF003366),
+                  Color(0xFF6366F1), // Indigo
+                  Color(0xFF8B5CF6), // Purple
                 ],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFC41E3A).withOpacity(0.3),
-                  blurRadius: 8,
+                  color: const Color(0xFF6366F1).withOpacity(0.3),
+                  blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -243,7 +251,7 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
                 foregroundColor: Colors.white,
                 shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 elevation: 0,
               ),

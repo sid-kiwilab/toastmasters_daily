@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../widgets/header_widget.dart';
 import '../widgets/footer_widget.dart';
+import '../widgets/header_widget.dart';
 import '../widgets/home_banner_widget.dart';
-import '../widgets/todays_challenge_widget.dart';
-import '../widgets/challenge_videos_widget.dart';
+import '../widgets/action_tiles_widget.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -21,8 +20,7 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     const HomeBannerWidget(),
-                    const TodaysChallengeWidget(),
-                    const ChallengeVideosWidget(),
+                    const ActionTilesWidget(),
                   ],
                 ),
               ),

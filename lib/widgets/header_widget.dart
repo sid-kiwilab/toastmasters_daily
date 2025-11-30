@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -11,21 +12,26 @@ class HeaderWidget extends StatelessWidget {
       builder: (context, authProvider, child) {
         return LayoutBuilder(
           builder: (context, constraints) {
-            final isMobile = constraints.maxWidth < 600;
-            
             return Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Center(
                 child: Container(
+                  width: double.infinity,
                   constraints: const BoxConstraints(maxWidth: 1200),
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(50),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
                       // Home button
                       TextButton(
                         onPressed: () {
@@ -36,42 +42,32 @@ class HeaderWidget extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF6366F1),
+                            color: Color(0xFF1E1B4B),
                           ),
                         ),
                       ),
                       const SizedBox(width: 16),
                       // Create Meeting button
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextButton(
-                          onPressed: () {
-                            if (authProvider.isLoggedIn) {
-                              Navigator.of(context).pushNamed('/base');
-                            } else {
-                              Navigator.of(context).pushNamed('/club-login');
-                            }
-                          },
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isMobile ? 16 : 24,
-                              vertical: 12,
-                            ),
-                          ),
-                          child: const Text(
-                            'Create Meeting',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
+                      TextButton(
+                        onPressed: () {
+                          if (authProvider.isLoggedIn) {
+                            Navigator.of(context).pushNamed('/base');
+                          } else {
+                            Navigator.of(context).pushNamed('/club-login');
+                          }
+                        },
+                        child: const Text(
+                          'Create Meeting',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF1E1B4B),
                           ),
                         ),
                       ),
-                    ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
