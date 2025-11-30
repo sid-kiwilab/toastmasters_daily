@@ -379,7 +379,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                     child: Container(
                       width: double.infinity,
                       constraints: const BoxConstraints(maxWidth: 1200),
-                      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
+                      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
                       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
@@ -417,7 +417,7 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                     child: Container(
                       constraints: const BoxConstraints(maxWidth: 1200),
                       margin: const EdgeInsets.symmetric(horizontal: 20),
-                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      padding: const EdgeInsets.only(top: 16, bottom: 32),
                     child: Consumer<ManageMeetingsProvider>(
                       builder: (context, meetingsProvider, child) {
                         return Column(

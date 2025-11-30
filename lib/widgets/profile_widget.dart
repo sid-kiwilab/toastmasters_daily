@@ -107,12 +107,16 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         builder: (dialogContext) => StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Start Free Trial'),
-                  Icon(Icons.info_outline, color: Colors.blue),
-                ],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Start Free Trial',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF212121),
+                ),
               ),
               content: const Column(
                 mainAxisSize: MainAxisSize.min,
@@ -120,24 +124,54 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                 children: [
                   Text(
                     'Your trial will start for 30 days.',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF212121),
+                    ),
                   ),
                   SizedBox(height: 12),
                   Text(
                     'After the trial period ends, you can continue using the service for \$5 USD per month.',
-                    style: TextStyle(fontSize: 14),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF6B7280),
+                    ),
                   ),
                 ],
               ),
               actions: [
                 TextButton(
                   onPressed: _isStartingTrial ? null : () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Cancel'),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
                 ),
-                ElevatedButton(
-                  onPressed: _isStartingTrial
-                      ? null
-                      : () async {
+                SizedBox(
+                  width: 140,
+                  height: 48,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF6366F1), // Indigo
+                          Color(0xFF8B5CF6), // Purple
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isStartingTrial
+                          ? null
+                          : () async {
                           setDialogState(() {
                             _isStartingTrial = true;
                           });
@@ -228,20 +262,34 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                             }
                           }
                         },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
-                    foregroundColor: Colors.white,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      ),
+                      child: _isStartingTrial
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Start Trial',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
                   ),
-                  child: _isStartingTrial
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text('Start Trial'),
                 ),
               ],
             );
@@ -357,12 +405,16 @@ class _ProfileWidgetState extends State<ProfileWidget> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Cancel Auto-Renewal'),
-              Icon(Icons.warning_amber_rounded, color: Colors.orange),
-            ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Cancel Subscription',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF212121),
+            ),
           ),
           content: const Column(
             mainAxisSize: MainAxisSize.min,
@@ -370,24 +422,49 @@ class _ProfileWidgetState extends State<ProfileWidget> {
             children: [
               Text(
                 'Are you sure you want to cancel auto-renewal?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF212121),
+                ),
               ),
               SizedBox(height: 12),
               Text(
                 'Your subscription will remain active until the end of the current billing period. After that, it will not renew automatically.',
-                style: TextStyle(fontSize: 14),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF6B7280),
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: _isCancellingSubscription ? null : () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Keep Auto-Renewal'),
+              child: const Text(
+                'Keep',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
             ),
-            ElevatedButton(
-              onPressed: _isCancellingSubscription
-                  ? null
-                  : () async {
+            SizedBox(
+              width: 180,
+              height: 48,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFDC2626), Color(0xFFB91C1C)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ElevatedButton(
+                  onPressed: _isCancellingSubscription
+                      ? null
+                      : () async {
                       setState(() {
                         _isCancellingSubscription = true;
                       });
@@ -436,20 +513,34 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                         }
                       }
                     },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[600],
-                foregroundColor: Colors.white,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  ),
+                  child: _isCancellingSubscription
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
               ),
-              child: _isCancellingSubscription
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text('Cancel Auto-Renewal'),
             ),
           ],
         ),
@@ -467,12 +558,16 @@ class _ProfileWidgetState extends State<ProfileWidget> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Resume Auto-Renewal'),
-              Icon(Icons.check_circle, color: Colors.green),
-            ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Resume Subscription',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF212121),
+            ),
           ),
           content: const Column(
             mainAxisSize: MainAxisSize.min,
@@ -480,24 +575,54 @@ class _ProfileWidgetState extends State<ProfileWidget> {
             children: [
               Text(
                 'Resume automatic subscription renewal?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF212121),
+                ),
               ),
               SizedBox(height: 12),
               Text(
                 'Your subscription will automatically renew at the end of each billing period.',
-                style: TextStyle(fontSize: 14),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF6B7280),
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: _isResumingSubscription ? null : () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
             ),
-            ElevatedButton(
-              onPressed: _isResumingSubscription
-                  ? null
-                  : () async {
+            SizedBox(
+              width: 180,
+              height: 48,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF6366F1), // Indigo
+                      Color(0xFF8B5CF6), // Purple
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ElevatedButton(
+                  onPressed: _isResumingSubscription
+                      ? null
+                      : () async {
                       setState(() {
                         _isResumingSubscription = true;
                       });
@@ -546,20 +671,34 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                         }
                       }
                     },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[600],
-                foregroundColor: Colors.white,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  ),
+                  child: _isResumingSubscription
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Resume',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
               ),
-              child: _isResumingSubscription
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text('Resume Auto-Renewal'),
             ),
           ],
         ),
@@ -653,7 +792,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
             title,
             style: const TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               color: Color(0xFF212121),
             ),
           ),
@@ -662,7 +801,8 @@ class _ProfileWidgetState extends State<ProfileWidget> {
             description,
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF757575),
+              color: Color(0xFF6B7280),
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],
@@ -674,13 +814,13 @@ class _ProfileWidgetState extends State<ProfileWidget> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -691,85 +831,6 @@ class _ProfileWidgetState extends State<ProfileWidget> {
     );
   }
 
-  Widget _buildItem({
-    required IconData icon,
-    required String label,
-    String? value,
-    VoidCallback? onTap,
-    Widget? trailing,
-    bool isLast = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        border: isLast ? null : Border(
-          bottom: BorderSide(
-            color: const Color(0xFFF5F5F5),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 22,
-                    color: const Color(0xFF424242),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF212121),
-                        ),
-                      ),
-                      if (value != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          value,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF757575),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (trailing != null) trailing,
-                if (onTap != null)
-                  const Icon(
-                    Icons.chevron_right,
-                    size: 16,
-                    color: Color(0xFF9E9E9E),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -792,7 +853,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: const Color(0xFFF5F5F5),
+                        color: const Color(0xFFE5E7EB),
                         width: 1,
                       ),
                     ),
@@ -827,7 +888,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                                       'Email',
                                       style: TextStyle(
                                         fontSize: 16,
-                                        fontWeight: FontWeight.w500,
+                                        fontWeight: FontWeight.w600,
                                         color: Color(0xFF212121),
                                       ),
                                     ),
@@ -854,7 +915,8 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                                   email,
                                   style: const TextStyle(
                                     fontSize: 14,
-                                    color: Color(0xFF757575),
+                                    color: Color(0xFF6B7280),
+                                    fontWeight: FontWeight.w400,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -864,39 +926,33 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                           if (!isVerified)
                             Container(
                               margin: const EdgeInsets.only(left: 12),
-                              child: TextButton(
+                              child: TextButton.icon(
                                 onPressed: _isSendingVerificationEmail ? null : () => _sendVerificationEmail(context, authProvider),
                                 style: TextButton.styleFrom(
-                                  backgroundColor: Colors.grey[800],
-                                  foregroundColor: Colors.white,
+                                  foregroundColor: const Color(0xFF6366F1),
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  minimumSize: const Size(100, 38),
                                 ),
-                                child: _isSendingVerificationEmail
+                                icon: _isSendingVerificationEmail
                                     ? const SizedBox(
                                         width: 16,
                                         height: 16,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
                                         ),
                                       )
-                                    : Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          Icon(Icons.email, size: 18),
-                                          SizedBox(width: 6),
-                                          Text(
-                                            'Verify',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
+                                    : const Icon(Icons.email, size: 18),
+                                label: _isSendingVerificationEmail
+                                    ? const SizedBox.shrink()
+                                    : const Text(
+                                        'Verify',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                               ),
                             ),
@@ -962,7 +1018,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: const Color(0xFFF5F5F5),
+                        color: const Color(0xFFE5E7EB),
                         width: 1,
                       ),
                     ),
@@ -998,7 +1054,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                                       'Subscription',
                                       style: TextStyle(
                                         fontSize: 16,
-                                        fontWeight: FontWeight.w500,
+                                        fontWeight: FontWeight.w600,
                                         color: Color(0xFF212121),
                                       ),
                                     ),
@@ -1007,7 +1063,8 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                                       subscriptionValue,
                                       style: const TextStyle(
                                         fontSize: 14,
-                                        color: Color(0xFF757575),
+                                        color: Color(0xFF6B7280),
+                                        fontWeight: FontWeight.w400,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -1021,52 +1078,70 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                             message: tooltipMessage,
                             child: SizedBox(
                               width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: isButtonEnabled
-                                    ? () {
-                                        if (isActive) {
-                                          // Cancel or Resume renewal based on current state
-                                          if (_subscriptionCancelAtPeriodEnd == true) {
-                                            _resumeSubscription(context);
-                                          } else {
-                                            _stopSubscription(context);
-                                          }
-                                        } else {
-                                          // Subscribe or Start Trial
-                                          _subscribe(context);
-                                        }
-                                      }
-                                    : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isActive 
-                                      ? (_subscriptionCancelAtPeriodEnd == true ? Colors.green[600] : Colors.red[600])
-                                      : Colors.green[600],
-                                  foregroundColor: Colors.white,
-                                  disabledBackgroundColor: Colors.grey[400],
-                                  disabledForegroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: isButtonEnabled
+                                      ? (isActive && _subscriptionCancelAtPeriodEnd != true
+                                          ? const LinearGradient(
+                                              colors: [Color(0xFFDC2626), Color(0xFFB91C1C)],
+                                            )
+                                          : const LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: [
+                                                Color(0xFF6366F1), // Indigo
+                                                Color(0xFF8B5CF6), // Purple
+                                              ],
+                                            ))
+                                      : null,
+                                  color: isButtonEnabled ? null : Colors.grey[400],
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: (_isCreatingCheckoutSession || _isCancellingSubscription || _isResumingSubscription)
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                child: ElevatedButton(
+                                  onPressed: isButtonEnabled
+                                      ? () {
+                                          if (isActive) {
+                                            // Cancel or Resume renewal based on current state
+                                            if (_subscriptionCancelAtPeriodEnd == true) {
+                                              _resumeSubscription(context);
+                                            } else {
+                                              _stopSubscription(context);
+                                            }
+                                          } else {
+                                            // Subscribe or Start Trial
+                                            _subscribe(context);
+                                          }
+                                        }
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    foregroundColor: Colors.white,
+                                    shadowColor: Colors.transparent,
+                                    disabledBackgroundColor: Colors.transparent,
+                                    disabledForegroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: (_isCreatingCheckoutSession || _isCancellingSubscription || _isResumingSubscription)
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          ),
+                                        )
+                                      : Text(
+                                          buttonText,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
-                                      )
-                                    : Text(
-                                        buttonText,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
+                                ),
                               ),
                             ),
                           ),

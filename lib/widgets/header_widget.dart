@@ -33,26 +33,11 @@ class HeaderWidget extends StatelessWidget {
                     isActive: false,
                     isPrimary: false,
                   ),
-                  // Login buttons group
-                  Row(
-                    children: [
-                      _HeaderButton(
-                        text: authProvider.isLoggedIn ? 'Club Profile' : 'Club Login',
-                        onPressed: () {
-                          if (authProvider.isLoggedIn) {
-                            Navigator.of(context).pushNamed('/base');
-                          } else {
-                            Navigator.of(context).pushNamed('/club-login');
-                          }
-                        },
-                        isActive: false,
-                        isPrimary: false,
-                      ),
-                      const SizedBox(width: 8),
-                      _HeaderButton(
-                        text: authProvider.isLoggedIn ? 'User Profile' : 'User Login',
-                        onPressed: () async {
-                          if (authProvider.isLoggedIn) {
+                  // Login buttons group or Profile button
+                  authProvider.isLoggedIn
+                      ? _HeaderButton(
+                          text: 'Profile',
+                          onPressed: () async {
                             // Check account type and route accordingly
                             final userId = authProvider.userId;
                             if (userId != null) {
@@ -75,15 +60,31 @@ class HeaderWidget extends StatelessWidget {
                             } else {
                               Navigator.of(context).pushNamed('/base');
                             }
-                          } else {
-                            Navigator.of(context).pushNamed('/user-login');
-                          }
-                        },
-                        isActive: false,
-                        isPrimary: true,
-                      ),
-                    ],
-                  ),
+                          },
+                          isActive: false,
+                          isPrimary: true,
+                        )
+                      : Row(
+                          children: [
+                            _HeaderButton(
+                              text: 'Club Login',
+                              onPressed: () {
+                                Navigator.of(context).pushNamed('/club-login');
+                              },
+                              isActive: false,
+                              isPrimary: false,
+                            ),
+                            const SizedBox(width: 8),
+                            _HeaderButton(
+                              text: 'User Login',
+                              onPressed: () {
+                                Navigator.of(context).pushNamed('/user-login');
+                              },
+                              isActive: false,
+                              isPrimary: true,
+                            ),
+                          ],
+                        ),
                 ],
               ),
             ),

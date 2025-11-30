@@ -38,7 +38,7 @@ class AppInfoWidget extends StatelessWidget {
             title,
             style: const TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               color: Color(0xFF212121),
             ),
           ),
@@ -47,7 +47,8 @@ class AppInfoWidget extends StatelessWidget {
             description,
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF757575),
+              color: Color(0xFF6B7280),
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],
@@ -59,13 +60,13 @@ class AppInfoWidget extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -106,7 +107,7 @@ class AppInfoWidget extends StatelessWidget {
                       'Version',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                         color: Color(0xFF212121),
                       ),
                     ),
@@ -115,7 +116,8 @@ class AppInfoWidget extends StatelessWidget {
                       appVersion,
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF757575),
+                        color: Color(0xFF6B7280),
+                        fontWeight: FontWeight.w400,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -136,7 +138,7 @@ class AppInfoWidget extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: const Color(0xFFF5F5F5),
+              color: const Color(0xFFE5E7EB),
               width: 1,
             ),
           ),
@@ -169,7 +171,7 @@ class AppInfoWidget extends StatelessWidget {
                         'User Guide',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: Color(0xFF212121),
                         ),
                       ),
@@ -178,7 +180,8 @@ class AppInfoWidget extends StatelessWidget {
                         'Coming soon',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF757575),
+                          color: Color(0xFF6B7280),
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],
@@ -199,7 +202,7 @@ class AppInfoWidget extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: const Color(0xFFF5F5F5),
+              color: const Color(0xFFE5E7EB),
               width: 1,
             ),
           ),
@@ -232,7 +235,7 @@ class AppInfoWidget extends StatelessWidget {
                         'Help & Support',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: Color(0xFF212121),
                         ),
                       ),
@@ -241,7 +244,8 @@ class AppInfoWidget extends StatelessWidget {
                         'Coming soon',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF757575),
+                          color: Color(0xFF6B7280),
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],
@@ -295,7 +299,7 @@ class AppInfoWidget extends StatelessWidget {
                         'Logout',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: Color(0xFF212121),
                         ),
                       ),
@@ -320,27 +324,80 @@ class AppInfoWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Logout',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF212121),
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(
+            fontSize: 16,
+            color: Color(0xFF6B7280),
+            fontWeight: FontWeight.w400,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
-              await authProvider.logout();
-              if (context.mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[600],
-              foregroundColor: Colors.white,
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF6B7280),
+              ),
             ),
-            child: const Text('Logout'),
+          ),
+          SizedBox(
+            width: 120,
+            height: 48,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF6366F1), // Indigo
+                    Color(0xFF8B5CF6), // Purple
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                  await authProvider.logout();
+                  if (context.mounted) {
+                    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                ),
+                child: const Text(
+                  'Logout',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
