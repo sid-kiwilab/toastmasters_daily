@@ -94,64 +94,78 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             // Close button at top
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                      },
                       borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: const Icon(
+                          Icons.close,
+                          size: 24,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
                     ),
-                     child: IconButton(
-                       icon: const Icon(Icons.close),
-                       onPressed: () {
-                         Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-                       },
-                       padding: const EdgeInsets.all(8),
-                       constraints: const BoxConstraints(),
-                     ),
                   ),
                 ],
               ),
             ),
             // Content
             Expanded(
-              child: Align(
-                alignment: const Alignment(0, -0.15),
+              child: Center(
                 child: SingleChildScrollView(
                   physics: const ClampingScrollPhysics(),
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 400),
+                    constraints: const BoxConstraints(maxWidth: 500),
                     child: Form(
                       key: _signUpFormKey,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Title
-                          Text(
-                            'Club Signup',
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                          // Welcome Title
+                          const Text(
+                            'Create Your Account',
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF212121),
+                              letterSpacing: -1.0,
+                              height: 1.1,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 8),
+                          // Subtitle
+                          Text(
+                            'Join Toastmasters and start your journey',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: const Color(0xFF6B7280),
+                              letterSpacing: 0.2,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 48),
                           // Email field
                           SizedBox(
-                            width: 280,
+                            width: double.infinity,
                             child: TextFormField(
                               controller: _signUpEmailController,
                               decoration: InputDecoration(
@@ -165,7 +179,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 fillColor: const Color(0xFFF2F1F0),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 20,
-                                  vertical: 16,
+                                  vertical: 18,
                                 ),
                               ),
                               keyboardType: TextInputType.emailAddress,
@@ -181,11 +195,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               },
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
                           
                           // Password field
                           SizedBox(
-                            width: 280,
+                            width: double.infinity,
                             child: TextFormField(
                               controller: _signUpPasswordController,
                               decoration: InputDecoration(
@@ -205,7 +219,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 fillColor: const Color(0xFFF2F1F0),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 20,
-                                  vertical: 16,
+                                  vertical: 18,
                                 ),
                               ),
                               obscureText: _obscurePassword,
@@ -221,11 +235,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               },
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
                           
                           // Confirm Password field
                           SizedBox(
-                            width: 280,
+                            width: double.infinity,
                             child: TextFormField(
                               controller: _signUpConfirmPasswordController,
                               decoration: InputDecoration(
@@ -245,7 +259,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 fillColor: const Color(0xFFF2F1F0),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 20,
-                                  vertical: 16,
+                                  vertical: 18,
                                 ),
                               ),
                               obscureText: _obscurePassword,
@@ -270,56 +284,90 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           
                           // Sign Up button
                           SizedBox(
-                            width: 140,
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: _isSignUpLoading ? null : _handleSignUp,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey[800],
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                            width: double.infinity,
+                            height: 56,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF6366F1), // Indigo
+                                    Color(0xFF8B5CF6), // Purple
+                                  ],
                                 ),
-                                elevation: 0,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: _isSignUpLoading
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              child: ElevatedButton(
+                                onPressed: _isSignUpLoading ? null : _handleSignUp,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+                                ),
+                                child: _isSignUpLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Create Account',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.3,
+                                        ),
                                       ),
-                                    )
-                                  : const Text(
-                                      'Club Signup',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                              ),
                             ),
                           ),
                           
                           // Link to login screen
-                          const SizedBox(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Already have an account? ',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                  fontSize: 14,
+                          const SizedBox(height: 32),
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9FAFB),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Already have an account? ',
+                                  style: TextStyle(
+                                    color: Color(0xFF6B7280),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w400,
+                                  ),
                                 ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pushNamed('/club-login');
-                                },
-                                child: const Text('Login'),
-                              ),
-                            ],
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pushNamed('/club-login');
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  ),
+                                  child: const Text(
+                                    'Sign In',
+                                    style: TextStyle(
+                                      color: Color(0xFF6366F1),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),

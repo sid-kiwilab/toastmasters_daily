@@ -100,64 +100,78 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             // Close button at top
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                      },
                       borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: const Icon(
+                          Icons.close,
+                          size: 24,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
                     ),
-                     child: IconButton(
-                       icon: const Icon(Icons.close),
-                       onPressed: () {
-                         Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-                       },
-                       padding: const EdgeInsets.all(8),
-                       constraints: const BoxConstraints(),
-                     ),
                   ),
                 ],
               ),
             ),
             // Content
             Expanded(
-              child: Align(
-                alignment: const Alignment(0, -0.15),
+              child: Center(
                 child: SingleChildScrollView(
                   physics: const ClampingScrollPhysics(),
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 400),
+                    constraints: const BoxConstraints(maxWidth: 500),
                     child: Form(
                       key: _loginFormKey,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Title
-                          Text(
-                            'Club Login',
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                          // Welcome Title
+                          const Text(
+                            'Welcome Back!',
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF212121),
+                              letterSpacing: -1.0,
+                              height: 1.1,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 8),
+                          // Subtitle
+                          Text(
+                            'Sign in to your club account',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: const Color(0xFF6B7280),
+                              letterSpacing: 0.2,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 48),
                           // Email field
                           SizedBox(
-                            width: 280,
+                            width: double.infinity,
                             child: TextFormField(
                               controller: _loginEmailController,
                               decoration: InputDecoration(
@@ -171,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 fillColor: const Color(0xFFF2F1F0),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 20,
-                                  vertical: 16,
+                                  vertical: 18,
                                 ),
                               ),
                               keyboardType: TextInputType.emailAddress,
@@ -187,11 +201,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
                           
                           // Password field
                           SizedBox(
-                            width: 280,
+                            width: double.infinity,
                             child: TextFormField(
                               controller: _loginPasswordController,
                               decoration: InputDecoration(
@@ -211,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 fillColor: const Color(0xFFF2F1F0),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 20,
-                                  vertical: 16,
+                                  vertical: 18,
                                 ),
                               ),
                               obscureText: _obscurePassword,
@@ -233,71 +247,106 @@ class _LoginScreenState extends State<LoginScreen> {
                           
                           // Login button
                           SizedBox(
-                            width: 140,
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: _isLoginLoading ? null : _handleLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey[800],
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                            width: double.infinity,
+                            height: 56,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF6366F1), // Indigo
+                                    Color(0xFF8B5CF6), // Purple
+                                  ],
                                 ),
-                                elevation: 0,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: _isLoginLoading
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              child: ElevatedButton(
+                                onPressed: _isLoginLoading ? null : _handleLogin,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+                                ),
+                                child: _isLoginLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Sign In',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.3,
+                                        ),
                                       ),
-                                    )
-                                  : const Text(
-                                      'Club Login',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                              ),
                             ),
                           ),
                           
                           // Reset password link
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
                           Center(
                             child: TextButton(
                               onPressed: _showResetPasswordDialog,
-                              child: Text(
+                              child: const Text(
                                 'Forgot Password?',
                                 style: TextStyle(
-                                  color: theme.colorScheme.primary,
+                                  color: Color(0xFF6366F1),
                                   fontSize: 14,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ),
                           ),
                           
                           // Link to sign up screen
-                          const SizedBox(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Don't have an account? ",
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                  fontSize: 14,
+                          const SizedBox(height: 32),
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9FAFB),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "Don't have an account? ",
+                                  style: TextStyle(
+                                    color: Color(0xFF6B7280),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w400,
+                                  ),
                                 ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pushNamed('/club-signup');
-                                },
-                                child: const Text('Sign Up'),
-                              ),
-                            ],
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pushNamed('/club-signup');
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  ),
+                                  child: const Text(
+                                    'Sign Up',
+                                    style: TextStyle(
+                                      color: Color(0xFF6366F1),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -398,21 +447,22 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
         'Reset Password',
         style: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF212121),
         ),
         textAlign: TextAlign.center,
       ),
       content: SizedBox(
-        width: 320,
+        width: 500,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               'Enter your email address and we\'ll send you a link to reset your password.',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w400,
               ),
               textAlign: TextAlign.center,
             ),
@@ -431,7 +481,7 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
                 fillColor: const Color(0xFFF2F1F0),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20,
-                  vertical: 16,
+                  vertical: 18,
                 ),
               ),
               textInputAction: TextInputAction.done,
@@ -454,32 +504,47 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
         SizedBox(
           width: 140,
           height: 48,
-          child: ElevatedButton(
-            onPressed: _isResetting ? null : _handleResetPassword,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[800],
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF6366F1), // Indigo
+                  Color(0xFF8B5CF6), // Purple
+                ],
               ),
-              elevation: 0,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: _isResetting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            child: ElevatedButton(
+              onPressed: _isResetting ? null : _handleResetPassword,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              ),
+              child: _isResetting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Send Link',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  )
-                : const Text(
-                    'Send Link',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+            ),
           ),
         ),
       ],
