@@ -74,7 +74,7 @@ class HomeBannerWidget extends StatelessWidget {
                     size: 20,
                   ),
                   label: const Text(
-                    'Want to Create a Meeting?',
+                    'Learn How',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
