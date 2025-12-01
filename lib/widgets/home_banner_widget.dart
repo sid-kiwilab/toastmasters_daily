@@ -6,11 +6,20 @@ class HomeBannerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(maxWidth: 1200),
-      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
-      padding: const EdgeInsets.only(top: 64, bottom: 64),
+      margin: EdgeInsets.only(
+        left: isMobile ? 12 : 20,
+        right: isMobile ? 12 : 20,
+        bottom: isMobile ? 16 : 24,
+      ),
+      padding: EdgeInsets.only(
+        top: isMobile ? 32 : 64,
+        bottom: isMobile ? 32 : 64,
+      ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -20,12 +29,12 @@ class HomeBannerWidget extends StatelessWidget {
             Color(0xFF8B5CF6), // Purple
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isMobile ? 12 : 16),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF6366F1).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            blurRadius: isMobile ? 12 : 20,
+            offset: Offset(0, isMobile ? 4 : 8),
           ),
         ],
       ),
@@ -33,32 +42,32 @@ class HomeBannerWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
+            padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Build your voice,',
                   style: TextStyle(
-                    fontSize: 48,
+                    fontSize: isMobile ? 28 : 48,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
-                    letterSpacing: -1.5,
+                    letterSpacing: isMobile ? -0.8 : -1.5,
                     height: 1.1,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: isMobile ? 2 : 4),
                 Text(
                   'one day at a time',
                   style: TextStyle(
-                    fontSize: 48,
+                    fontSize: isMobile ? 28 : 48,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
-                    letterSpacing: -1.5,
+                    letterSpacing: isMobile ? -0.8 : -1.5,
                     height: 1.1,
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: isMobile ? 16 : 24),
                 ElevatedButton.icon(
                   onPressed: () {
                     showDialog(
@@ -69,23 +78,26 @@ class HomeBannerWidget extends StatelessWidget {
                       ),
                     );
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.play_circle_outline,
-                    size: 20,
+                    size: isMobile ? 18 : 20,
                   ),
-                  label: const Text(
+                  label: Text(
                     'Learn How',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: isMobile ? 14 : 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: const Color(0xFF6366F1),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 20 : 24,
+                      vertical: isMobile ? 12 : 16,
+                    ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
                     ),
                     elevation: 0,
                   ),
