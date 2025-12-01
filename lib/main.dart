@@ -5,7 +5,7 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'firebase_options.dart';
 import 'utils/theme.dart';
 import 'screens/home_screen.dart';
-import 'screens/manage_meetings_screen.dart';
+import 'screens/base_screen.dart';
 import 'screens/view_meeting_screen.dart';
 import 'screens/club_screen.dart';
 import 'screens/privacy_policy_screen.dart';

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -374,49 +373,11 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
               child: Column(
                 children: [
                   const HeaderWidget(),
-                  // Base banner
-                  Center(
-                    child: Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF6366F1), // Indigo
-                            Color(0xFF8B5CF6), // Purple
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF6366F1).withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Text(
-                        'Base',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -1.5,
-                          height: 1.1,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
                   // Main content
                   Center(
                     child: Container(
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      constraints: const BoxConstraints(maxWidth: 1100),
+                      margin: const EdgeInsets.symmetric(horizontal: 40),
                       padding: const EdgeInsets.only(top: 16, bottom: 32),
                     child: Consumer<ManageMeetingsProvider>(
                       builder: (context, meetingsProvider, child) {
@@ -429,38 +390,42 @@ class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
                             ),
                             const SizedBox(height: 32),
                             
-                            // My Club Section
-                            const MyClubWidget(),
-                            const SizedBox(height: 32),
+                            // My Club Section - only show if subscription or trial is active
+                            if (_isSubscriptionActive) ...[
+                              const MyClubWidget(),
+                              const SizedBox(height: 32),
+                            ],
                             
-                            // Meetings Section
-                            MeetingsListWidget(
-                              meetings: meetingsProvider.meetings,
-                              isCreatingMeeting: _isCreatingMeeting,
-                              uploadingAgendas: _uploadingAgendas,
-                              isSubscriptionActive: _isSubscriptionActive,
-                              hasMoreMeetings: meetingsProvider.hasMoreMeetings,
-                              isLoadingMore: meetingsProvider.isLoadingMore,
-                              onLoadMore: () {
-                                meetingsProvider.loadMoreMeetings();
-                              },
-                              onCreateMeeting: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => CreateMeetingDialog(
-                                    onConfirm: (title) async {
-                                      await _createMeeting(context, authProvider.currentUser!.uid, title);
-                                    },
-                                  ),
-                                );
-                              },
-                              onUploadAgenda: _uploadAgenda,
-                              onSetupPolls: _showSetupPollsDialog,
-                              onPollResults: _showPollResultsDialog,
-                              onDeleteMeeting: _deleteMeeting,
-                              onSetDateTime: (context, meeting) => _showSetDateTimeDialog(context, meeting),
-                            ),
-                            const SizedBox(height: 32),
+                            // Meetings Section - only show if subscription or trial is active
+                            if (_isSubscriptionActive) ...[
+                              MeetingsListWidget(
+                                meetings: meetingsProvider.meetings,
+                                isCreatingMeeting: _isCreatingMeeting,
+                                uploadingAgendas: _uploadingAgendas,
+                                isSubscriptionActive: _isSubscriptionActive,
+                                hasMoreMeetings: meetingsProvider.hasMoreMeetings,
+                                isLoadingMore: meetingsProvider.isLoadingMore,
+                                onLoadMore: () {
+                                  meetingsProvider.loadMoreMeetings();
+                                },
+                                onCreateMeeting: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => CreateMeetingDialog(
+                                      onConfirm: (title) async {
+                                        await _createMeeting(context, authProvider.currentUser!.uid, title);
+                                      },
+                                    ),
+                                  );
+                                },
+                                onUploadAgenda: _uploadAgenda,
+                                onSetupPolls: _showSetupPollsDialog,
+                                onPollResults: _showPollResultsDialog,
+                                onDeleteMeeting: _deleteMeeting,
+                                onSetDateTime: (context, meeting) => _showSetDateTimeDialog(context, meeting),
+                              ),
+                              const SizedBox(height: 32),
+                            ],
                             
                             // App Info Section
                             const AppInfoWidget(),

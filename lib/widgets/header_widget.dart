@@ -37,6 +37,14 @@ class HeaderWidget extends StatelessWidget {
                         Navigator.of(context).pushNamed('/club-login');
                       },
                       isPrimary: true,
+                    )
+                  else if (authProvider.authStateResolved)
+                    _HeaderButton(
+                      text: 'Profile',
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/base');
+                      },
+                      isPrimary: true,
                     ),
                 ],
               ),
@@ -73,40 +81,40 @@ class _HeaderButtonState extends State<_HeaderButton> {
       return MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: _isHovered
-                  ? [
-                      const Color(0xFF6366F1), // Indigo
-                      const Color(0xFF8B5CF6), // Purple
-                    ]
-                  : [
-                      const Color(0xFF6366F1).withOpacity(0.9),
-                      const Color(0xFF8B5CF6).withOpacity(0.9),
-                    ],
-            ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onPressed,
             borderRadius: BorderRadius.circular(8),
-            boxShadow: _isHovered
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF6366F1).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: widget.onPressed,
-              borderRadius: BorderRadius.circular(8),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: _isHovered
+                      ? [
+                          const Color(0xFF6366F1), // Indigo
+                          const Color(0xFF8B5CF6), // Purple
+                        ]
+                      : [
+                          const Color(0xFF6366F1).withOpacity(0.9),
+                          const Color(0xFF8B5CF6).withOpacity(0.9),
+                        ],
+                ),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: _isHovered
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF6366F1).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : [],
+              ),
               child: Center(
                 child: Text(
                   widget.text,

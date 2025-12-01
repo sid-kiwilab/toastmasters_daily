@@ -1051,7 +1051,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'Subscription',
+                                      'Club Subscription',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,

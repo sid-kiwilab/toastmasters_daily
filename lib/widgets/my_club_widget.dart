@@ -44,6 +44,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
   StreamSubscription<DocumentSnapshot>? _clubCodeSubscription;
   bool _isLoadingClubCode = false;
   bool _isRegeneratingClubCode = false;
+  bool _isGeneratingClubCode = false;
 
   @override
   void initState() {
@@ -164,6 +165,98 @@ class _MyClubWidgetState extends State<MyClubWidget> {
         setState(() {
           _isLoadingClubCode = false;
         });
+      }
+    }
+  }
+
+  Future<void> _generateClubCode() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser == null) return;
+    
+    final userId = authProvider.currentUser!.uid;
+    final db = FirebaseFirestore.instance;
+    
+    if (mounted) {
+      setState(() {
+        _isGeneratingClubCode = true;
+      });
+    }
+    
+    try {
+      // Generate unique 8-digit club code before transaction
+      String newClubCode;
+      int attempts = 0;
+      const maxAttempts = 20;
+      final random = Random();
+      
+      do {
+        // Generate random 8-digit number (10000000 to 99999999)
+        final codeValue = 10000000 + random.nextInt(90000000);
+        newClubCode = codeValue.toString();
+        
+        // Check if code exists as document ID in club_codes collection
+        final existingCodeSnap = await db.collection('club_codes').doc(newClubCode).get();
+        
+        // Also check if any user already has this club_code value (as number)
+        final existingUserWithCode = await db.collection('users')
+            .where('club_code', isEqualTo: int.parse(newClubCode))
+            .limit(1)
+            .get();
+        
+        if (!existingCodeSnap.exists && existingUserWithCode.docs.isEmpty) {
+          break; // Code is available
+        }
+        
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw Exception('Failed to generate unique club code after $maxAttempts attempts');
+        }
+      } while (attempts < maxAttempts);
+      
+      // Now run transaction - ALL READS FIRST, THEN ALL WRITES
+      await db.runTransaction((transaction) async {
+        final userDocRef = db.collection('users').doc(userId);
+        
+        // Read new club_code document to verify it doesn't exist
+        final newClubCodeRef = db.collection('club_codes').doc(newClubCode);
+        final newClubCodeSnap = await transaction.get(newClubCodeRef);
+        
+        if (newClubCodeSnap.exists) {
+          throw Exception('Club code collision detected during transaction');
+        }
+        
+        // NOW DO ALL WRITES (after all reads)
+        // Create new club_codes document with 8-digit code
+        transaction.set(newClubCodeRef, {'uid': userId});
+        
+        // Update user document with new 8-digit club_code as number
+        transaction.set(userDocRef, {'club_code': int.parse(newClubCode)}, SetOptions(merge: true));
+      });
+      
+      // Listener will automatically update _clubCode, no need to reload
+      if (mounted) {
+        setState(() {
+          _isGeneratingClubCode = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Club code generated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error generating club code: $e');
+      if (mounted) {
+        setState(() {
+          _isGeneratingClubCode = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error generating club code. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -1020,7 +1113,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
                         Text(
                           _isLoadingClubCode
                               ? 'Loading...'
-                              : (_clubCode ?? 'Refresh to load code'),
+                              : (_clubCode ?? 'Not set'),
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF757575),
@@ -1030,6 +1123,36 @@ class _MyClubWidgetState extends State<MyClubWidget> {
                       ],
                     ),
                   ),
+                  if (_clubCode == null && !_isLoadingClubCode) ...[
+                    // Generate Club Code button
+                    _isGeneratingClubCode
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                            ),
+                          )
+                        : ElevatedButton(
+                            onPressed: _generateClubCode,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6366F1),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text(
+                              'Generate Club Code',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                  ],
                   if (_clubCode != null && !_isLoadingClubCode) ...[
                     // Download QR Code button
                     IconButton(
