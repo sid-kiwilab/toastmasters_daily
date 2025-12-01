@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/auth_provider.dart';
 
 class HeaderWidget extends StatelessWidget {
@@ -24,67 +23,21 @@ class HeaderWidget extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Home link - clean text button
                   _HeaderButton(
                     text: 'Home',
                     onPressed: () {
                       Navigator.of(context).pushNamed('/');
                     },
-                    isActive: false,
                     isPrimary: false,
                   ),
-                  // Login buttons group or Profile button
-                  authProvider.isLoggedIn
-                      ? _HeaderButton(
-                          text: 'Profile',
-                          onPressed: () async {
-                            // Check account type and route accordingly
-                            final userId = authProvider.userId;
-                            if (userId != null) {
-                              try {
-                                final userDoc = await FirebaseFirestore.instance
-                                    .collection('users')
-                                    .doc(userId)
-                                    .get();
-                                
-                                final accountType = userDoc.data()?['account_type'] as String?;
-                                
-                                if (accountType == 'individual') {
-                                  Navigator.of(context).pushNamed('/user-profile');
-                                } else {
-                                  Navigator.of(context).pushNamed('/base');
-                                }
-                              } catch (e) {
-                                Navigator.of(context).pushNamed('/base');
-                              }
-                            } else {
-                              Navigator.of(context).pushNamed('/base');
-                            }
-                          },
-                          isActive: false,
-                          isPrimary: true,
-                        )
-                      : Row(
-                          children: [
-                            _HeaderButton(
-                              text: 'Club Login',
-                              onPressed: () {
-                                Navigator.of(context).pushNamed('/club-login');
-                              },
-                              isActive: false,
-                              isPrimary: false,
-                            ),
-                            const SizedBox(width: 8),
-                            _HeaderButton(
-                              text: 'User Login',
-                              onPressed: () {
-                                Navigator.of(context).pushNamed('/user-login');
-                              },
-                              isActive: false,
-                              isPrimary: true,
-                            ),
-                          ],
-                        ),
+                  if (!authProvider.isLoggedIn)
+                    _HeaderButton(
+                      text: 'Login',
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/club-login');
+                      },
+                      isPrimary: true,
+                    ),
                 ],
               ),
             ),
@@ -98,14 +51,12 @@ class HeaderWidget extends StatelessWidget {
 class _HeaderButton extends StatefulWidget {
   final String text;
   final VoidCallback onPressed;
-  final bool isActive;
   final bool isPrimary;
 
   const _HeaderButton({
     required this.text,
     required this.onPressed,
-    required this.isActive,
-    required this.isPrimary,
+    this.isPrimary = false,
   });
 
   @override
@@ -190,7 +141,7 @@ class _HeaderButtonState extends State<_HeaderButton> {
                 widget.text,
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: FontWeight.w500,
                   color: _isHovered
                       ? const Color(0xFF6366F1)
                       : const Color(0xFF1E1B4B),
