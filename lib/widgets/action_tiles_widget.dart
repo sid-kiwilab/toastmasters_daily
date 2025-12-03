@@ -65,7 +65,7 @@ class ActionTilesWidget extends StatelessWidget {
                           context: context,
                           imageAsset: 'assets/images/daily_challenge.webp',
                           title: 'Daily Challenge',
-                          description: 'Practice & grow your skills',
+                          description: 'Coming soon',
                           onTap: () => _navigateToDailyChallenge(context),
                         ),
                       ],
@@ -192,7 +192,6 @@ class ActionTilesWidget extends StatelessWidget {
   }
 
   void _navigateToDailyChallenge(BuildContext context) {
-    // TODO: Implement daily challenge navigation
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Daily Challenge coming soon!'),

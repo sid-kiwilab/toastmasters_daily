@@ -27,7 +27,7 @@ import 'providers/version_provider.dart';
 import 'widgets/version_banner_widget.dart';
 
 // Cache busting version - increment this when making changes that require browser cache clearing
-const String appVersion = '1.3.5';
+const String appVersion = '1.3.6';
 
 // Custom page transitions builder that removes all animations
 class NoTransitionsBuilder extends PageTransitionsBuilder {

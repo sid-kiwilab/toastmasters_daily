@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DailyChallengeWidget extends StatelessWidget {
   const DailyChallengeWidget({super.key});
 
-  String _getTodayDateString() {
-    final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final todayDateString = _getTodayDateString();
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Container(
@@ -82,153 +75,41 @@ class DailyChallengeWidget extends StatelessWidget {
                 ),
               ),
               SizedBox(height: isMobile ? 16 : 24),
-              StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('daily_challenges')
-                    .doc(todayDateString)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  final isMobile = MediaQuery.of(context).size.width < 600;
-                  
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Container(
-                      padding: EdgeInsets.all(isMobile ? 16 : 20),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
+              Container(
+                padding: EdgeInsets.all(isMobile ? 16 : 20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Coming Soon',
+                      style: TextStyle(
+                        fontSize: isMobile ? 16 : 20,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        height: 1.4,
                       ),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: isMobile ? 14 : 16,
-                            height: isMobile ? 14 : 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          ),
-                          SizedBox(width: isMobile ? 10 : 12),
-                          Text(
-                            'Loading challenge...',
-                            style: TextStyle(
-                              fontSize: isMobile ? 14 : 16,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                        ],
+                    ),
+                    SizedBox(height: isMobile ? 12 : 16),
+                    Text(
+                      'Daily challenges will be available soon. Check back later for exciting speech practice opportunities!',
+                      style: TextStyle(
+                        fontSize: isMobile ? 14 : 16,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white.withOpacity(0.9),
+                        height: 1.6,
+                        letterSpacing: 0.2,
                       ),
-                    );
-                  }
-
-                  if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
-                    return Container(
-                      padding: EdgeInsets.all(isMobile ? 16 : 20),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
-                      ),
-                      child: Text(
-                        snapshot.hasError
-                            ? 'Error loading challenge'
-                            : 'No challenge available for today',
-                        style: TextStyle(
-                          fontSize: isMobile ? 14 : 16,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                      ),
-                    );
-                  }
-
-                  final data = snapshot.data!.data() as Map<String, dynamic>?;
-                  final topic = data?['topic'] as String? ?? 'No topic available';
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(isMobile ? 16 : 20),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Today\'s Topic',
-                              style: TextStyle(
-                                fontSize: isMobile ? 12 : 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white.withOpacity(0.8),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            SizedBox(height: isMobile ? 6 : 8),
-                            Text(
-                              topic,
-                              style: TextStyle(
-                                fontSize: isMobile ? 16 : 20,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: isMobile ? 16 : 24),
-                      Text(
-                        'Upload a video of yourself delivering this speech and join the community of Toastmasters sharing their progress.',
-                        style: TextStyle(
-                          fontSize: isMobile ? 14 : 16,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white.withOpacity(0.9),
-                          height: 1.6,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      SizedBox(height: isMobile ? 16 : 24),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          // TODO: Implement video upload
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Video upload coming soon!'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        icon: Icon(
-                          Icons.video_library,
-                          size: isMobile ? 18 : 20,
-                        ),
-                        label: Text(
-                          'Upload Video',
-                          style: TextStyle(
-                            fontSize: isMobile ? 14 : 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF1E1B4B),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isMobile ? 20 : 24,
-                            vertical: isMobile ? 12 : 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(isMobile ? 10 : 12),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                    ),
+                  ],
+                ),
               ),
             ],
                   ),
