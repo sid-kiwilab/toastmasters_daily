@@ -9,12 +9,10 @@ class ActionTilesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.symmetric(vertical: isMobile ? 12 : 16),
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20),
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -22,23 +20,21 @@ class ActionTilesWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'What would you like to do?',
                 style: TextStyle(
-                  fontSize: isMobile ? 18 : 20,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF212121),
+                  color: Color(0xFF212121),
                 ),
               ),
-              SizedBox(height: isMobile ? 10 : 12),
+              const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
                   // Calculate tile height: image (320 square) + spacing (12) + title (~24 with line height) + spacing (4) + description (~20 with line height) + buffer (10)
-                  final maxCardWidth = isMobile
-                      ? (constraints.maxWidth > 240 ? 240.0 : constraints.maxWidth)
-                      : (constraints.maxWidth > 320 ? 320.0 : constraints.maxWidth);
+                  final maxCardWidth = constraints.maxWidth > 320 ? 320.0 : constraints.maxWidth;
                   final cardHeight = maxCardWidth; // Square aspect ratio
-                  final tileHeight = cardHeight + (isMobile ? 10 : 12) + (isMobile ? 20 : 24) + (isMobile ? 3 : 4) + (isMobile ? 18 : 20) + (isMobile ? 8 : 10); // Image + spacing + title + spacing + description + buffer
+                  final tileHeight = cardHeight + 12 + 24 + 4 + 20 + 10; // Image + spacing + title + spacing + description + buffer
                   
                   return SizedBox(
                     height: tileHeight,
@@ -52,7 +48,7 @@ class ActionTilesWidget extends StatelessWidget {
                           description: 'Enter club code to join',
                           onTap: () => _showJoinMeetingDialog(context),
                         ),
-                        SizedBox(width: isMobile ? 12 : 16),
+                        const SizedBox(width: 16),
                         _buildTile(
                           context: context,
                           imageAsset: 'assets/images/create_meeting.webp',
@@ -60,7 +56,7 @@ class ActionTilesWidget extends StatelessWidget {
                           description: 'Start a new meeting',
                           onTap: () => _navigateToCreateMeeting(context),
                         ),
-                        SizedBox(width: isMobile ? 12 : 16),
+                        const SizedBox(width: 16),
                         _buildTile(
                           context: context,
                           imageAsset: 'assets/images/daily_challenge.webp',
@@ -87,14 +83,10 @@ class ActionTilesWidget extends StatelessWidget {
     required String description,
     required VoidCallback onTap,
   }) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate width (use most of available space, max 320px on desktop, 240px on mobile)
-        final maxCardWidth = isMobile
-            ? (constraints.maxWidth > 240 ? 240.0 : constraints.maxWidth)
-            : (constraints.maxWidth > 320 ? 320.0 : constraints.maxWidth);
+        // Calculate width (use most of available space, max 320px)
+        final maxCardWidth = constraints.maxWidth > 320 ? 320.0 : constraints.maxWidth;
         // Square aspect ratio
         final cardHeight = maxCardWidth;
         
@@ -105,22 +97,22 @@ class ActionTilesWidget extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 onTap: onTap,
-                borderRadius: BorderRadius.circular(isMobile ? 12 : 16),
+                borderRadius: BorderRadius.circular(16),
                 child: Container(
                   width: maxCardWidth,
                   height: cardHeight,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(isMobile ? 12 : 16),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
-                        blurRadius: isMobile ? 8 : 12,
-                        offset: Offset(0, isMobile ? 2 : 4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(isMobile ? 12 : 16),
+                    borderRadius: BorderRadius.circular(16),
                     child: _AssetImageWithShimmer(
                       imageAsset: imageAsset,
                       width: maxCardWidth,
@@ -130,23 +122,23 @@ class ActionTilesWidget extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: isMobile ? 10 : 12),
+            const SizedBox(height: 12),
             _ShimmerText(
               text: title,
-              style: TextStyle(
-                fontSize: isMobile ? 14 : 16,
+              style: const TextStyle(
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF212121),
+                color: Color(0xFF212121),
               ),
               imageAsset: imageAsset,
             ),
-            SizedBox(height: isMobile ? 3 : 4),
+            const SizedBox(height: 4),
             _ShimmerText(
               text: description,
-              style: TextStyle(
-                fontSize: isMobile ? 12 : 14,
+              style: const TextStyle(
+                fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: const Color(0xFF6B7280),
+                color: Color(0xFF6B7280),
               ),
               imageAsset: imageAsset,
             ),
