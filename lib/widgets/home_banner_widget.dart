@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 import 'youtube_video_overlay.dart';
 
 class HomeBannerWidget extends StatelessWidget {
@@ -6,29 +8,30 @@ class HomeBannerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 1200),
-      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
-      padding: const EdgeInsets.only(top: 64, bottom: 64),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF6366F1), // Indigo
-            Color(0xFF8B5CF6), // Purple
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final colors = themeProvider.colors;
+        
+        return Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 1200),
+          margin: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
+          padding: const EdgeInsets.only(top: 64, bottom: 64),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: colors.bannerGradient,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: colors.bannerShadow.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -81,8 +84,8 @@ class HomeBannerWidget extends StatelessWidget {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF6366F1),
+                    backgroundColor: colors.bannerButtonBackground,
+                    foregroundColor: colors.bannerButtonText,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -94,7 +97,9 @@ class HomeBannerWidget extends StatelessWidget {
             ),
           ),
         ],
-      ),
+        ),
+        );
+      },
     );
   }
 }

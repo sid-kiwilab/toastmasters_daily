@@ -24,6 +24,7 @@ import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
 import 'providers/version_provider.dart';
+import 'providers/theme_provider.dart';
 import 'widgets/version_banner_widget.dart';
 
 // Cache busting version - increment this when making changes that require browser cache clearing
@@ -56,11 +57,17 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  runApp(const MainApp());
+  // Initialize theme provider and load saved preference
+  final themeProvider = ThemeProvider();
+  await themeProvider.initialize();
+  
+  runApp(MainApp(themeProvider: themeProvider));
 }
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final ThemeProvider themeProvider;
+  
+  const MainApp({super.key, required this.themeProvider});
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +77,7 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => ManageMeetingsProvider()),
         ChangeNotifierProvider(create: (context) => ViewMeetingProvider()),
         ChangeNotifierProvider(create: (context) => VersionProvider()),
+        ChangeNotifierProvider.value(value: themeProvider),
       ],
       child: MaterialApp(
         title: 'Toastmasters Daily',

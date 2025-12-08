@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -94,7 +95,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final colors = themeProvider.colors;
+        
+        return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
@@ -288,13 +293,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             height: 56,
                             child: Container(
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
+                                gradient: LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFF6366F1), // Indigo
-                                    Color(0xFF8B5CF6), // Purple
-                                  ],
+                                  colors: colors.primaryButtonGradient,
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -357,10 +359,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'Sign In',
                                     style: TextStyle(
-                                      color: Color(0xFF6366F1),
+                                      color: colors.primaryButtonGradient.first,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -379,6 +381,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ],
         ),
       ),
+        );
+      },
     );
   }
 }

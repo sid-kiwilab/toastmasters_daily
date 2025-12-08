@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../providers/theme_provider.dart';
 
 class FooterWidget extends StatelessWidget {
   const FooterWidget({super.key});
@@ -8,18 +10,19 @@ class FooterWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 700;
     
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1E1B4B), // Dark indigo
-            Color(0xFF312E81), // Darker purple
-          ],
-        ),
-      ),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final colors = themeProvider.colors;
+        
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: colors.footerGradient,
+            ),
+          ),
       padding: EdgeInsets.symmetric(
         vertical: isMobile ? 32 : 48,
         horizontal: isMobile ? 16 : 20,
@@ -158,11 +161,11 @@ class FooterWidget extends StatelessWidget {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Made with ❤️ for Toastmasters',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFFA5B4FC),
+                          color: colors.footerAccent,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -185,11 +188,11 @@ class FooterWidget extends StatelessWidget {
                           color: Colors.white.withOpacity(0.7),
                         ),
                       ),
-                      const Text(
+                      Text(
                         'Made with ❤️ for Toastmasters',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFFA5B4FC),
+                          color: colors.footerAccent,
                         ),
                       ),
                     ],
@@ -197,6 +200,8 @@ class FooterWidget extends StatelessWidget {
           ],
         ),
       ),
+        );
+      },
     );
   }
 

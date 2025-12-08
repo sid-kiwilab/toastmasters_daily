@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 
 class ClubCodeEntryWidget extends StatefulWidget {
   const ClubCodeEntryWidget({super.key});
@@ -130,25 +132,26 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Decorative gradient accent
-        Container(
-          width: 60,
-          height: 4,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF6366F1), // Indigo
-                Color(0xFF8B5CF6), // Purple
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final colors = themeProvider.colors;
+        
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Decorative gradient accent
+            Container(
+              width: 60,
+              height: 4,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: colors.primaryButtonGradient,
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
         const SizedBox(height: 24),
         // Main content
         Text(
@@ -196,7 +199,7 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+                borderSide: BorderSide(color: colors.primaryButtonGradient.first, width: 2),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 20,
@@ -227,18 +230,15 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
           height: 48,
           child: Container(
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF6366F1), // Indigo
-                  Color(0xFF8B5CF6), // Purple
-                ],
+              gradient: LinearGradient(
+                colors: colors.primaryButtonGradient,
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.3),
+                  color: colors.buttonShadow.withOpacity(0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -275,6 +275,8 @@ class _ClubCodeEntryWidgetState extends State<ClubCodeEntryWidget> {
           ),
         ),
       ],
+        );
+      },
     );
   }
 }

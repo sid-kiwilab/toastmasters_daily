@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -100,7 +101,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final colors = themeProvider.colors;
+        
+        return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
@@ -251,13 +256,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 56,
                             child: Container(
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
+                                gradient: LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFF6366F1), // Indigo
-                                    Color(0xFF8B5CF6), // Purple
-                                  ],
+                                  colors: colors.primaryButtonGradient,
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -299,10 +301,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           Center(
                             child: TextButton(
                               onPressed: _showResetPasswordDialog,
-                              child: const Text(
+                              child: Text(
                                 'Forgot Password?',
                                 style: TextStyle(
-                                  color: Color(0xFF6366F1),
+                                  color: colors.primaryButtonGradient.first,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -336,10 +338,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'Sign Up',
                                     style: TextStyle(
-                                      color: Color(0xFF6366F1),
+                                      color: colors.primaryButtonGradient.first,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -358,6 +360,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ),
+        );
+      },
     );
   }
 }
@@ -439,7 +443,11 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final colors = themeProvider.colors;
+        
+        return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -506,13 +514,10 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
           height: 48,
           child: Container(
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF6366F1), // Indigo
-                  Color(0xFF8B5CF6), // Purple
-                ],
+                colors: colors.primaryButtonGradient,
               ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -548,6 +553,8 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
           ),
         ),
       ],
+        );
+      },
     );
   }
 }
