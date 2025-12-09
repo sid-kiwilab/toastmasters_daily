@@ -16,47 +16,66 @@ class _ThemeSwitcherWidgetState extends State<ThemeSwitcherWidget> {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
+        final currentThemeName = themeProvider.currentTheme == AppThemeType.purple
+            ? 'Quirky'
+            : 'Classic';
+        
         return MouseRegion(
           onEnter: (_) => setState(() => _isHovered = true),
           onExit: (_) => setState(() => _isHovered = false),
           child: PopupMenuButton<AppThemeType>(
-            tooltip: 'Theme',
+            tooltip: 'Switch Theme',
             elevation: 8,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            offset: const Offset(0, 12),
+            offset: const Offset(0, -8),
             color: Colors.white,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: _isHovered
-                    ? themeProvider.colors.secondaryButtonDefault.withOpacity(0.05)
-                    : Colors.transparent,
+                    ? Colors.white.withOpacity(0.15)
+                    : Colors.white.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(8),
-              ),
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: themeProvider.colors.primaryButtonGradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(6),
-                  boxShadow: _isHovered
-                      ? [
-                          BoxShadow(
-                            color: themeProvider.colors.primaryButtonGradient.first
-                                .withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : [],
+                border: Border.all(
+                  color: Colors.white.withOpacity(_isHovered ? 0.3 : 0.2),
+                  width: 1,
                 ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: themeProvider.colors.primaryButtonGradient,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    currentThemeName,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withOpacity(0.9),
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    size: 16,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ],
               ),
             ),
             onSelected: (AppThemeType theme) {

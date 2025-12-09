@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart' show appVersion;
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 
 class AppInfoWidget extends StatelessWidget {
   const AppInfoWidget({super.key});
@@ -323,7 +324,8 @@ class AppInfoWidget extends StatelessWidget {
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -360,13 +362,10 @@ class AppInfoWidget extends StatelessWidget {
             height: 48,
             child: Container(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF6366F1), // Indigo
-                    Color(0xFF8B5CF6), // Purple
-                  ],
+                  colors: themeProvider.colors.primaryButtonGradient,
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -400,6 +399,7 @@ class AppInfoWidget extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

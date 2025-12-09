@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/theme_provider.dart';
+import 'theme_switcher_widget.dart';
 
 class FooterWidget extends StatelessWidget {
   const FooterWidget({super.key});
@@ -89,6 +90,23 @@ class FooterWidget extends StatelessWidget {
                           }),
                         ],
                       ),
+                      const SizedBox(height: 32),
+                      // Theme Section
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Theme',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const ThemeSwitcherWidget(),
+                        ],
+                      ),
                     ],
                   )
                 : Row(
@@ -148,6 +166,24 @@ class FooterWidget extends StatelessWidget {
                           ],
                         ),
                       ),
+                      // Theme Section
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Theme',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const ThemeSwitcherWidget(),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
             SizedBox(height: isMobile ? 24 : 32),
@@ -156,6 +192,7 @@ class FooterWidget extends StatelessWidget {
               thickness: 1,
             ),
             SizedBox(height: isMobile ? 16 : 24),
+            // Copyright and Made with ❤️
             // Copyright and Made with ❤️
             isMobile
                 ? Column(

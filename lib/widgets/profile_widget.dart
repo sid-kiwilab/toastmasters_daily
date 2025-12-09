@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
 import 'package:toastmasters_daily/providers/auth_provider.dart' as app_auth;
+import '../providers/theme_provider.dart';
 
 // Web-specific imports
 import 'dart:html' as html if (dart.library.html) 'dart:html';
@@ -104,9 +105,11 @@ class _ProfileWidgetState extends State<ProfileWidget> {
       // Show trial confirmation dialog
       final shouldProceed = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
+        builder: (dialogContext) => Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return StatefulBuilder(
+              builder: (context, setDialogState) {
+                return AlertDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -158,13 +161,10 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                   height: 48,
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF6366F1), // Indigo
-                          Color(0xFF8B5CF6), // Purple
-                        ],
+                        colors: themeProvider.colors.primaryButtonGradient,
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -292,6 +292,8 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                   ),
                 ),
               ],
+                );
+              },
             );
           },
         ),
@@ -556,8 +558,11 @@ class _ProfileWidgetState extends State<ProfileWidget> {
     // Show confirmation dialog to resume auto-renewal
     final shouldResume = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+      builder: (dialogContext) => Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -609,13 +614,10 @@ class _ProfileWidgetState extends State<ProfileWidget> {
               height: 48,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF6366F1), // Indigo
-                      Color(0xFF8B5CF6), // Purple
-                    ],
+                    colors: themeProvider.colors.primaryButtonGradient,
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -643,15 +645,27 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                       try {
                         final functions = FirebaseFunctions.instance;
                         final callable = functions.httpsCallable('resume_subscription');
-                        await callable.call();
+                        final result = await callable.call();
 
-                        if (mounted) {
+                        // Only show success if we get a response
+                        if (mounted && result.data != null) {
                           setState(() { _isResumingSubscription = false; });
                           Navigator.of(dialogContext).pop(true);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Auto-renewal resumed successfully'),
                               backgroundColor: Colors.green,
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
+                        } else if (mounted) {
+                          // No response received
+                          setState(() { _isResumingSubscription = false; });
+                          Navigator.of(dialogContext).pop(false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to resume auto-renewal: No response from server'),
+                              backgroundColor: Colors.red,
                               duration: Duration(seconds: 4),
                             ),
                           );
@@ -701,7 +715,10 @@ class _ProfileWidgetState extends State<ProfileWidget> {
               ),
             ),
           ],
-        ),
+              );
+            },
+          );
+        },
       ),
     );
 
@@ -834,7 +851,9 @@ class _ProfileWidgetState extends State<ProfileWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
@@ -929,19 +948,19 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                               child: TextButton.icon(
                                 onPressed: _isSendingVerificationEmail ? null : () => _sendVerificationEmail(context, authProvider),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: const Color(0xFF6366F1),
+                                  foregroundColor: themeProvider.colors.primaryButtonGradient.first,
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
                                 icon: _isSendingVerificationEmail
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         width: 16,
                                         height: 16,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                                          valueColor: AlwaysStoppedAnimation<Color>(themeProvider.colors.primaryButtonGradient.first),
                                         ),
                                       )
                                     : const Icon(Icons.email, size: 18),
@@ -1007,13 +1026,6 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                     ? (_subscriptionCancelAtPeriodEnd == true ? 'Resume Subscription' : 'Stop Subscription')
                     : (hasTrialEndDate ? 'Subscribe' : 'Start Trial');
                 
-                String tooltipMessage = '';
-                if (!_isSubscriptionDataLoaded) {
-                  tooltipMessage = 'Loading subscription status...';
-                } else if (!isActive && !isEmailVerified) {
-                  tooltipMessage = 'Please verify your email to ${hasTrialEndDate ? "subscribe" : "start trial"}';
-                }
-                
                 return Container(
                   decoration: BoxDecoration(
                     border: Border(
@@ -1074,74 +1086,78 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          Tooltip(
-                            message: tooltipMessage,
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: isButtonEnabled
-                                      ? (isActive && _subscriptionCancelAtPeriodEnd != true
-                                          ? const LinearGradient(
-                                              colors: [Color(0xFFDC2626), Color(0xFFB91C1C)],
-                                            )
-                                          : const LinearGradient(
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                              colors: [
-                                                Color(0xFF6366F1), // Indigo
-                                                Color(0xFF8B5CF6), // Purple
-                                              ],
-                                            ))
-                                      : null,
-                                  color: isButtonEnabled ? null : Colors.grey[400],
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: isButtonEnabled
-                                      ? () {
-                                          if (isActive) {
-                                            // Cancel or Resume renewal based on current state
-                                            if (_subscriptionCancelAtPeriodEnd == true) {
-                                              _resumeSubscription(context);
-                                            } else {
-                                              _stopSubscription(context);
-                                            }
+                          SizedBox(
+                            width: double.infinity,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: isButtonEnabled && !(isActive && _subscriptionCancelAtPeriodEnd != true)
+                                    ? (themeProvider.currentTheme == AppThemeType.toastmasters
+                                        ? null // Use solid color for classic theme
+                                        : LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: themeProvider.colors.primaryButtonGradient,
+                                          )) // Use gradient for quirky theme
+                                    : null,
+                                color: isButtonEnabled
+                                    ? (isActive && _subscriptionCancelAtPeriodEnd != true
+                                        ? const Color(0xFFDC2626) // Keep red for cancel
+                                        : (themeProvider.currentTheme == AppThemeType.toastmasters
+                                            ? themeProvider.colors.bannerButtonBackground // Yellow for classic
+                                            : null)) // Gradient for quirky
+                                    : Colors.grey[400],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ElevatedButton(
+                                onPressed: isButtonEnabled
+                                    ? () {
+                                        if (isActive) {
+                                          // Cancel or Resume renewal based on current state
+                                          if (_subscriptionCancelAtPeriodEnd == true) {
+                                            _resumeSubscription(context);
                                           } else {
-                                            // Subscribe or Start Trial
-                                            _subscribe(context);
+                                            _stopSubscription(context);
                                           }
+                                        } else {
+                                          // Subscribe or Start Trial
+                                          _subscribe(context);
                                         }
-                                      : null,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    foregroundColor: Colors.white,
-                                    shadowColor: Colors.transparent,
-                                    disabledBackgroundColor: Colors.transparent,
-                                    disabledForegroundColor: Colors.white,
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: isButtonEnabled
+                                      ? (isActive && _subscriptionCancelAtPeriodEnd != true
+                                          ? Colors.white
+                                          : (themeProvider.currentTheme == AppThemeType.toastmasters
+                                              ? themeProvider.colors.bannerButtonText // Blue for classic
+                                              : Colors.white)) // White for quirky gradient
+                                      : Colors.white,
+                                  shadowColor: Colors.transparent,
+                                  disabledBackgroundColor: Colors.transparent,
+                                  disabledForegroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: (_isCreatingCheckoutSession || _isCancellingSubscription || _isResumingSubscription)
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                          ),
-                                        )
-                                      : Text(
-                                          buttonText,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
                                 ),
+                                child: (_isCreatingCheckoutSession || _isCancellingSubscription || _isResumingSubscription)
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : Text(
+                                        buttonText,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),
@@ -1155,6 +1171,8 @@ class _ProfileWidgetState extends State<ProfileWidget> {
           ],
         ),
       ],
+        );
+      },
     );
   }
 }

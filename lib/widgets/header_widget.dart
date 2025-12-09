@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
-import 'theme_switcher_widget.dart';
 
 class HeaderWidget extends StatelessWidget {
   const HeaderWidget({super.key});
@@ -32,28 +31,22 @@ class HeaderWidget extends StatelessWidget {
                     },
                     isPrimary: false,
                   ),
-                  Row(
-                    children: [
-                      const ThemeSwitcherWidget(),
-                      const SizedBox(width: 12),
-                      if (!authProvider.isLoggedIn)
-                        _HeaderButton(
-                          text: 'Login',
-                          onPressed: () {
-                            Navigator.of(context).pushNamed('/club-login');
-                          },
-                          isPrimary: true,
-                        )
-                      else if (authProvider.authStateResolved)
-                        _HeaderButton(
-                          text: 'Profile',
-                          onPressed: () {
-                            Navigator.of(context).pushNamed('/base');
-                          },
-                          isPrimary: true,
-                        ),
-                    ],
-                  ),
+                  if (!authProvider.isLoggedIn)
+                    _HeaderButton(
+                      text: 'Login',
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/club-login');
+                      },
+                      isPrimary: true,
+                    )
+                  else if (authProvider.authStateResolved)
+                    _HeaderButton(
+                      text: 'Profile',
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/base');
+                      },
+                      isPrimary: true,
+                    ),
                 ],
               ),
             ),
