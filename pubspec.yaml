@@ -43,4 +43,7 @@ flutter:
     - assets/images/join_meeting.webp
     - assets/images/create_meeting.webp
     - assets/images/daily_challenge.webp
+    - assets/images/join_meeting_classic.webp
+    - assets/images/create_meeting_classic.webp
+    - assets/images/daily_challenge_classic.webp
     - assets/images/challenge.webp

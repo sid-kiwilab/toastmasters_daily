@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/club_code_entry_widget.dart';
 
 class ActionTilesWidget extends StatelessWidget {
@@ -9,7 +10,11 @@ class ActionTilesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final isClassic = themeProvider.currentTheme == AppThemeType.toastmasters;
+        
+        return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(vertical: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -43,7 +48,9 @@ class ActionTilesWidget extends StatelessWidget {
                       children: [
                         _buildTile(
                           context: context,
-                          imageAsset: 'assets/images/join_meeting.webp',
+                          imageAsset: isClassic 
+                              ? 'assets/images/join_meeting_classic.webp'
+                              : 'assets/images/join_meeting.webp',
                           title: 'Join Meeting',
                           description: 'Enter club code to join',
                           onTap: () => _showJoinMeetingDialog(context),
@@ -51,7 +58,9 @@ class ActionTilesWidget extends StatelessWidget {
                         const SizedBox(width: 16),
                         _buildTile(
                           context: context,
-                          imageAsset: 'assets/images/create_meeting.webp',
+                          imageAsset: isClassic
+                              ? 'assets/images/create_meeting_classic.webp'
+                              : 'assets/images/create_meeting.webp',
                           title: 'Create Meeting',
                           description: 'Start a new meeting',
                           onTap: () => _navigateToCreateMeeting(context),
@@ -59,7 +68,9 @@ class ActionTilesWidget extends StatelessWidget {
                         const SizedBox(width: 16),
                         _buildTile(
                           context: context,
-                          imageAsset: 'assets/images/daily_challenge.webp',
+                          imageAsset: isClassic
+                              ? 'assets/images/daily_challenge_classic.webp'
+                              : 'assets/images/daily_challenge.webp',
                           title: 'Daily Challenge',
                           description: 'Coming soon',
                           onTap: () => _navigateToDailyChallenge(context),
@@ -73,6 +84,8 @@ class ActionTilesWidget extends StatelessWidget {
           ),
         ),
       ),
+        );
+      },
     );
   }
 
