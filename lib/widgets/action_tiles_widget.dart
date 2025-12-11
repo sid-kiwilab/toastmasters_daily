@@ -5,8 +5,79 @@ import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/club_code_entry_widget.dart';
 
-class ActionTilesWidget extends StatelessWidget {
+class ActionTilesWidget extends StatefulWidget {
   const ActionTilesWidget({super.key});
+
+  @override
+  State<ActionTilesWidget> createState() => _ActionTilesWidgetState();
+}
+
+class _ActionTilesWidgetState extends State<ActionTilesWidget> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showLeftArrow = false;
+  bool _showRightArrow = false;
+  bool _isScrollable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateArrowVisibility);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkScrollability();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _checkScrollability() {
+    if (!mounted) return;
+    final isScrollable = _scrollController.hasClients &&
+        _scrollController.position.maxScrollExtent > 0;
+    setState(() {
+      _isScrollable = isScrollable;
+      _updateArrowVisibility();
+    });
+  }
+
+  void _updateArrowVisibility() {
+    if (!_scrollController.hasClients) return;
+    
+    final position = _scrollController.position;
+    final showLeft = position.pixels > 0;
+    final showRight = position.pixels < position.maxScrollExtent;
+    
+    if (mounted && (_showLeftArrow != showLeft || _showRightArrow != showRight || _isScrollable != (position.maxScrollExtent > 0))) {
+      setState(() {
+        _showLeftArrow = showLeft;
+        _showRightArrow = showRight;
+        _isScrollable = position.maxScrollExtent > 0;
+      });
+    }
+  }
+
+  void _scrollLeft() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.offset - 256, // 240px card + 16px spacing
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _scrollRight() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.offset + 256, // 240px card + 16px spacing
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,47 +107,149 @@ class ActionTilesWidget extends StatelessWidget {
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  // Calculate tile height: image (320 square) + spacing (12) + title (~24 with line height) + spacing (4) + description (~20 with line height) + buffer (10)
-                  final maxCardWidth = constraints.maxWidth > 320 ? 320.0 : constraints.maxWidth;
+                  // Calculate tile height: image (240 square) + spacing (12) + title (~24 with line height) + spacing (4) + description (~20 with line height) + buffer (10)
+                  final maxCardWidth = constraints.maxWidth > 240 ? 240.0 : constraints.maxWidth;
                   final cardHeight = maxCardWidth; // Square aspect ratio
                   final tileHeight = cardHeight + 12 + 24 + 4 + 20 + 10; // Image + spacing + title + spacing + description + buffer
                   
-                  return SizedBox(
-                    height: tileHeight,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _buildTile(
-                          context: context,
-                          imageAsset: isClassic 
-                              ? 'assets/images/join_meeting_classic.webp'
-                              : 'assets/images/join_meeting.webp',
-                          title: 'Join Meeting',
-                          description: 'Enter club code to join',
-                          onTap: () => _showJoinMeetingDialog(context),
+                  // Check scrollability when viewport changes
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _checkScrollability();
+                  });
+                  
+                  return Stack(
+                    children: [
+                      SizedBox(
+                        height: tileHeight,
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _checkScrollability();
+                            });
+                            return false;
+                          },
+                          child: ListView(
+                            controller: _scrollController,
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                            _buildTile(
+                              context: context,
+                              imageAsset: isClassic 
+                                  ? 'assets/images/join_meeting_classic.webp'
+                                  : 'assets/images/join_meeting.webp',
+                              title: 'Join Meeting',
+                              description: 'Enter club code to join',
+                              onTap: () => _showJoinMeetingDialog(context),
+                            ),
+                            const SizedBox(width: 16),
+                            _buildTile(
+                              context: context,
+                              imageAsset: isClassic
+                                  ? 'assets/images/create_meeting_classic.webp'
+                                  : 'assets/images/create_meeting.webp',
+                              title: 'Create Meeting',
+                              description: 'Start a new meeting',
+                              onTap: () => _navigateToCreateMeeting(context),
+                            ),
+                            const SizedBox(width: 16),
+                            _buildTile(
+                              context: context,
+                              imageAsset: isClassic
+                                  ? 'assets/images/daily_challenge_classic.webp'
+                                  : 'assets/images/daily_challenge.webp',
+                              title: 'Daily Challenge',
+                              description: 'Coming soon',
+                              onTap: () => _navigateToDailyChallenge(context),
+                            ),
+                          ],
+                          ),
                         ),
-                        const SizedBox(width: 16),
-                        _buildTile(
-                          context: context,
-                          imageAsset: isClassic
-                              ? 'assets/images/create_meeting_classic.webp'
-                              : 'assets/images/create_meeting.webp',
-                          title: 'Create Meeting',
-                          description: 'Start a new meeting',
-                          onTap: () => _navigateToCreateMeeting(context),
+                      ),
+                      // Left arrow
+                      if (_isScrollable && _showLeftArrow)
+                        Positioned(
+                          left: 8,
+                          top: tileHeight * 0.35,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.7),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: _scrollLeft,
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: const Icon(
+                                      Icons.chevron_left,
+                                      color: Color(0xFF212121),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 16),
-                        _buildTile(
-                          context: context,
-                          imageAsset: isClassic
-                              ? 'assets/images/daily_challenge_classic.webp'
-                              : 'assets/images/daily_challenge.webp',
-                          title: 'Daily Challenge',
-                          description: 'Coming soon',
-                          onTap: () => _navigateToDailyChallenge(context),
+                      // Right arrow
+                      if (_isScrollable && _showRightArrow)
+                        Positioned(
+                          right: 8,
+                          top: tileHeight * 0.35,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.7),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: _scrollRight,
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: const Icon(
+                                      Icons.chevron_right,
+                                      color: Color(0xFF212121),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
+                    ],
                   );
                 },
               ),
@@ -98,8 +271,8 @@ class ActionTilesWidget extends StatelessWidget {
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate width (use most of available space, max 320px)
-        final maxCardWidth = constraints.maxWidth > 320 ? 320.0 : constraints.maxWidth;
+        // Calculate width (use most of available space, max 240px)
+        final maxCardWidth = constraints.maxWidth > 240 ? 240.0 : constraints.maxWidth;
         // Square aspect ratio
         final cardHeight = maxCardWidth;
         
@@ -352,16 +525,16 @@ class _AssetImageWithShimmerState extends State<_AssetImageWithShimmer>
     }
 
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-    final cacheWidth = (widget.width * devicePixelRatio).round();
-    final cacheHeight = (widget.height * devicePixelRatio).round();
+    final cacheWidth = (widget.width * devicePixelRatio * 1.5).round(); // Higher resolution for better quality
+    final cacheHeight = (widget.height * devicePixelRatio * 1.5).round();
 
     return Image.asset(
       widget.imageAsset,
       width: widget.width,
       height: widget.height,
       fit: BoxFit.cover,
-      filterQuality: FilterQuality.none,
-      isAntiAlias: false,
+      filterQuality: FilterQuality.high,
+      isAntiAlias: true,
       cacheWidth: cacheWidth,
       cacheHeight: cacheHeight,
     );

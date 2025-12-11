@@ -1,20 +1,96 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 
-class SpeakingSkillsWidget extends StatelessWidget {
+class SpeakingSkillsWidget extends StatefulWidget {
   const SpeakingSkillsWidget({super.key});
+
+  @override
+  State<SpeakingSkillsWidget> createState() => _SpeakingSkillsWidgetState();
+}
+
+class _SpeakingSkillsWidgetState extends State<SpeakingSkillsWidget> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showLeftArrow = false;
+  bool _showRightArrow = false;
+  bool _isScrollable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateArrowVisibility);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkScrollability();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _checkScrollability() {
+    if (!mounted) return;
+    final isScrollable = _scrollController.hasClients &&
+        _scrollController.position.maxScrollExtent > 0;
+    setState(() {
+      _isScrollable = isScrollable;
+      _updateArrowVisibility();
+    });
+  }
+
+  void _updateArrowVisibility() {
+    if (!_scrollController.hasClients) return;
+    
+    final position = _scrollController.position;
+    final showLeft = position.pixels > 0;
+    final showRight = position.pixels < position.maxScrollExtent;
+    
+    if (mounted && (_showLeftArrow != showLeft || _showRightArrow != showRight || _isScrollable != (position.maxScrollExtent > 0))) {
+      setState(() {
+        _showLeftArrow = showLeft;
+        _showRightArrow = showRight;
+        _isScrollable = position.maxScrollExtent > 0;
+      });
+    }
+  }
+
+  void _scrollLeft() {
+    if (_scrollController.hasClients) {
+      // Card width (~227.2px) + spacing (16px) = ~243.2px
+      const scrollDistance = 243.2;
+      _scrollController.animateTo(
+        _scrollController.offset - scrollDistance,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _scrollRight() {
+    if (_scrollController.hasClients) {
+      // Card width (~227.2px) + spacing (16px) = ~243.2px
+      const scrollDistance = 243.2;
+      _scrollController.animateTo(
+        _scrollController.offset + scrollDistance,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
-        final colors = themeProvider.colors;
         final isClassic = themeProvider.currentTheme == AppThemeType.toastmasters;
         
         return Container(
           width: double.infinity,
-          margin: const EdgeInsets.only(top: 24, bottom: 40, left: 20, right: 20),
+          margin: const EdgeInsets.only(top: 24, bottom: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Center(
             child: Container(
               constraints: const BoxConstraints(maxWidth: 1200),
@@ -32,8 +108,8 @@ class SpeakingSkillsWidget extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Challenge cards grid
-                  _buildChallengeGrid(colors, isClassic),
+                  // Challenge cards horizontal scroll
+                  _buildChallengeScroll(isClassic),
                 ],
               ),
             ),
@@ -43,257 +119,254 @@ class SpeakingSkillsWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildChallengeGrid(AppThemeColors colors, bool isClassic) {
-    // Theme-specific color schemes with good contrast
-    final List<List<Color>> challengeGradients;
+  Widget _buildChallengeScroll(bool isClassic) {
+    // Theme-specific icon colors
+    final List<Color> iconColors;
     
     if (isClassic) {
       // Toastmasters classic theme colors
-      challengeGradients = [
-        [const Color(0xFF004165), const Color(0xFF005A8A)], // Loyal Blue variants
-        [const Color(0xFF772432), const Color(0xFF9A2F42)], // True Maroon variants
-        [const Color(0xFF003049), const Color(0xFF004165)], // Darker blue variants
-        [const Color(0xFF5A1A25), const Color(0xFF772432)], // Darker maroon variants
-        [const Color(0xFF004165), const Color(0xFF0066A3)], // Blue to lighter blue
-        [const Color(0xFF772432), const Color(0xFF9D3A4F)], // Maroon to lighter maroon
+      iconColors = [
+        const Color(0xFF772432), // True Maroon
+        const Color(0xFF003049), // Darker blue
+        const Color(0xFF5A1A25), // Darker maroon
+        const Color(0xFF004165), // Loyal Blue
+        const Color(0xFF772432), // True Maroon
       ];
     } else {
       // Purple quirky theme colors
-      challengeGradients = [
-        [const Color(0xFF6366F1), const Color(0xFF818CF8)], // Indigo to lighter indigo
-        [const Color(0xFF8B5CF6), const Color(0xFFA78BFA)], // Purple to lighter purple
-        [const Color(0xFF4F46E5), const Color(0xFF6366F1)], // Darker indigo to indigo
-        [const Color(0xFF7C3AED), const Color(0xFF8B5CF6)], // Darker purple to purple
-        [const Color(0xFF6366F1), const Color(0xFF8B5CF6)], // Indigo to purple
-        [const Color(0xFF818CF8), const Color(0xFFA78BFA)], // Light indigo to light purple
+      iconColors = [
+        const Color(0xFF8B5CF6), // Purple
+        const Color(0xFF4F46E5), // Darker indigo
+        const Color(0xFF7C3AED), // Darker purple
+        const Color(0xFF6366F1), // Indigo
+        const Color(0xFF8B5CF6), // Purple
       ];
     }
 
     final challenges = [
       {
-        'icon': Icons.gesture,
-        'title': 'Body Language',
-        'description': 'Master non-verbal communication',
-        'progress': 0.0,
-        'gradient': challengeGradients[0],
-      },
-      {
         'icon': Icons.mic,
         'title': 'Voice Master',
-        'description': 'Practice vocal variety',
-        'progress': 0.0,
-        'gradient': challengeGradients[1],
+        'iconColor': iconColors[0],
       },
       {
         'icon': Icons.lightbulb_outline,
         'title': 'Table Topics Pro',
-        'description': 'Master impromptu speaking',
-        'progress': 0.0,
-        'gradient': challengeGradients[2],
+        'iconColor': iconColors[1],
       },
       {
         'icon': Icons.feedback_outlined,
         'title': 'Evaluator Expert',
-        'description': 'Give constructive feedback',
-        'progress': 0.0,
-        'gradient': challengeGradients[3],
+        'iconColor': iconColors[2],
       },
       {
         'icon': Icons.text_fields,
         'title': 'Grammarian Guru',
-        'description': 'Track word usage',
-        'progress': 0.0,
-        'gradient': challengeGradients[4],
+        'iconColor': iconColors[3],
       },
       {
         'icon': Icons.auto_stories,
         'title': 'Storyteller',
-        'description': 'Craft compelling narratives',
-        'progress': 0.0,
-        'gradient': challengeGradients[5],
+        'iconColor': iconColors[4],
       },
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 900
-            ? 3
-            : constraints.maxWidth > 600
-                ? 2
-                : 1;
-        final spacing = 20.0;
-
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: spacing,
-            mainAxisSpacing: spacing,
-            childAspectRatio: 1.1,
-          ),
-          itemCount: challenges.length,
-          itemBuilder: (context, index) {
-            return _buildChallengeCard(
-              context,
-              challenges[index],
-            );
-          },
+        // Calculate tile width based on full max width (1200px) to fit all 5 tiles
+        // Max width: 1200px, 5 tiles, 4 gaps of 16px = 64px spacing
+        // Available width: 1200 - 64 = 1136px
+        // Each tile: 1136 / 5 = 227.2px
+        const maxWidth = 1200.0;
+        const spacing = 16.0;
+        const numberOfTiles = 5;
+        const totalSpacing = spacing * (numberOfTiles - 1); // 4 gaps
+        const cardWidth = (maxWidth - totalSpacing) / numberOfTiles; // ~227.2px
+        const aspectRatio = 1.5; // 3:2 horizontal card ratio (visually pleasing)
+        final cardHeight = cardWidth / aspectRatio; // ~151.5px
+        final tileHeight = cardHeight;
+        
+        // Check scrollability when viewport changes
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkScrollability();
+        });
+        
+        return Stack(
+          children: [
+            SizedBox(
+              height: tileHeight,
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (notification) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _checkScrollability();
+                  });
+                  return false;
+                },
+                child: ListView(
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _buildChallengeCard(context, challenges[0], cardWidth, cardHeight),
+                    const SizedBox(width: spacing),
+                    _buildChallengeCard(context, challenges[1], cardWidth, cardHeight),
+                    const SizedBox(width: spacing),
+                    _buildChallengeCard(context, challenges[2], cardWidth, cardHeight),
+                    const SizedBox(width: spacing),
+                    _buildChallengeCard(context, challenges[3], cardWidth, cardHeight),
+                    const SizedBox(width: spacing),
+                    _buildChallengeCard(context, challenges[4], cardWidth, cardHeight),
+                  ],
+                ),
+              ),
+            ),
+            // Left arrow
+            if (_isScrollable && _showLeftArrow)
+              Positioned(
+                left: 8,
+                top: tileHeight * 0.35,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.7),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _scrollLeft,
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Icon(
+                            Icons.chevron_left,
+                            color: Color(0xFF212121),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            // Right arrow
+            if (_isScrollable && _showRightArrow)
+              Positioned(
+                right: 8,
+                top: tileHeight * 0.35,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.7),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _scrollRight,
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Icon(
+                            Icons.chevron_right,
+                            color: Color(0xFF212121),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildChallengeCard(BuildContext context, Map<String, dynamic> challenge) {
-    final progress = challenge['progress'] as double;
-    final gradient = challenge['gradient'] as List<Color>;
+  Widget _buildChallengeCard(
+    BuildContext context,
+    Map<String, dynamic> challenge,
+    double cardWidth,
+    double cardHeight,
+  ) {
+    final iconColor = challenge['iconColor'] as Color;
     
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          // Handle challenge tap
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${challenge['title']} challenge coming soon! 🎉'),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: gradient,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: gradient.first.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+    return SizedBox(
+      width: cardWidth,
+      height: cardHeight,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${challenge['title']} challenge coming soon! 🎉'),
+                duration: const Duration(seconds: 2),
               ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              // Decorative circles
-              Positioned(
-                top: -20,
-                right: -20,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Stack(
+              children: [
+                // Icon top-right aligned
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Icon(
+                    challenge['icon'] as IconData,
+                    size: 24,
+                    color: iconColor,
                   ),
                 ),
-              ),
-              Positioned(
-                bottom: -30,
-                left: -30,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.08),
+                // Title bottom-left aligned
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  child: Text(
+                    challenge['title'] as String,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF212121),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ),
-              // Content
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Icon
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          challenge['icon'] as IconData,
-                          size: 32,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    // Title and description
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          challenge['title'] as String,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          challenge['description'] as String,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Progress bar
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Progress',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white.withOpacity(0.8),
-                              ),
-                            ),
-                            Text(
-                              '${(progress * 100).toInt()}%',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            backgroundColor: Colors.white.withOpacity(0.2),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                            minHeight: 6,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
