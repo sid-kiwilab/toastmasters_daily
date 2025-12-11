@@ -35,7 +35,7 @@ class HeaderWidget extends StatelessWidget {
                     _HeaderButton(
                       text: 'Login',
                       onPressed: () {
-                        Navigator.of(context).pushNamed('/club-login');
+                        Navigator.of(context).pushNamed('/login');
                       },
                       isPrimary: true,
                     )

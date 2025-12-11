@@ -354,7 +354,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.of(context).pushNamed('/club-login');
+                                    Navigator.of(context).pushNamed('/login');
                                   },
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -164,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 8),
                           // Subtitle
                           Text(
-                            'Sign in to your club account',
+                            'Sign in to your account',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
@@ -333,7 +333,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.of(context).pushNamed('/club-signup');
+                                    Navigator.of(context).pushNamed('/signup');
                                   },
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

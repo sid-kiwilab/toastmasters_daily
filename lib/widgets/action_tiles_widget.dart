@@ -192,7 +192,7 @@ class ActionTilesWidget extends StatelessWidget {
     if (authProvider.isLoggedIn) {
       Navigator.of(context).pushNamed('/base');
     } else {
-      Navigator.of(context).pushNamed('/club-login');
+      Navigator.of(context).pushNamed('/login');
     }
   }
 
