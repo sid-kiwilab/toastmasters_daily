@@ -145,27 +145,27 @@ class _SpeakingSkillsWidgetState extends State<SpeakingSkillsWidget> {
 
     final challenges = [
       {
-        'icon': Icons.mic,
+        'image': 'assets/images/2.webp',
         'title': 'Voice Master',
         'iconColor': iconColors[0],
       },
       {
-        'icon': Icons.lightbulb_outline,
+        'image': 'assets/images/3.webp',
         'title': 'Table Topics Pro',
         'iconColor': iconColors[1],
       },
       {
-        'icon': Icons.feedback_outlined,
+        'image': 'assets/images/4.webp',
         'title': 'Evaluator Expert',
         'iconColor': iconColors[2],
       },
       {
-        'icon': Icons.text_fields,
+        'image': 'assets/images/5.webp',
         'title': 'Grammarian Guru',
         'iconColor': iconColors[3],
       },
       {
-        'icon': Icons.auto_stories,
+        'image': 'assets/images/6.webp',
         'title': 'Storyteller',
         'iconColor': iconColors[4],
       },
@@ -315,7 +315,7 @@ class _SpeakingSkillsWidgetState extends State<SpeakingSkillsWidget> {
     double cardWidth,
     double cardHeight,
   ) {
-    final iconColor = challenge['iconColor'] as Color;
+    final imageAsset = challenge['image'] as String;
     
     return SizedBox(
       width: cardWidth,
@@ -333,36 +333,54 @@ class _SpeakingSkillsWidgetState extends State<SpeakingSkillsWidget> {
           },
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Stack(
+            child: Row(
               children: [
-                // Icon top-right aligned
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Icon(
-                    challenge['icon'] as IconData,
-                    size: 24,
-                    color: iconColor,
+                // Title centered vertically on the left
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: Center(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          challenge['title'] as String,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF212121),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                // Title bottom-left aligned
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  child: Text(
-                    challenge['title'] as String,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF212121),
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                // Image on the right, full height
+                SizedBox(
+                  width: cardHeight, // Square image area
+                  height: cardHeight,
+                  child: Builder(
+                    builder: (context) {
+                      final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+                      final cacheWidth = (cardHeight * devicePixelRatio * 1.5).round();
+                      final cacheHeight = (cardHeight * devicePixelRatio * 1.5).round();
+                      
+                      return Image.asset(
+                        imageAsset,
+                        width: cardHeight,
+                        height: cardHeight,
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                        isAntiAlias: true,
+                        cacheWidth: cacheWidth,
+                        cacheHeight: cacheHeight,
+                      );
+                    },
                   ),
                 ),
               ],
