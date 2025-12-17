@@ -3,6 +3,7 @@ import '../widgets/footer_widget.dart';
 import '../widgets/header_widget.dart';
 import '../widgets/home_banner_widget.dart';
 import '../widgets/action_tiles_widget.dart';
+import '../widgets/rate_my_speech_widget.dart';
 // import '../widgets/speaking_skills_widget.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -22,6 +23,7 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     const HomeBannerWidget(),
                     const ActionTilesWidget(),
+                    const RateMySpeechWidget(),
                     // const SpeakingSkillsWidget(),
                   ],
                 ),
