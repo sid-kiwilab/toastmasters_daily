@@ -80,16 +80,18 @@ class _GuestListScreenState extends State<GuestListScreen> {
       
       if (!mounted) return;
       
-      // Load all attendances for all guests
+      // Load all attendances for all guests IN PARALLEL (much faster!)
       final allEntries = <Map<String, dynamic>>[];
-      for (final guestDoc in snapshot.docs) {
+      
+      // Create all attendance queries in parallel
+      final attendanceFutures = snapshot.docs.map((guestDoc) async {
         final guestData = guestDoc.data();
         final deviceId = guestDoc.id;
         final attendances = await guestDoc.reference.collection('attendances').get();
         
-        for (final attDoc in attendances.docs) {
+        return attendances.docs.map((attDoc) {
           final attData = attDoc.data();
-          allEntries.add({
+          return {
             'id': '${deviceId}_${attDoc.id}',
             'device_id': deviceId,
             'name': guestData['name'] ?? '',
@@ -101,8 +103,16 @@ class _GuestListScreenState extends State<GuestListScreen> {
             'entry_date': attData['entry_date'] ?? attDoc.id,
             'attendance_doc_id': attDoc.id,
             'device_doc_id': deviceId,
-          });
-        }
+          };
+        }).toList();
+      }).toList();
+      
+      // Wait for all queries to complete in parallel
+      final allAttendanceResults = await Future.wait(attendanceFutures);
+      
+      // Flatten the results
+      for (final entries in allAttendanceResults) {
+        allEntries.addAll(entries);
       }
       
       setState(() {
@@ -150,16 +160,16 @@ class _GuestListScreenState extends State<GuestListScreen> {
       
       if (!mounted) return;
       
-      // Load attendances for new guests
-      final newEntries = <Map<String, dynamic>>[];
-      for (final guestDoc in snapshot.docs) {
+      // Load attendances for new guests IN PARALLEL (much faster!)
+      // Create all attendance queries in parallel
+      final attendanceFutures = snapshot.docs.map((guestDoc) async {
         final guestData = guestDoc.data();
         final deviceId = guestDoc.id;
         final attendances = await guestDoc.reference.collection('attendances').get();
         
-        for (final attDoc in attendances.docs) {
+        return attendances.docs.map((attDoc) {
           final attData = attDoc.data();
-          newEntries.add({
+          return {
             'id': '${deviceId}_${attDoc.id}',
             'device_id': deviceId,
             'name': guestData['name'] ?? '',
@@ -171,8 +181,17 @@ class _GuestListScreenState extends State<GuestListScreen> {
             'entry_date': attData['entry_date'] ?? attDoc.id,
             'attendance_doc_id': attDoc.id,
             'device_doc_id': deviceId,
-          });
-        }
+          };
+        }).toList();
+      }).toList();
+      
+      // Wait for all queries to complete in parallel
+      final allAttendanceResults = await Future.wait(attendanceFutures);
+      
+      // Flatten the results
+      final newEntries = <Map<String, dynamic>>[];
+      for (final entries in allAttendanceResults) {
+        newEntries.addAll(entries);
       }
       
       setState(() {
@@ -619,6 +638,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12, top: 8),
                       child: Row(
+
                         children: [
                           Text(
                             _formatDateHeader(entry.key),
@@ -1057,4 +1077,5 @@ class _GuestListScreenState extends State<GuestListScreen> {
     }
   }
 }
+
 
