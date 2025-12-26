@@ -327,6 +327,19 @@ class _ProfileWidgetState extends State<ProfileWidget> {
       // Get base URL for web
       final base_url = kIsWeb ? Uri.base.origin : null;
 
+      // CRITICAL: Open window IMMEDIATELY while we still have user gesture context
+      // This must happen BEFORE any async operations to prevent popup blocking
+      html.WindowBase? checkoutWindow;
+      if (kIsWeb) {
+        try {
+          // Open window immediately on user click - this preserves the gesture context
+          // Just open blank window, we'll redirect it once we have the URL
+          checkoutWindow = html.window.open('', '_blank');
+        } catch (e) {
+          print('Could not open window: $e');
+        }
+      }
+
       try {
         final functions = FirebaseFunctions.instance;
         final callable = functions.httpsCallable('create_checkout_session');
@@ -346,19 +359,18 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         }
         
         if (session_url != null && session_url.isNotEmpty) {
-          if (kIsWeb) {
-            // Use anchor element click method - most reliable, simulates user click
-            // This approach is trusted by browsers and won't be blocked
-            final anchor = html.AnchorElement(href: session_url)
-              ..target = '_blank'
-              ..rel = 'noopener noreferrer'
-              ..style.display = 'none';
-            html.document.body?.append(anchor);
-            anchor.click();
-            // Remove after a brief delay to ensure click is processed
-            Future.delayed(const Duration(milliseconds: 100), () {
-              anchor.remove();
-            });
+          if (kIsWeb && checkoutWindow != null) {
+            // Redirect the window we opened immediately (preserves user gesture)
+            try {
+              checkoutWindow.location.href = session_url;
+            } catch (e) {
+              // Window was blocked/closed, fallback to same-window navigation
+              print('Error redirecting window: $e');
+              html.window.location.href = session_url;
+            }
+          } else if (kIsWeb) {
+            // Window open failed, use same-window as last resort
+            html.window.location.href = session_url;
           } else {
             final uri = Uri.parse(session_url);
             if (await canLaunchUrl(uri)) {
@@ -386,6 +398,14 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         }
       } catch (e) {
         print('Error creating checkout session: $e');
+        // Close window if it was opened
+        if (kIsWeb && checkoutWindow != null) {
+          try {
+            checkoutWindow.close();
+          } catch (closeError) {
+            print('Error closing window: $closeError');
+          }
+        }
         if (mounted) {
           setState(() {
             _isCreatingCheckoutSession = false;
