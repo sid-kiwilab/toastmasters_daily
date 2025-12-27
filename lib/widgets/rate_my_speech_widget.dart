@@ -74,7 +74,7 @@ class RateMySpeechWidget extends StatelessWidget {
         onTap: () => _handleUploadSpeech(context),
         borderRadius: BorderRadius.circular(24),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 400, maxHeight: 500),
+          constraints: const BoxConstraints(minHeight: 400),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
@@ -87,46 +87,44 @@ class RateMySpeechWidget extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SizedBox(
-                  width: constraints.maxWidth,
-                  height: constraints.maxHeight.isFinite ? constraints.maxHeight : 400,
-                  child: Stack(
-                    children: [
-                      // Background gradient
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: colors.bannerGradient,
-                            ),
-                          ),
+            child: IntrinsicHeight(
+              child: Stack(
+                children: [
+                  // Background gradient
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: colors.bannerGradient,
                         ),
                       ),
-                      // Decorative elements
-                      _buildDecorativeElements(colors),
-                      // Content
-                      Row(
-                        children: [
-                          // Left side - Visual
-                          Expanded(
-                            flex: 5,
-                            child: _buildVisualSide(colors),
-                          ),
-                          // Right side - Content
-                          Expanded(
-                            flex: 6,
-                            child: _buildContentSide(context, colors, isClassic),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
-                );
-              },
+                  // Decorative elements
+                  _buildDecorativeElements(colors),
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Left side - Visual
+                        Expanded(
+                          flex: 5,
+                          child: _buildVisualSide(colors),
+                        ),
+                        // Right side - Content
+                        Expanded(
+                          flex: 6,
+                          child: _buildContentSide(context, colors, isClassic),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -140,43 +138,36 @@ class RateMySpeechWidget extends StatelessWidget {
       child: InkWell(
         onTap: () => _handleUploadSpeech(context),
         borderRadius: BorderRadius.circular(24),
-        child: LayoutBuilder(
-          builder: (context, outerConstraints) {
-            return Container(
-              constraints: BoxConstraints(
-                minHeight: 400,
-                maxHeight: outerConstraints.maxHeight.isFinite 
-                    ? outerConstraints.maxHeight 
-                    : 600,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 400),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: colors.bannerShadow.withOpacity(0.2),
+                blurRadius: 30,
+                offset: const Offset(0, 12),
               ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: colors.bannerShadow.withOpacity(0.2),
-                    blurRadius: 30,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
+            ],
+          ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: colors.bannerGradient,
+                child: IntrinsicHeight(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: colors.bannerGradient,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    _buildDecorativeElements(colors),
-                    SingleChildScrollView(
-                      child: Padding(
+                      _buildDecorativeElements(colors),
+                      Padding(
                         padding: const EdgeInsets.all(32),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,12 +181,10 @@ class RateMySpeechWidget extends StatelessWidget {
                           ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            );
-          },
         ),
       ),
     );
