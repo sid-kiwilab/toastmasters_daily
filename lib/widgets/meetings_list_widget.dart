@@ -124,8 +124,46 @@ class MeetingsListWidget extends StatelessWidget {
   }
 
   Widget _buildMeetingItem(BuildContext context, Meeting meeting, {bool isLast = false}) {
-    final hasAgenda = meeting.agendaUrl != null && meeting.agendaUrl!.isNotEmpty;
-    final isMobile = MediaQuery.of(context).size.width < 700;
+    // Use Selector to listen to specific meeting's agendaUrl updates from provider
+    return Selector<ManageMeetingsProvider, String?>(
+      key: ValueKey('meeting_${meeting.id}'),
+      selector: (_, provider) {
+        try {
+          final updatedMeeting = provider.meetings.firstWhere((m) => m.id == meeting.id);
+          return updatedMeeting.agendaUrl;
+        } catch (e) {
+          return meeting.agendaUrl;
+        }
+      },
+      builder: (context, updatedAgendaUrl, child) {
+        // Get the latest meeting from provider to ensure we have all updated fields
+        final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
+        Meeting currentMeeting;
+        try {
+          currentMeeting = meetingsProvider.meetings.firstWhere((m) => m.id == meeting.id);
+        } catch (e) {
+          currentMeeting = meeting;
+        }
+        
+        // Use the updated agendaUrl from selector
+        final finalMeeting = Meeting(
+          id: currentMeeting.id,
+          title: currentMeeting.title,
+          description: currentMeeting.description,
+          createdAt: currentMeeting.createdAt,
+          agendaUrl: updatedAgendaUrl ?? currentMeeting.agendaUrl,
+          meetingDateTime: currentMeeting.meetingDateTime,
+        );
+        
+        final hasAgenda = finalMeeting.agendaUrl != null && finalMeeting.agendaUrl!.isNotEmpty;
+        final isMobile = MediaQuery.of(context).size.width < 700;
+        
+        return _buildMeetingItemContent(context, finalMeeting, hasAgenda, isMobile, isLast);
+      },
+    );
+  }
+
+  Widget _buildMeetingItemContent(BuildContext context, Meeting meeting, bool hasAgenda, bool isMobile, bool isLast) {
     
     return Container(
       margin: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
@@ -498,50 +536,15 @@ class MeetingsListWidget extends StatelessWidget {
             ),
           ),
         ),
-        // Existing meetings - separate card
+        // Existing meetings - show latest 5 only
         if (meetings.isNotEmpty) ...[
           const SizedBox(height: 12),
-          ...meetings.asMap().entries.map((entry) {
+          ...meetings.take(5).toList().asMap().entries.map((entry) {
             final index = entry.key;
             final meeting = entry.value;
-            final isLast = index == meetings.length - 1;
+            final isLast = index == (meetings.length > 5 ? 4 : meetings.length - 1);
             return _buildMeetingItem(context, meeting, isLast: isLast);
           }),
-          // Load More button
-          if (hasMoreMeetings && onLoadMore != null) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: isLoadingMore ? null : onLoadMore,
-                icon: isLoadingMore
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(Icons.expand_more, size: 18),
-                label: Text(
-                  isLoadingMore ? 'Loading...' : 'Load Previous',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF424242),
-                  side: const BorderSide(color: Color(0xFFE0E0E0)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  minimumSize: const Size(double.infinity, 40),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ],
     );

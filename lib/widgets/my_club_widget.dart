@@ -972,6 +972,10 @@ class _MyClubWidgetState extends State<MyClubWidget> {
     Navigator.of(context).pushNamed('/guest-list');
   }
 
+  void _showMeetingsScreen() {
+    Navigator.of(context).pushNamed('/meetings');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -1010,6 +1014,8 @@ class _MyClubWidgetState extends State<MyClubWidget> {
             _buildClubCodeItem(),
             // Guests button
             _buildGuestsItem(),
+            // Meetings button
+            _buildMeetingsItem(),
           ],
         ),
       ],
@@ -1069,7 +1075,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
       decoration: const BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Color(0xFFF5F5F5),
+            color: Color(0xFFE5E7EB),
             width: 1,
           ),
         ),
@@ -1105,7 +1111,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
                           'Club Code',
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                             color: Color(0xFF212121),
                           ),
                         ),
@@ -1274,6 +1280,14 @@ class _MyClubWidgetState extends State<MyClubWidget> {
 
   Widget _buildGuestsItem() {
     return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFE5E7EB),
+            width: 1,
+          ),
+        ),
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -1301,7 +1315,62 @@ class _MyClubWidgetState extends State<MyClubWidget> {
                     'Club Guests',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212121),
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: Color(0xFF9E9E9E),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMeetingsItem() {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFE5E7EB),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _showMeetingsScreen,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.event,
+                    size: 22,
+                    color: Color(0xFF424242),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Text(
+                    'Club Meetings',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       color: Color(0xFF212121),
                     ),
                   ),
@@ -1331,7 +1400,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
       decoration: BoxDecoration(
         border: isLast ? null : Border(
           bottom: BorderSide(
-            color: const Color(0xFFF5F5F5),
+            color: const Color(0xFFE5E7EB),
             width: 1,
           ),
         ),
@@ -1366,7 +1435,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
                         label,
                         style: const TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: Color(0xFF212121),
                         ),
                       ),

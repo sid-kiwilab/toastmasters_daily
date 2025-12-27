@@ -247,6 +247,24 @@ class ManageMeetingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Update meeting agenda URL
+  void updateMeetingAgenda(String meetingId, String agendaUrl) {
+    final meetingIndex = _meetings.indexWhere((m) => m.id == meetingId);
+    if (meetingIndex != -1) {
+      final existingMeeting = _meetings[meetingIndex];
+      final updatedMeeting = Meeting(
+        id: existingMeeting.id,
+        title: existingMeeting.title,
+        description: existingMeeting.description,
+        createdAt: existingMeeting.createdAt,
+        agendaUrl: agendaUrl,
+        meetingDateTime: existingMeeting.meetingDateTime,
+      );
+      _meetings[meetingIndex] = updatedMeeting;
+      notifyListeners();
+    }
+  }
+
   // Update meeting date and time (stored in UTC)
   Future<void> updateMeetingDateTime(String meetingId, DateTime? meetingDateTime) async {
     try {

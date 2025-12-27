@@ -20,6 +20,7 @@ import 'screens/role_detail_screen.dart';
 import 'screens/guest_list_screen.dart';
 import 'screens/payment_success_screen.dart';
 import 'screens/payment_cancelled_screen.dart';
+import 'screens/meetings_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
@@ -117,6 +118,7 @@ class MainApp extends StatelessWidget {
           '/login': (context) => const LoginAuthGate(),
           '/signup': (context) => const SignUpAuthGate(),
           '/guest-list': (context) => const GuestListScreen(),
+          '/meetings': (context) => const MeetingsScreen(),
           '/payment-success': (context) => const PaymentSuccessScreen(),
           '/payment-cancelled': (context) => const PaymentCancelledScreen(),
         },
