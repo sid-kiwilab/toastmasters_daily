@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/manage_meetings_provider.dart';
-import '../widgets/meetings_list_widget.dart';
+import '../widgets/meetings_calendar_widget.dart';
 import '../dialogs/create_meeting_dialog.dart';
 import '../screens/setup_polls_screen.dart';
 import '../screens/poll_results_screen.dart';
@@ -58,7 +58,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
     });
   }
 
-  Future<void> _createMeeting(BuildContext context, String userId, String title) async {
+  Future<void> _createMeeting(BuildContext context, String userId, String title, {DateTime? dateTime}) async {
     try {
       if (mounted) {
         setState(() {
@@ -103,10 +103,15 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
           description: 'No description',
           createdAt: createdAt ?? DateTime.now(),
           agendaUrl: null,
-          meetingDateTime: null,
+          meetingDateTime: dateTime,
         );
         
         meetingsProvider.addMeeting(newMeeting);
+        
+        // If dateTime was provided, update it immediately
+        if (dateTime != null) {
+          await meetingsProvider.updateMeetingDateTime(meetingData['id'], dateTime);
+        }
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -316,58 +321,6 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
     }
   }
 
-  Future<void> _showSetDateTimeDialog(BuildContext context, Meeting meeting) async {
-    final now = DateTime.now();
-    final existingDateTime = meeting.meetingDateTime ?? now;
-    
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: existingDateTime,
-      firstDate: existingDateTime.isBefore(now) ? existingDateTime : now,
-      lastDate: now.add(const Duration(days: 365)),
-    );
-    
-    if (pickedDate == null) return;
-    
-    final pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(existingDateTime),
-    );
-    
-    if (pickedTime == null) return;
-    
-    final combinedDateTime = DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      pickedTime.hour,
-      pickedTime.minute,
-    );
-    
-    try {
-      final meetingsProvider = Provider.of<ManageMeetingsProvider>(context, listen: false);
-      await meetingsProvider.updateMeetingDateTime(meeting.id, combinedDateTime);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Meeting date and time updated successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating meeting datetime: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -387,15 +340,13 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                 child: Center(
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 1200),
-                    child: MeetingsListWidget(
+                    child: MeetingsCalendarWidget(
                       meetings: meetingsProvider.meetings,
                       isCreatingMeeting: _isCreatingMeeting,
                       uploadingAgendas: _uploadingAgendas,
                       isSubscriptionActive: _isSubscriptionActive,
-                      hasMoreMeetings: meetingsProvider.hasMoreMeetings,
-                      isLoadingMore: meetingsProvider.isLoadingMore,
-                      onLoadMore: () {
-                        meetingsProvider.loadMoreMeetings();
+                      onCreateMeetingWithDateTime: (title, dateTime) async {
+                        await _createMeeting(context, authProvider.currentUser!.uid, title, dateTime: dateTime);
                       },
                       onCreateMeeting: () {
                         showDialog(
@@ -411,7 +362,6 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                       onSetupPolls: _showSetupPollsDialog,
                       onPollResults: _showPollResultsDialog,
                       onDeleteMeeting: _deleteMeeting,
-                      onSetDateTime: _showSetDateTimeDialog,
                     ),
                   ),
                 ),

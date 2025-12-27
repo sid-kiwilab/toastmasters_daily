@@ -106,9 +106,12 @@ class _CreateMeetingDialogState extends State<CreateMeetingDialog> {
           onPressed: _isLoading ? null : _handleSubmit,
           child: _isLoading
               ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
                 )
               : const Text('Create Meeting'),
         ),
