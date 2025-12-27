@@ -1,45 +1,52 @@
 const functions = require('firebase-functions');
 
-// Pub/Sub function to keep checkout session creation warm
-// Runs every 5 minutes to prevent cold starts
-// Even if the call fails, it keeps the function instance alive
-exports.ping_checkout_session_creation = functions.pubsub
+// Array of URLs to ping
+const URLS = [
+  'https://us-central1-toastmasters-daily.cloudfunctions.net/create_checkout_session',
+  // Add more URLs here as needed
+];
+
+/**
+ * Simple health checker that pings multiple URLs every 5 minutes
+ */
+exports.ping_functions = functions.pubsub
   .schedule('every 5 minutes')
   .onRun(async (context) => {
-    console.log('Pinging checkout session creation to keep it warm...');
-    
     try {
-      // Import the handler function directly
-      const stripeFunctions = require('./stripe_functions');
+      // Ping all URLs concurrently
+      const results = await Promise.all(
+        URLS.map(async (url, index) => {
+          try {
+            const response = await fetch(url);
+            
+            return {
+              url: url,
+              status: response.status,
+              ok: response.ok,
+              success: true
+            };
+          } catch (error) {
+            return {
+              url: url,
+              error: error.message,
+              success: false
+            };
+          }
+        })
+      );
       
-      // Create a dummy context that will fail auth check
-      // This loads the function code but fails early, keeping it warm
-      const dummyContext = {
-        auth: null, // Will fail auth check immediately
-      };
+      // Only log errors
+      results.forEach(result => {
+        if (!result.success) {
+          console.error(`❌ ${result.url} - Error: ${result.error}`);
+        }
+      });
       
-      // Call handler with invalid data - fails fast but loads the function
-      try {
-        await stripeFunctions.create_checkout_session_handler(
-          {
-            price_id: 'dummy',
-            user_id: 'dummy',
-            email: 'dummy@test.com',
-            base_url: 'https://test.com',
-          },
-          dummyContext
-        );
-      } catch (error) {
-        // Expected to fail at auth check - this is fine
-        // The function code was loaded and executed, keeping it warm
-        console.log('Ping completed (expected failure):', error.code || error.message);
-      }
+      return { results };
       
-      console.log('Checkout session creation pinged - function kept warm');
-      return null;
     } catch (error) {
-      // Even if this fails, attempting to load the function helps keep it warm
-      console.error('Error in ping function:', error);
-      return null;
+      console.error('❌ Health check failed:', error);
+      return { error: error.message };
     }
   });
+

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import '../providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 class GuestListScreen extends StatefulWidget {
   const GuestListScreen({super.key});
@@ -16,6 +17,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
   List<Map<String, dynamic>> _uniqueGuests = []; // Grouped by device_id with counts
   Set<String> _selectedEntryIds = {}; // Track selection by entry ID (each entry independently)
   Set<String> _expandedDeviceIds = {}; // Track which guests have expanded attendance lists
+  Set<String> _copiedEmails = {}; // Track which emails have been copied (for animation)
   bool _isDeleting = false;
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -765,7 +767,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(
+                            SelectableText(
                               guest['name'] ?? 'No name',
                               style: const TextStyle(
                                 fontSize: 16,
@@ -804,16 +806,60 @@ class _GuestListScreenState extends State<GuestListScreen> {
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          guest['email'] ?? 'No email',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[700],
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SelectableText(
+                              guest['email'] ?? 'No email',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Builder(
+                              builder: (context) {
+                                final email = guest['email'] as String? ?? '';
+                                final currentEntryId = guest['current_entry_id'] as String? ?? guest['id'] as String? ?? '';
+                                final copyKey = '$currentEntryId-email';
+                                final isCopied = _copiedEmails.contains(copyKey);
+                                
+                                return GestureDetector(
+                                  onTap: email.isNotEmpty && email != 'No email' ? () async {
+                                    await Clipboard.setData(ClipboardData(text: email));
+                                    setState(() {
+                                      _copiedEmails.add(copyKey);
+                                    });
+                                    // Remove after 2 seconds
+                                    Future.delayed(const Duration(seconds: 2), () {
+                                      if (mounted) {
+                                        setState(() {
+                                          _copiedEmails.remove(copyKey);
+                                        });
+                                      }
+                                    });
+                                  } : null,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: isCopied ? Colors.green[50] : Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Icon(
+                                      isCopied ? Icons.check : Icons.copy,
+                                      size: 14,
+                                      color: isCopied ? Colors.green[700] : Colors.grey[600],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                         if (guest['phone'] != null && guest['phone'].toString().isNotEmpty) ...[
                           const SizedBox(height: 4),
-                          Text(
+                          SelectableText(
                             guest['phone'],
                             style: TextStyle(
                               fontSize: 14,
@@ -831,11 +877,13 @@ class _GuestListScreenState extends State<GuestListScreen> {
                                 color: Colors.grey[600],
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                'Heard about us: ${guest['hear_about_us']}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
+                              Expanded(
+                                child: SelectableText(
+                                  'Heard about us: ${guest['hear_about_us']}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[700],
+                                  ),
                                 ),
                               ),
                             ],
@@ -859,7 +907,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(
+                                  child: SelectableText(
                                     guest['comments'],
                                     style: TextStyle(
                                       fontSize: 13,

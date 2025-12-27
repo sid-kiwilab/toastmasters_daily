@@ -13,7 +13,6 @@ const RATE_LIMITS = {
 };
 
 // Create Stripe checkout session
-// Exported for pinger function to keep it warm
 const create_checkout_session_handler = async (data, context) => {
   // Verify authentication
   if (!context.auth) {
@@ -77,9 +76,6 @@ const create_checkout_session_handler = async (data, context) => {
     throw new functions.https.HttpsError('internal', 'Failed to create checkout session', error.message);
   }
 };
-
-// Export handler for pinger function
-exports.create_checkout_session_handler = create_checkout_session_handler;
 
 // Wrap with rate limiting
 exports.create_checkout_session = functions.https.onCall(
