@@ -1,5 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:http/http.dart' as http;
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -428,19 +432,266 @@ class RateMySpeechWidget extends StatelessWidget {
     );
   }
 
-  void _handleUploadSpeech(BuildContext context) {
+  Future<void> _handleUploadSpeech(BuildContext context) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (!authProvider.isLoggedIn || authProvider.userId == null) {
       Navigator.of(context).pushNamed('/login');
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Speech upload feature coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    dynamic result2;
+    try {
+      // Pick video file
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.video,
+        allowMultiple: false,
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+      
+      // Validate file type
+      final allowedExtensions = ['mp4', 'webm', 'mov', 'avi'];
+      if (file.extension == null || !allowedExtensions.contains(file.extension!.toLowerCase())) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Only video files are allowed (mp4, webm, mov, avi)'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Get file bytes
+      List<int> bytes;
+      if (file.bytes != null) {
+        bytes = file.bytes!;
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not access file data'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Show uploading message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Getting upload URL...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Get presigned URL from Firebase Function
+      final functions = FirebaseFunctions.instance;
+      final contentType = _getContentType(file.extension ?? 'mp4');
+      
+      dynamic result2;
+      result2 = await functions.httpsCallable('get_speech_upload_url').call({
+        'fileName': file.name,
+        'contentType': contentType,
+      });
+
+      if (!result2.data['success']) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result2.data['error'] ?? 'Failed to get upload URL'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final uploadUrl = result2.data['uploadUrl'] as String;
+      final videoId = result2.data['videoId'] as String?;
+      final publicUrl = result2.data['publicUrl'] as String?;
+
+      // Update status to uploading
+      if (videoId != null) {
+        try {
+          await functions.httpsCallable('update_video_status').call({
+            'videoId': videoId,
+            'status': 'uploading',
+          });
+        } catch (e) {
+          // Log but don't fail the upload if status update fails
+          print('Failed to update status to uploading: $e');
+        }
+      }
+
+      // Upload directly to R2
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Uploading video...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Convert bytes to Uint8List for web compatibility
+      final uploadBytes = Uint8List.fromList(bytes);
+      
+      try {
+        final response = await http.put(
+          Uri.parse(uploadUrl),
+          body: uploadBytes,
+          headers: {
+            'Content-Type': contentType,
+          },
+        ).timeout(
+          const Duration(minutes: 10),
+          onTimeout: () {
+            throw Exception('Upload timeout - file may be too large');
+          },
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 204) {
+          // Atomically update status to uploaded (only if currently uploading)
+          if (videoId != null) {
+            try {
+              final statusResult = await functions.httpsCallable('complete_video_upload').call({
+                'videoId': videoId,
+              });
+              if (!statusResult.data['success']) {
+                print('Failed to update status to uploaded: ${statusResult.data['error']}');
+                // Try fallback to regular status update
+                try {
+                  await functions.httpsCallable('update_video_status').call({
+                    'videoId': videoId,
+                    'status': 'uploaded',
+                  });
+                } catch (e) {
+                  print('Fallback status update also failed: $e');
+                }
+              }
+            } catch (e) {
+              // Log but don't fail if status update fails - upload succeeded
+              print('Failed to update status to uploaded: $e');
+              // Try fallback
+              try {
+                await functions.httpsCallable('update_video_status').call({
+                  'videoId': videoId,
+                  'status': 'uploaded',
+                });
+              } catch (fallbackError) {
+                print('Fallback status update failed: $fallbackError');
+              }
+            }
+          }
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Video uploaded successfully!${publicUrl != null ? '\nPublic URL: $publicUrl' : ''}'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
+        } else {
+          // Update status to failed if we have videoId
+          if (videoId != null) {
+            try {
+              await functions.httpsCallable('update_video_status').call({
+                'videoId': videoId,
+                'status': 'failed',
+              });
+            } catch (e) {
+              print('Failed to update status to failed: $e');
+            }
+          }
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Upload failed: ${response.statusCode} - ${response.body}'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
+        }
+      } on http.ClientException catch (e) {
+        // Update status to failed if we have videoId
+        if (videoId != null) {
+          try {
+            await functions.httpsCallable('update_video_status').call({
+              'videoId': videoId,
+              'status': 'failed',
+            });
+          } catch (updateError) {
+            print('Failed to update status to failed: $updateError');
+          }
+        }
+
+        // Handle network/CORS errors
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Network error: ${e.message}. This may be a CORS issue. Please check R2 bucket CORS settings.'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        rethrow;
+      }
+    } catch (e) {
+      // Update status to failed if we have videoId (only if we got past getting the URL)
+      // Note: videoId is only set if we successfully got the upload URL
+      try {
+        final videoIdForError = (result2 as dynamic)?.data?['videoId'] as String?;
+        if (videoIdForError != null) {
+          try {
+            await FirebaseFunctions.instance.httpsCallable('update_video_status').call({
+              'videoId': videoIdForError,
+              'status': 'failed',
+            });
+          } catch (updateError) {
+            print('Failed to update status to failed: $updateError');
+          }
+        }
+      } catch (_) {
+        // Ignore errors when trying to get videoId from result2
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  String _getContentType(String extension) {
+    switch (extension.toLowerCase()) {
+      case 'mp4':
+        return 'video/mp4';
+      case 'webm':
+        return 'video/webm';
+      case 'mov':
+        return 'video/quicktime';
+      case 'avi':
+        return 'video/x-msvideo';
+      default:
+        return 'video/mp4';
+    }
   }
 
   Widget _buildDecorativeElements(AppThemeColors colors) {
