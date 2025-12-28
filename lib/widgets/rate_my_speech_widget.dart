@@ -68,64 +68,57 @@ class RateMySpeechWidget extends StatelessWidget {
   }
 
   Widget _buildDesktopLayout(BuildContext context, AppThemeColors colors, bool isClassic) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _handleUploadSpeech(context),
+    return Container(
+      constraints: const BoxConstraints(minHeight: 400),
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 400),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: colors.bannerShadow.withOpacity(0.2),
-                blurRadius: 30,
-                offset: const Offset(0, 12),
+        boxShadow: [
+          BoxShadow(
+            color: colors.bannerShadow.withOpacity(0.2),
+            blurRadius: 30,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: IntrinsicHeight(
+          child: Stack(
+            children: [
+              // Background gradient
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: colors.bannerGradient,
+                    ),
+                  ),
+                ),
+              ),
+              // Decorative elements
+              _buildDecorativeElements(colors),
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(40),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Left side - Visual
+                    Expanded(
+                      flex: 5,
+                      child: _buildVisualSide(colors),
+                    ),
+                    // Right side - Content
+                    Expanded(
+                      flex: 6,
+                      child: _buildContentSide(context, colors, isClassic),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: IntrinsicHeight(
-              child: Stack(
-                children: [
-                  // Background gradient
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: colors.bannerGradient,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Decorative elements
-                  _buildDecorativeElements(colors),
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.all(40),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Left side - Visual
-                        Expanded(
-                          flex: 5,
-                          child: _buildVisualSide(colors),
-                        ),
-                        // Right side - Content
-                        Expanded(
-                          flex: 6,
-                          child: _buildContentSide(context, colors, isClassic),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ),
       ),
@@ -133,58 +126,51 @@ class RateMySpeechWidget extends StatelessWidget {
   }
 
   Widget _buildMobileLayout(BuildContext context, AppThemeColors colors, bool isClassic) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _handleUploadSpeech(context),
+    return Container(
+      constraints: const BoxConstraints(minHeight: 400),
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 400),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: colors.bannerShadow.withOpacity(0.2),
-                blurRadius: 30,
-                offset: const Offset(0, 12),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: colors.bannerShadow.withOpacity(0.2),
+            blurRadius: 30,
+            offset: const Offset(0, 12),
           ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: IntrinsicHeight(
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: colors.bannerGradient,
-                            ),
-                          ),
-                        ),
-                      ),
-                      _buildDecorativeElements(colors),
-                      Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildVisualIcon(colors, 80),
-                            const SizedBox(height: 24),
-                            _buildContentText(colors),
-                            const SizedBox(height: 24),
-                            _buildActionButton(context, colors),
-                          ],
-                        ),
-                      ),
-                    ],
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: IntrinsicHeight(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: colors.bannerGradient,
+                    ),
                   ),
                 ),
               ),
+              _buildDecorativeElements(colors),
+              Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildVisualIcon(colors, 80),
+                    const SizedBox(height: 24),
+                    _buildContentText(colors),
+                    const SizedBox(height: 24),
+                    _buildActionButton(context, colors),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -391,44 +377,51 @@ class RateMySpeechWidget extends StatelessWidget {
   Widget _buildActionButton(BuildContext context, AppThemeColors colors) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _handleUploadSpeech(context),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.cloud_upload_rounded,
-                color: colors.bannerGradient[0],
-                size: 24,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.cloud_upload_rounded,
+                    color: colors.bannerGradient[0],
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Upload Speech',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: colors.bannerGradient[0],
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: colors.bannerGradient[0],
+                    size: 20,
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text(
-                'Upload Speech',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: colors.bannerGradient[0],
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_rounded,
-                color: colors.bannerGradient[0],
-                size: 20,
-              ),
-            ],
+            ),
           ),
         );
       },
