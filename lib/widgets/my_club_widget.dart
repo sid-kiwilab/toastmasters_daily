@@ -70,7 +70,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
     
     try {
       final userDoc = await FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(authProvider.currentUser!.uid)
           .get();
       
@@ -90,7 +90,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
   void _setupClubCodeListener(String userId) {
     _clubCodeSubscription?.cancel();
     _clubCodeSubscription = FirebaseFirestore.instance
-        .collection('users')
+        .collection('club')
         .doc(userId)
         .snapshots()
         .listen((snapshot) {
@@ -133,7 +133,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
     }
     
     try {
-      final userDocRef = db.collection('users').doc(userId);
+      final userDocRef = db.collection('club').doc(userId);
       final userDocSnap = await userDocRef.get();
       
       String? clubCode;
@@ -198,7 +198,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
         final existingCodeSnap = await db.collection('club_codes').doc(newClubCode).get();
         
         // Also check if any user already has this club_code value (as number)
-        final existingUserWithCode = await db.collection('users')
+        final existingUserWithCode = await db.collection('club')
             .where('club_code', isEqualTo: int.parse(newClubCode))
             .limit(1)
             .get();
@@ -215,7 +215,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
       
       // Now run transaction - ALL READS FIRST, THEN ALL WRITES
       await db.runTransaction((transaction) async {
-        final userDocRef = db.collection('users').doc(userId);
+        final userDocRef = db.collection('club').doc(userId);
         
         // Read new club_code document to verify it doesn't exist
         final newClubCodeRef = db.collection('club_codes').doc(newClubCode);
@@ -290,7 +290,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
         final existingCodeSnap = await db.collection('club_codes').doc(newClubCode).get();
         
         // Also check if any user already has this club_code value (as number)
-        final existingUserWithCode = await db.collection('users')
+        final existingUserWithCode = await db.collection('club')
             .where('club_code', isEqualTo: int.parse(newClubCode))
             .limit(1)
             .get();
@@ -307,7 +307,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
       
       // Now run transaction - ALL READS FIRST, THEN ALL WRITES
       await db.runTransaction((transaction) async {
-        final userDocRef = db.collection('users').doc(userId);
+        final userDocRef = db.collection('club').doc(userId);
         final userDocSnap = await transaction.get(userDocRef);
         
         String? oldClubCode;
@@ -627,7 +627,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
     
     try {
       await FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(authProvider.currentUser!.uid)
           .set({
         'club_name': newValue.isEmpty ? '' : newValue,
@@ -742,7 +742,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
     
     try {
       await FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(authProvider.currentUser!.uid)
           .set({
         'club_info': newValue.isEmpty ? '' : newValue,
@@ -859,7 +859,7 @@ class _MyClubWidgetState extends State<MyClubWidget> {
     
     try {
       await FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(authProvider.currentUser!.uid)
           .set({
         'club_location': newValue.isEmpty ? '' : newValue,

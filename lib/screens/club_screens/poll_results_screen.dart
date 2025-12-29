@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-import '../utils/meeting_utils.dart';
-import '../providers/manage_meetings_provider.dart';
+import '../../utils/meeting_utils.dart';
+import '../../providers/manage_meetings_provider.dart';
 
 class PollResultsScreen extends StatefulWidget {
   final String meetingId;
@@ -72,7 +72,7 @@ class _PollResultsScreenState extends State<PollResultsScreen> {
     _pollsSubscription?.cancel(); // Cancel existing subscription if any
     
     _pollsSubscription = FirebaseFirestore.instance
-        .collection('users')
+        .collection('club')
         .doc(_creatorId)
         .collection('meetings')
         .doc(widget.meetingId)

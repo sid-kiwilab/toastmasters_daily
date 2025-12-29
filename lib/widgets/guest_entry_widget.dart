@@ -92,7 +92,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
 
       final todayDateString = _getTodayDateString();
       final guestDoc = await FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(creatorId)
           .collection('guests')
           .doc(_deviceId)
@@ -180,7 +180,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
 
       final todayDateString = _getTodayDateString();
       final guestDocRef = FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(creatorId)
           .collection('guests')
           .doc(_deviceId);
@@ -423,7 +423,7 @@ class _GuestEntryWidgetState extends State<GuestEntryWidget> {
 
       final todayDateString = _getTodayDateString();
       final guestDocRef = FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(creatorId)
           .collection('guests')
           .doc(_deviceId);

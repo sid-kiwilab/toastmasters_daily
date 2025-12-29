@@ -42,7 +42,7 @@ const submit_vote_handler = async (data, context) => {
     // Use transaction to ensure atomic vote submission
     await db.runTransaction(async (transaction) => {
       // Read the poll document from polls subcollection
-      const pollRef = db.collection('users').doc(creator_id)
+      const pollRef = db.collection('club').doc(creator_id)
         .collection('meetings').doc(data.meeting_id)
         .collection('polls').doc(data.poll_id);
       

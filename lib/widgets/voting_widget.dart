@@ -387,7 +387,7 @@ class _VotingWidgetState extends State<VotingWidget> {
     
     // Listen to polls subcollection
     _pollsSubscription = FirebaseFirestore.instance
-        .collection('users')
+        .collection('club')
         .doc(_creatorId)
         .collection('meetings')
         .doc(widget.meetingId)

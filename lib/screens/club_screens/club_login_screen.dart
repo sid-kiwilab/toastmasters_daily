@@ -1,30 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import '../providers/auth_provider.dart';
-import '../providers/theme_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class ClubLoginScreen extends StatefulWidget {
+  const ClubLoginScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<ClubLoginScreen> createState() => _ClubLoginScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
-  final _signUpFormKey = GlobalKey<FormState>();
-  final _signUpEmailController = TextEditingController();
-  final _signUpPasswordController = TextEditingController();
-  final _signUpConfirmPasswordController = TextEditingController();
+class _ClubLoginScreenState extends State<ClubLoginScreen> {
+  final _loginFormKey = GlobalKey<FormState>();
+  final _loginEmailController = TextEditingController();
+  final _loginPasswordController = TextEditingController();
   
-  bool _isSignUpLoading = false;
+  bool _isLoginLoading = false;
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _signUpEmailController.dispose();
-    _signUpPasswordController.dispose();
-    _signUpConfirmPasswordController.dispose();
+    _loginEmailController.dispose();
+    _loginPasswordController.dispose();
     super.dispose();
   }
 
@@ -34,32 +32,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
   }
 
-  void _handleSignUp() async {
-    if (!_signUpFormKey.currentState!.validate()) return;
+  void _handleLogin() async {
+    if (!_loginFormKey.currentState!.validate()) return;
     
     setState(() {
-      _isSignUpLoading = true;
+      _isLoginLoading = true;
     });
     
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.signUp(
-        email: _signUpEmailController.text,
-        password: _signUpPasswordController.text,
-        name: _signUpEmailController.text.split('@')[0],
+      final success = await authProvider.login(
+        email: _loginEmailController.text,
+        password: _loginPasswordController.text,
       );
       
       if (mounted) {
         if (success) {
           Navigator.of(context).pop();
-          Navigator.of(context).pushReplacementNamed('/base');
+          Navigator.of(context).pushReplacementNamed('/club-base');
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account created successfully!')),
+            const SnackBar(content: Text('Logged in successfully!')),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Failed to create account. Please try again.'),
+              content: Text('Login failed. Please check your credentials.'),
               duration: Duration(seconds: 2),
             ),
           );
@@ -87,10 +84,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } finally {
       if (mounted) {
         setState(() {
-          _isSignUpLoading = false;
+          _isLoginLoading = false;
         });
       }
     }
+  }
+
+  void _showResetPasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return _ResetPasswordDialog();
+      },
+    );
   }
 
   @override
@@ -138,14 +144,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 500),
                     child: Form(
-                      key: _signUpFormKey,
+                      key: _loginFormKey,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // Welcome Title
                           const Text(
-                            'Create Your Account',
+                            'Club Login',
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.w900,
@@ -158,7 +164,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           const SizedBox(height: 8),
                           // Subtitle
                           Text(
-                            'Join Toastmasters and start your journey',
+                            'Sign in to manage your club meetings and members',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
@@ -172,7 +178,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: TextFormField(
-                              controller: _signUpEmailController,
+                              controller: _loginEmailController,
                               decoration: InputDecoration(
                                 labelText: 'Email',
                                 prefixIcon: const Icon(Icons.email_outlined),
@@ -206,7 +212,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: TextFormField(
-                              controller: _signUpPasswordController,
+                              controller: _loginPasswordController,
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 prefixIcon: const Icon(Icons.lock_outline),
@@ -228,58 +234,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               ),
                               obscureText: _obscurePassword,
-                              textInputAction: TextInputAction.next,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter a password';
-                                }
-                                if (value.length < 6) {
-                                  return 'Password must be at least 6 characters';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          
-                          // Confirm Password field
-                          SizedBox(
-                            width: double.infinity,
-                            child: TextFormField(
-                              controller: _signUpConfirmPasswordController,
-                              decoration: InputDecoration(
-                                labelText: 'Confirm Password',
-                                prefixIcon: const Icon(Icons.lock_outline),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                  ),
-                                  onPressed: _togglePasswordVisibility,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: const Color(0xFFF2F1F0),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 18,
-                                ),
-                              ),
-                              obscureText: _obscurePassword,
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) {
-                                if (!_isSignUpLoading) {
-                                  _handleSignUp();
+                                if (!_isLoginLoading) {
+                                  _handleLogin();
                                 }
                               },
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please confirm your password';
-                                }
-                                if (value != _signUpPasswordController.text) {
-                                  return 'Passwords do not match';
+                                  return 'Please enter your password';
                                 }
                                 return null;
                               },
@@ -287,7 +250,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                           const SizedBox(height: 32),
                           
-                          // Sign Up button
+                          // Login button
                           SizedBox(
                             width: double.infinity,
                             height: 56,
@@ -301,7 +264,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: ElevatedButton(
-                                onPressed: _isSignUpLoading ? null : _handleSignUp,
+                                onPressed: _isLoginLoading ? null : _handleLogin,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
                                   foregroundColor: Colors.white,
@@ -312,7 +275,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   elevation: 0,
                                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
                                 ),
-                                child: _isSignUpLoading
+                                child: _isLoginLoading
                                     ? const SizedBox(
                                         width: 24,
                                         height: 24,
@@ -322,7 +285,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         ),
                                       )
                                     : const Text(
-                                        'Create Account',
+                                        'Sign In',
                                         style: TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.w600,
@@ -333,7 +296,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                           ),
                           
-                          // Link to login screen
+                          // Reset password link
+                          const SizedBox(height: 24),
+                          Center(
+                            child: TextButton(
+                              onPressed: _showResetPasswordDialog,
+                              child: Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  color: colors.primaryButtonGradient.first,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                          // Link to sign up screen
                           const SizedBox(height: 32),
                           Container(
                             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
@@ -345,7 +324,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Text(
-                                  'Already have an account? ',
+                                  "Don't have an account? ",
                                   style: TextStyle(
                                     color: Color(0xFF6B7280),
                                     fontSize: 15,
@@ -354,13 +333,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.of(context).pushNamed('/login');
+                                    Navigator.of(context).pushNamed('/club-signup');
                                   },
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   ),
                                   child: Text(
-                                    'Sign In',
+                                    'Sign Up',
                                     style: TextStyle(
                                       color: colors.primaryButtonGradient.first,
                                       fontSize: 15,
@@ -381,6 +360,199 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ],
         ),
       ),
+        );
+      },
+    );
+  }
+}
+
+// Reset Password Dialog Widget
+class _ResetPasswordDialog extends StatefulWidget {
+  const _ResetPasswordDialog();
+
+  @override
+  State<_ResetPasswordDialog> createState() => _ResetPasswordDialogState();
+}
+
+class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
+  final _resetEmailController = TextEditingController();
+  bool _isResetting = false;
+
+  @override
+  void dispose() {
+    _resetEmailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleResetPassword() async {
+    final email = _resetEmailController.text.trim();
+    
+    if (email.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter your email address')),
+        );
+      }
+      return;
+    }
+    
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid email address')),
+        );
+      }
+      return;
+    }
+    
+    setState(() {
+      _isResetting = true;
+    });
+    
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.resetPassword(email: email);
+      
+      if (mounted) {
+        Navigator.of(context).pop();
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Reset password link sent! Check your email.')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to send reset password link. Please try again.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('An error occurred. Please try again.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isResetting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final colors = themeProvider.colors;
+        
+        return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      title: const Text(
+        'Reset Password',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF212121),
+        ),
+        textAlign: TextAlign.center,
+      ),
+      content: SizedBox(
+        width: 500,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Enter your email address and we\'ll send you a link to reset your password.',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: _resetEmailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: 'Email',
+                prefixIcon: const Icon(Icons.email_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF2F1F0),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 18,
+                ),
+              ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) {
+                if (!_isResetting) {
+                  _handleResetPassword();
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isResetting ? null : () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+        SizedBox(
+          width: 140,
+          height: 48,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: colors.primaryButtonGradient,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ElevatedButton(
+              onPressed: _isResetting ? null : _handleResetPassword,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              ),
+              child: _isResetting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Send Link',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
         );
       },
     );

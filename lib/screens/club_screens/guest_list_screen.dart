@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-import '../providers/auth_provider.dart';
+import '../../providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
@@ -72,7 +72,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
     try {
       // Query main guest documents: users/{userId}/guests/
       final query = FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(userId)
           .collection('guests')
           .orderBy('last_updated', descending: true)
@@ -151,7 +151,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
     try {
       // Query next page of main guest documents
       final query = FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(userId)
           .collection('guests')
           .orderBy('last_updated', descending: true)
@@ -414,7 +414,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
         if (deviceId == null || attDocId == null) continue;
         
         batch.delete(FirebaseFirestore.instance
-            .collection('users').doc(userId)
+            .collection('club').doc(userId)
             .collection('guests').doc(deviceId)
             .collection('attendances').doc(attDocId));
         
@@ -423,7 +423,7 @@ class _GuestListScreenState extends State<GuestListScreen> {
       
       for (final e in deviceCounts.entries) {
         batch.update(FirebaseFirestore.instance
-            .collection('users').doc(userId)
+            .collection('club').doc(userId)
             .collection('guests').doc(e.key), {
           'attendance_count': FieldValue.increment(-e.value),
         });

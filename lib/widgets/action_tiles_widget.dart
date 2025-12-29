@@ -363,9 +363,10 @@ class _ActionTilesWidgetState extends State<ActionTilesWidget> {
   void _navigateToCreateMeeting(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.isLoggedIn) {
-      Navigator.of(context).pushNamed('/base');
+      // Always go to club-base - members don't have ability to create meetings
+      Navigator.of(context).pushNamed('/club-base');
     } else {
-      Navigator.of(context).pushNamed('/login');
+      Navigator.of(context).pushNamed('/club-login');
     }
   }
 

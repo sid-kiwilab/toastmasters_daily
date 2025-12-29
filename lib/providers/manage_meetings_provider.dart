@@ -142,7 +142,7 @@ class ManageMeetingsProvider extends ChangeNotifier {
     try {
       // Only load 2 meetings - true pagination, not loading all
       final query = _firestore
-          .collection('users')
+          .collection('club')
           .doc(userId)
           .collection('meetings')
           .orderBy('created_at', descending: true)
@@ -191,7 +191,7 @@ class ManageMeetingsProvider extends ChangeNotifier {
     try {
       // Load only the next 2 meetings - true pagination
       final query = _firestore
-          .collection('users')
+          .collection('club')
           .doc(user.uid)
           .collection('meetings')
           .orderBy('created_at', descending: true)
@@ -272,7 +272,7 @@ class ManageMeetingsProvider extends ChangeNotifier {
       if (user == null) throw Exception('User not authenticated');
 
       final meetingRef = _firestore
-          .collection('users')
+          .collection('club')
           .doc(user.uid)
           .collection('meetings')
           .doc(meetingId);
@@ -364,7 +364,7 @@ class ManageMeetingsProvider extends ChangeNotifier {
     
     // Verify meeting exists
     final meetingRef = _firestore
-        .collection('users')
+        .collection('club')
         .doc(user.uid)
         .collection('meetings')
         .doc(meetingId);
@@ -568,7 +568,7 @@ class ManageMeetingsProvider extends ChangeNotifier {
       }
 
       final pollsRef = _firestore
-          .collection('users')
+          .collection('club')
           .doc(userId)
           .collection('meetings')
           .doc(meetingId)

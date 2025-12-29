@@ -5,7 +5,8 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'firebase_options.dart';
 import 'utils/theme.dart';
 import 'screens/home_screen.dart';
-import 'screens/base_screen.dart';
+import 'screens/club_screens/club_base_screen.dart';
+import 'screens/member_screens/member_base_screen.dart';
 import 'screens/view_meeting_screen.dart';
 import 'screens/club_screen.dart';
 import 'screens/privacy_policy_screen.dart';
@@ -13,14 +14,16 @@ import 'screens/terms_of_service_screen.dart';
 import 'screens/voting_screen.dart';
 import 'screens/guest_entry_screen.dart';
 import 'screens/agenda_viewer_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/sign_up_screen.dart';
+import 'screens/club_screens/club_login_screen.dart';
+import 'screens/club_screens/club_sign_up_screen.dart';
+import 'screens/member_screens/member_login_screen.dart' as member_login;
+import 'screens/member_screens/member_sign_up_screen.dart' as member_signup;
 import 'screens/role_holders_list_screen.dart';
 import 'screens/role_detail_screen.dart';
-import 'screens/guest_list_screen.dart';
+import 'screens/club_screens/guest_list_screen.dart';
 import 'screens/payment_success_screen.dart';
 import 'screens/payment_cancelled_screen.dart';
-import 'screens/meetings_screen.dart';
+import 'screens/club_screens/meetings_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/manage_meetings_provider.dart';
 import 'providers/view_meeting_provider.dart';
@@ -112,11 +115,14 @@ class MainApp extends StatelessWidget {
         initialRoute: '/',
         routes: {
           '/': (context) => const AuthWrapper(),
-          '/base': (context) => const ManageMeetingsScreen(),
+          '/club-base': (context) => const ClubBaseAuthGate(),
+          '/member-base': (context) => const MemberBaseAuthGate(),
           '/privacy': (context) => const PrivacyPolicyScreen(),
           '/terms': (context) => const TermsOfServiceScreen(),
-          '/login': (context) => const LoginAuthGate(),
-          '/signup': (context) => const SignUpAuthGate(),
+          '/club-login': (context) => const ClubLoginAuthGate(),
+          '/club-signup': (context) => const ClubSignUpAuthGate(),
+          '/member-login': (context) => const MemberLoginAuthGate(),
+          '/member-signup': (context) => const MemberSignUpAuthGate(),
           '/guest-list': (context) => const GuestListScreen(),
           '/meetings': (context) => const MeetingsScreen(),
           '/payment-success': (context) => const PaymentSuccessScreen(),
@@ -241,9 +247,9 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
-// Reverse auth gate for login screen - redirects if already authenticated
-class LoginAuthGate extends StatelessWidget {
-  const LoginAuthGate({super.key});
+// Auth gate for club base screen - only allows club accounts
+class ClubBaseAuthGate extends StatelessWidget {
+  const ClubBaseAuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -256,26 +262,49 @@ class LoginAuthGate extends StatelessWidget {
           );
         }
 
-        // If authenticated, redirect to base
-        if (authProvider.isLoggedIn) {
+        // Must be logged in
+        if (!authProvider.isLoggedIn) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacementNamed('/base');
+            Navigator.of(context).pushReplacementNamed('/');
           });
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // Not authenticated, show login screen
-        return const LoginScreen();
+        // Wait for account type to be resolved
+        if (!authProvider.accountTypeResolved) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Only allow club accounts
+        if (authProvider.accountType != AccountType.club) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Redirect members to their own base screen
+            if (authProvider.accountType == AccountType.member) {
+              Navigator.of(context).pushReplacementNamed('/member-base');
+            } else {
+              // Unknown type, redirect to home
+              Navigator.of(context).pushReplacementNamed('/');
+            }
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Club account, show club base screen
+        return const ClubBaseScreen();
       },
     );
   }
 }
 
-// Reverse auth gate for signup screen - redirects if already authenticated
-class SignUpAuthGate extends StatelessWidget {
-  const SignUpAuthGate({super.key});
+// Auth gate for member base screen - only allows member accounts
+class MemberBaseAuthGate extends StatelessWidget {
+  const MemberBaseAuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -288,18 +317,169 @@ class SignUpAuthGate extends StatelessWidget {
           );
         }
 
-        // If authenticated, redirect to base
-        if (authProvider.isLoggedIn) {
+        // Must be logged in
+        if (!authProvider.isLoggedIn) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacementNamed('/base');
+            Navigator.of(context).pushReplacementNamed('/');
           });
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // Not authenticated, show signup screen
-        return const SignUpScreen();
+        // Wait for account type to be resolved
+        if (!authProvider.accountTypeResolved) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Only allow member accounts
+        if (authProvider.accountType != AccountType.member) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Redirect clubs to their own base screen
+            if (authProvider.accountType == AccountType.club) {
+              Navigator.of(context).pushReplacementNamed('/club-base');
+            } else {
+              // Unknown type, redirect to home
+              Navigator.of(context).pushReplacementNamed('/');
+            }
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Member account, show member base screen
+        return const MemberBaseScreen();
+      },
+    );
+  }
+}
+
+// Reverse auth gate for club login screen - redirects if already authenticated
+class ClubLoginAuthGate extends StatelessWidget {
+  const ClubLoginAuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Wait for auth state to be resolved
+        if (!authProvider.authStateResolved) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // If authenticated, redirect to club-base for club accounts
+        if (authProvider.isLoggedIn) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed('/club-base');
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Not authenticated, show club login screen
+        return const ClubLoginScreen();
+      },
+    );
+  }
+}
+
+// Reverse auth gate for club signup screen - redirects if already authenticated
+class ClubSignUpAuthGate extends StatelessWidget {
+  const ClubSignUpAuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Wait for auth state to be resolved
+        if (!authProvider.authStateResolved) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // If authenticated, redirect to club-base for club accounts
+        if (authProvider.isLoggedIn) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed('/club-base');
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Not authenticated, show club signup screen
+        return const ClubSignUpScreen();
+      },
+    );
+  }
+}
+
+// Reverse auth gate for member login screen - redirects if already authenticated
+class MemberLoginAuthGate extends StatelessWidget {
+  const MemberLoginAuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Wait for auth state to be resolved
+        if (!authProvider.authStateResolved) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // If authenticated, redirect to member-base for member accounts
+        if (authProvider.isLoggedIn) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed('/member-base');
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Not authenticated, show member login screen
+        return const member_login.LoginScreen();
+      },
+    );
+  }
+}
+
+// Reverse auth gate for member signup screen - redirects if already authenticated
+class MemberSignUpAuthGate extends StatelessWidget {
+  const MemberSignUpAuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Wait for auth state to be resolved
+        if (!authProvider.authStateResolved) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // If authenticated, redirect to member-base for member accounts
+        if (authProvider.isLoggedIn) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed('/member-base');
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Not authenticated, show member signup screen
+        return const member_signup.SignUpScreen();
       },
     );
   }

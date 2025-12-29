@@ -61,7 +61,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
     
     _subscriptionSubscription?.cancel();
     _subscriptionSubscription = FirebaseFirestore.instance
-        .collection('users')
+        .collection('club')
         .doc(userId)
         .snapshots()
         .listen((snapshot) {
@@ -197,7 +197,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                           try {
                             // Double-check: Verify trial_end_date doesn't already exist
                             final userDoc = await FirebaseFirestore.instance
-                                .collection('users')
+                                .collection('club')
                                 .doc(authProvider.currentUser!.uid)
                                 .get();
                             
@@ -228,7 +228,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                             final trialEndDate = DateTime.now().add(const Duration(days: 30));
                             
                             await FirebaseFirestore.instance
-                                .collection('users')
+                                .collection('club')
                                 .doc(authProvider.currentUser!.uid)
                                 .set({
                               'trial_end_date': Timestamp.fromDate(trialEndDate),
@@ -307,8 +307,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
       }
     } else {
       // Regular subscription flow - create checkout session
-      const String price_id = 'price_1SVPGsCFYmZ3GbaT4UO5fRvQ';
-      
+      // Check email verification before allowing subscription
       final authProvider = Provider.of<app_auth.AuthProvider>(context, listen: false);
       if (authProvider.currentUser == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -319,6 +318,19 @@ class _ProfileWidgetState extends State<ProfileWidget> {
         );
         return;
       }
+
+      if (!authProvider.isEmailVerified) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please verify your email address before subscribing. Check your inbox for a verification email.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 5),
+          ),
+        );
+        return;
+      }
+
+      const String price_id = 'price_1SVPGsCFYmZ3GbaT4UO5fRvQ';
 
       setState(() {
         _isCreatingCheckoutSession = true;
@@ -1005,7 +1017,6 @@ class _ProfileWidgetState extends State<ProfileWidget> {
             // Subscription button (last item in Profile card)
             Consumer<app_auth.AuthProvider>(
               builder: (context, authProvider, child) {
-                final isEmailVerified = authProvider.isEmailVerified;
                 final isActive = _subscriptionStatus == 'active';
                 final hasTrialEndDate = _trialEndDate != null;
                 
@@ -1035,16 +1046,31 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                   subscriptionValue = 'Inactive';
                 }
                 
-                // Button is enabled only if subscription data is loaded AND (subscription is active OR email is verified)
-                // Also disable if creating checkout session or cancelling/resuming subscription
-                final isButtonEnabled = _isSubscriptionDataLoaded && 
-                    (isActive || isEmailVerified) && 
-                    !_isCreatingCheckoutSession &&
-                    !_isCancellingSubscription &&
-                    !_isResumingSubscription;
-                final buttonText = isActive 
-                    ? (_subscriptionCancelAtPeriodEnd == true ? 'Resume Subscription' : 'Stop Subscription')
-                    : (hasTrialEndDate ? 'Subscribe' : 'Start Trial');
+                // Check if trial is active
+                final isTrialActive = hasTrialEndDate && _trialEndDate!.isAfter(DateTime.now());
+                
+                // Determine button text and enabled state
+                String buttonText;
+                bool isButtonEnabled;
+                
+                if (isActive) {
+                  buttonText = _subscriptionCancelAtPeriodEnd == true ? 'Resume Subscription' : 'Stop Subscription';
+                  isButtonEnabled = _isSubscriptionDataLoaded && 
+                      !_isCreatingCheckoutSession &&
+                      !_isCancellingSubscription &&
+                      !_isResumingSubscription;
+                } else if (hasTrialEndDate) {
+                  buttonText = 'Subscribe';
+                  isButtonEnabled = _isSubscriptionDataLoaded && 
+                      isTrialActive && 
+                      !_isCreatingCheckoutSession &&
+                      !_isCancellingSubscription &&
+                      !_isResumingSubscription;
+                } else {
+                  // No trial_end_date yet - show loading/ready message (trials are auto-started on account creation)
+                  buttonText = 'Getting things ready...';
+                  isButtonEnabled = false; // Disable button while waiting for trial to be set up
+                }
                 
                 return Container(
                   decoration: BoxDecoration(

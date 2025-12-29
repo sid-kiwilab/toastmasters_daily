@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+enum AccountType { club, member, unknown }
 
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isLoggedIn = false;
   String? _userId;
   String? _userEmail;
   String? _userName;
   bool _isEmailVerified = false;
   bool _authStateResolved = false; // Flag to track if auth state has been determined
+  AccountType _accountType = AccountType.unknown;
+  bool _accountTypeResolved = false; // Flag to track if account type has been determined
 
   // Getters
   bool get isLoggedIn => _isLoggedIn;
@@ -18,6 +24,8 @@ class AuthProvider extends ChangeNotifier {
   bool get isEmailVerified => _isEmailVerified;
   User? get currentUser => _auth.currentUser;
   bool get authStateResolved => _authStateResolved; // Whether auth state has been checked
+  AccountType get accountType => _accountType;
+  bool get accountTypeResolved => _accountTypeResolved; // Whether account type has been determined
 
   // Constructor - check auth status on initialization
   AuthProvider() {
@@ -29,6 +37,8 @@ class AuthProvider extends ChangeNotifier {
       _userEmail = initialUser.email;
       _userName = initialUser.displayName ?? initialUser.email?.split('@')[0] ?? 'User';
       _isEmailVerified = initialUser.emailVerified;
+      // Determine account type asynchronously
+      _determineAccountType(initialUser.uid);
     }
     _authStateResolved = true; // Mark as resolved after initial check
     notifyListeners();
@@ -41,16 +51,53 @@ class AuthProvider extends ChangeNotifier {
         _userEmail = user.email;
         _userName = user.displayName ?? user.email?.split('@')[0] ?? 'User';
         _isEmailVerified = user.emailVerified;
+        // Determine account type when user logs in
+        _determineAccountType(user.uid);
       } else {
         _isLoggedIn = false;
         _userId = null;
         _userEmail = null;
         _userName = null;
         _isEmailVerified = false;
+        _accountType = AccountType.unknown;
+        _accountTypeResolved = false;
       }
       _authStateResolved = true; // Mark as resolved when state changes
       notifyListeners();
     });
+  }
+
+  // Check account type by checking Firestore collections
+  Future<void> _determineAccountType(String userId) async {
+    try {
+      // Check club collection first
+      final clubDoc = await _firestore.collection('club').doc(userId).get();
+      if (clubDoc.exists) {
+        _accountType = AccountType.club;
+        _accountTypeResolved = true;
+        notifyListeners();
+        return;
+      }
+      
+      // Check member collection
+      final memberDoc = await _firestore.collection('member').doc(userId).get();
+      if (memberDoc.exists) {
+        _accountType = AccountType.member;
+        _accountTypeResolved = true;
+        notifyListeners();
+        return;
+      }
+      
+      // If neither exists, set to unknown
+      _accountType = AccountType.unknown;
+      _accountTypeResolved = true;
+      notifyListeners();
+    } catch (e) {
+      print('Error determining account type: $e');
+      _accountType = AccountType.unknown;
+      _accountTypeResolved = true;
+      notifyListeners();
+    }
   }
 
   // Send verification email function
@@ -92,6 +139,9 @@ class AuthProvider extends ChangeNotifier {
         _userName = userCredential.user!.displayName ?? name;
         _isEmailVerified = userCredential.user!.emailVerified;
         
+        // Determine account type after signup
+        await _determineAccountType(userCredential.user!.uid);
+        
         notifyListeners();
         return true;
       }
@@ -124,6 +174,10 @@ class AuthProvider extends ChangeNotifier {
         _userName = userCredential.user!.displayName ?? 
                    userCredential.user!.email?.split('@')[0] ?? 
                    'User';
+        _isEmailVerified = userCredential.user!.emailVerified;
+        
+        // Determine account type after login
+        await _determineAccountType(userCredential.user!.uid);
         
         notifyListeners();
         return true;
@@ -147,6 +201,9 @@ class AuthProvider extends ChangeNotifier {
       _userId = null;
       _userEmail = null;
       _userName = null;
+      _isEmailVerified = false;
+      _accountType = AccountType.unknown;
+      _accountTypeResolved = false;
       
       notifyListeners();
     } on FirebaseAuthException catch (e) {
@@ -180,12 +237,16 @@ class AuthProvider extends ChangeNotifier {
         _userEmail = user.email;
         _userName = user.displayName ?? user.email?.split('@')[0] ?? 'User';
         _isEmailVerified = user.emailVerified;
+        // Determine account type
+        await _determineAccountType(user.uid);
       } else {
         _isLoggedIn = false;
         _userId = null;
         _userEmail = null;
         _userName = null;
         _isEmailVerified = false;
+        _accountType = AccountType.unknown;
+        _accountTypeResolved = false;
       }
       notifyListeners();
     } catch (e) {
@@ -200,6 +261,8 @@ class AuthProvider extends ChangeNotifier {
     _userEmail = null;
     _userName = null;
     _isEmailVerified = false;
+    _accountType = AccountType.unknown;
+    _accountTypeResolved = false;
     notifyListeners();
   }
 

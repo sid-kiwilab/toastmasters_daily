@@ -435,7 +435,8 @@ class RateMySpeechWidget extends StatelessWidget {
   Future<void> _handleUploadSpeech(BuildContext context) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (!authProvider.isLoggedIn || authProvider.userId == null) {
-      Navigator.of(context).pushNamed('/login');
+      // Only members can upload videos
+      Navigator.of(context).pushNamed('/member-login');
       return;
     }
 

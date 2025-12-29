@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
-import '../providers/manage_meetings_provider.dart';
+import '../../providers/manage_meetings_provider.dart';
 
 class SetupPollsScreen extends StatefulWidget {
   final String meetingId;
@@ -820,7 +820,7 @@ class _SetupPollsScreenState extends State<SetupPollsScreen> {
     _pollsSubscription?.cancel(); // Cancel existing subscription if any
 
     _pollsSubscription = FirebaseFirestore.instance
-        .collection('users')
+        .collection('club')
         .doc(user.uid)
         .collection('meetings')
         .doc(widget.meetingId)

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
-import '../providers/manage_meetings_provider.dart';
-import '../widgets/meetings_calendar_widget.dart';
-import '../dialogs/create_meeting_dialog.dart';
-import '../screens/setup_polls_screen.dart';
-import '../screens/poll_results_screen.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/manage_meetings_provider.dart';
+import '../../widgets/meetings_calendar_widget.dart';
+import '../../dialogs/create_meeting_dialog.dart';
+import '../../screens/club_screens/setup_polls_screen.dart';
+import '../../screens/club_screens/poll_results_screen.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
@@ -34,7 +34,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.currentUser != null) {
         FirebaseFirestore.instance
-            .collection('users')
+            .collection('club')
             .doc(authProvider.currentUser!.uid)
             .snapshots()
             .listen((snapshot) {

@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
-import '../providers/manage_meetings_provider.dart';
-import '../widgets/footer_widget.dart';
-import '../widgets/profile_widget.dart';
-import '../widgets/app_info_widget.dart';
-import '../widgets/my_club_widget.dart';
-import '../widgets/header_widget.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/manage_meetings_provider.dart';
+import '../../widgets/footer_widget.dart';
+import '../../widgets/profile_widget.dart';
+import '../../widgets/app_info_widget.dart';
+import '../../widgets/my_club_widget.dart';
+import '../../widgets/header_widget.dart';
 
-class ManageMeetingsScreen extends StatefulWidget {
-  const ManageMeetingsScreen({super.key});
+class ClubBaseScreen extends StatefulWidget {
+  const ClubBaseScreen({super.key});
 
   @override
-  State<ManageMeetingsScreen> createState() => _ManageMeetingsScreenState();
+  State<ClubBaseScreen> createState() => _ClubBaseScreenState();
 }
 
-class _ManageMeetingsScreenState extends State<ManageMeetingsScreen> {
+class _ClubBaseScreenState extends State<ClubBaseScreen> {
   // Subscription status
   bool _isSubscriptionActive = false;
 

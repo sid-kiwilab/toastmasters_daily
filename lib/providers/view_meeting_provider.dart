@@ -65,7 +65,7 @@ class ViewMeetingProvider extends ChangeNotifier {
     try {
       // Get agenda_url from users/{creatorId}/meetings/{meetingId}
       final meetingData = await FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(creatorId)
           .collection('meetings')
           .doc(meetingId)
@@ -100,7 +100,7 @@ class ViewMeetingProvider extends ChangeNotifier {
     
     // Set up real-time listener for polls subcollection
     _pollsSubscription = FirebaseFirestore.instance
-        .collection('users')
+        .collection('club')
         .doc(creatorId)
         .collection('meetings')
         .doc(meetingId)

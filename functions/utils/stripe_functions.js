@@ -31,7 +31,7 @@ const create_checkout_session_handler = async (data, context) => {
   try {
     // Get or create Stripe customer
     let customer_id;
-    const user_doc = await db.collection('users').doc(user_id).get();
+    const user_doc = await db.collection('club').doc(user_id).get();
     const user_data = user_doc.data();
 
     if (user_data?.stripe_customer_id) {
@@ -47,7 +47,7 @@ const create_checkout_session_handler = async (data, context) => {
       customer_id = customer.id;
 
       // Save customer ID to Firestore
-      await db.collection('users').doc(user_id).set({
+      await db.collection('club').doc(user_id).set({
         stripe_customer_id: customer_id,
       }, { merge: true });
     }
@@ -96,7 +96,7 @@ const cancel_subscription_handler = async (data, context) => {
 
   try {
     // Get user document to find Stripe customer ID
-    const user_doc = await db.collection('users').doc(user_id).get();
+    const user_doc = await db.collection('club').doc(user_id).get();
     const user_data = user_doc.data();
 
     if (!user_data?.stripe_customer_id) {
@@ -125,7 +125,7 @@ const cancel_subscription_handler = async (data, context) => {
     console.log(`Subscription ${subscription.id} will be canceled at period end`);
 
     // Update Firestore immediately with cancellation info
-    await db.collection('users').doc(user_id).set({
+    await db.collection('club').doc(user_id).set({
       subscription_cancel_at_period_end: true,
       subscription_current_period_end: admin.firestore.Timestamp.fromMillis(canceled_subscription.current_period_end * 1000),
     }, { merge: true });
@@ -164,7 +164,7 @@ const resume_subscription_handler = async (data, context) => {
 
   try {
     // Get user document to find Stripe customer ID
-    const user_doc = await db.collection('users').doc(user_id).get();
+    const user_doc = await db.collection('club').doc(user_id).get();
     const user_data = user_doc.data();
 
     if (!user_data?.stripe_customer_id) {
@@ -193,7 +193,7 @@ const resume_subscription_handler = async (data, context) => {
     console.log(`Subscription ${subscription.id} auto-renewal resumed`);
 
     // Update Firestore immediately to clear cancellation info
-    await db.collection('users').doc(user_id).set({
+    await db.collection('club').doc(user_id).set({
       subscription_cancel_at_period_end: false,
       subscription_current_period_end: admin.firestore.Timestamp.fromMillis(resumed_subscription.current_period_end * 1000),
     }, { merge: true });
@@ -376,14 +376,14 @@ async function handle_subscription_deleted(subscription) {
       }
       
       // Set to inactive and clear cancellation fields
-      await db.collection('users').doc(customer_firebase_uid).set({
+      await db.collection('club').doc(customer_firebase_uid).set({
         subscription: 'inactive',
         subscription_cancel_at_period_end: admin.firestore.FieldValue.delete(),
         subscription_current_period_end: admin.firestore.FieldValue.delete(),
       }, { merge: true });
     } else {
       // Set to inactive and clear cancellation fields
-      await db.collection('users').doc(firebase_uid).set({
+      await db.collection('club').doc(firebase_uid).set({
         subscription: 'inactive',
         subscription_cancel_at_period_end: admin.firestore.FieldValue.delete(),
         subscription_current_period_end: admin.firestore.FieldValue.delete(),
@@ -515,7 +515,7 @@ async function handle_invoice_payment_succeeded(invoice) {
 // Helper function to update user subscription status
 async function update_user_subscription(firebase_uid, status) {
   try {
-    await db.collection('users').doc(firebase_uid).set({
+    await db.collection('club').doc(firebase_uid).set({
       subscription: status,
     }, { merge: true });
     console.log(`Updated subscription status for user ${firebase_uid} to ${status}`);
@@ -542,7 +542,7 @@ async function update_user_subscription_with_period(firebase_uid, status, cancel
       update_data.subscription_current_period_end = admin.firestore.Timestamp.fromMillis(current_period_end * 1000);
     }
 
-    await db.collection('users').doc(firebase_uid).set(update_data, { merge: true });
+    await db.collection('club').doc(firebase_uid).set(update_data, { merge: true });
     console.log(`Updated subscription status for user ${firebase_uid} to ${status}, cancel_at_period_end: ${cancel_at_period_end}, current_period_end: ${current_period_end}`);
   } catch (error) {
     console.error(`Error updating subscription status for user ${firebase_uid}:`, error);

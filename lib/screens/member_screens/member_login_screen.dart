@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import '../providers/auth_provider.dart';
-import '../providers/theme_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,15 +41,25 @@ class _LoginScreenState extends State<LoginScreen> {
     
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      // Add "member-" prefix to email if not already present
+      String email = _loginEmailController.text.trim();
+      if (!email.startsWith('member-')) {
+        final emailParts = email.split('@');
+        if (emailParts.length == 2) {
+          email = 'member-${emailParts[0]}@${emailParts[1]}';
+        }
+      }
+      
       final success = await authProvider.login(
-        email: _loginEmailController.text,
+        email: email,
         password: _loginPasswordController.text,
       );
       
       if (mounted) {
         if (success) {
           Navigator.of(context).pop();
-          Navigator.of(context).pushReplacementNamed('/base');
+          Navigator.of(context).pushReplacementNamed('/member-base');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Logged in successfully!')),
           );
@@ -151,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           // Welcome Title
                           const Text(
-                            'Welcome Back!',
+                            'Member Login',
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.w900,
@@ -164,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 8),
                           // Subtitle
                           Text(
-                            'Sign in to your account',
+                            'Sign in to upload and rate your speeches',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
@@ -333,7 +343,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.of(context).pushNamed('/signup');
+                                    Navigator.of(context).pushNamed('/member-signup');
                                   },
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -411,7 +421,17 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
     
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.resetPassword(email: email);
+      
+      // Add "member-" prefix to email if not already present
+      String prefixedEmail = email;
+      if (!prefixedEmail.startsWith('member-')) {
+        final emailParts = prefixedEmail.split('@');
+        if (emailParts.length == 2) {
+          prefixedEmail = 'member-${emailParts[0]}@${emailParts[1]}';
+        }
+      }
+      
+      final success = await authProvider.resetPassword(email: prefixedEmail);
       
       if (mounted) {
         Navigator.of(context).pop();

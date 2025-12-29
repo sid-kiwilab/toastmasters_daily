@@ -32,19 +32,39 @@ class HeaderWidget extends StatelessWidget {
                     isPrimary: false,
                   ),
                   if (!authProvider.isLoggedIn)
-                    _HeaderButton(
-                      text: 'Login',
-                      onPressed: () {
-                        Navigator.of(context).pushNamed('/login');
-                      },
-                      isPrimary: true,
+                    Row(
+                      children: [
+                        _HeaderButton(
+                          text: 'Member Login',
+                          onPressed: () {
+                            Navigator.of(context).pushNamed('/member-login');
+                          },
+                          isPrimary: false,
+                        ),
+                        const SizedBox(width: 12),
+                        _HeaderButton(
+                          text: 'Club Login',
+                          onPressed: () {
+                            Navigator.of(context).pushNamed('/club-login');
+                          },
+                          isPrimary: true,
+                        ),
+                      ],
                     )
                   else if (authProvider.authStateResolved)
                     _HeaderButton(
                       text: 'Profile',
-                      onPressed: () {
-                        Navigator.of(context).pushNamed('/base');
-                      },
+                      onPressed: authProvider.accountTypeResolved
+                          ? () {
+                              // Navigate based on account type
+                              if (authProvider.accountType == AccountType.club) {
+                                Navigator.of(context).pushNamed('/club-base');
+                              } else if (authProvider.accountType == AccountType.member) {
+                                Navigator.of(context).pushNamed('/member-base');
+                              }
+                              // If account type is unknown, don't navigate
+                            }
+                          : null, // Disable button if account type not determined
                       isPrimary: true,
                     ),
                 ],
@@ -59,12 +79,12 @@ class HeaderWidget extends StatelessWidget {
 
 class _HeaderButton extends StatefulWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isPrimary;
 
   const _HeaderButton({
     required this.text,
-    required this.onPressed,
+    this.onPressed,
     this.isPrimary = false,
   });
 
@@ -83,9 +103,10 @@ class _HeaderButtonState extends State<_HeaderButton> {
         
         if (widget.isPrimary) {
           // Primary button with gradient
+          final isEnabled = widget.onPressed != null;
           return MouseRegion(
-            onEnter: (_) => setState(() => _isHovered = true),
-            onExit: (_) => setState(() => _isHovered = false),
+            onEnter: isEnabled ? (_) => setState(() => _isHovered = true) : null,
+            onExit: isEnabled ? (_) => setState(() => _isHovered = false) : null,
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -99,14 +120,18 @@ class _HeaderButtonState extends State<_HeaderButton> {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: _isHovered
-                          ? colors.primaryButtonGradient
+                      colors: isEnabled
+                          ? (_isHovered
+                              ? colors.primaryButtonGradient
+                              : colors.primaryButtonGradient
+                                  .map((c) => c.withOpacity(0.9))
+                                  .toList())
                           : colors.primaryButtonGradient
-                              .map((c) => c.withOpacity(0.9))
+                              .map((c) => c.withOpacity(0.5))
                               .toList(),
                     ),
                     borderRadius: BorderRadius.circular(8),
-                    boxShadow: _isHovered
+                    boxShadow: isEnabled && _isHovered
                         ? [
                             BoxShadow(
                               color: colors.buttonShadow.withOpacity(0.3),
@@ -119,10 +144,10 @@ class _HeaderButtonState extends State<_HeaderButton> {
                   child: Center(
                     child: Text(
                       widget.text,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: isEnabled ? Colors.white : Colors.white.withOpacity(0.6),
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -133,15 +158,16 @@ class _HeaderButtonState extends State<_HeaderButton> {
           );
         } else {
           // Secondary button - clean text style
+          final isEnabled = widget.onPressed != null;
           return MouseRegion(
-            onEnter: (_) => setState(() => _isHovered = true),
-            onExit: (_) => setState(() => _isHovered = false),
+            onEnter: isEnabled ? (_) => setState(() => _isHovered = true) : null,
+            onExit: isEnabled ? (_) => setState(() => _isHovered = false) : null,
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: widget.onPressed,
                 borderRadius: BorderRadius.circular(8),
-                hoverColor: Colors.grey.withOpacity(0.1),
+                hoverColor: isEnabled ? Colors.grey.withOpacity(0.1) : null,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeInOut,
@@ -151,9 +177,11 @@ class _HeaderButtonState extends State<_HeaderButton> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: _isHovered
-                          ? colors.secondaryButtonHover
-                          : colors.secondaryButtonDefault,
+                      color: isEnabled
+                          ? (_isHovered
+                              ? colors.secondaryButtonHover
+                              : colors.secondaryButtonDefault)
+                          : colors.secondaryButtonDefault.withOpacity(0.5),
                       letterSpacing: 0.2,
                     ),
                   ),

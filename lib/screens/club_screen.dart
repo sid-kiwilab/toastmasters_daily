@@ -174,7 +174,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
 
     try {
       final userDoc = await FirebaseFirestore.instance
-          .collection('users')
+          .collection('club')
           .doc(_userId!)
           .get();
 
@@ -231,7 +231,7 @@ class _ClubScreenState extends State<ClubScreen> with SingleTickerProviderStateM
     // Limit to next 100 meetings for production scale efficiency
     // Using orderBy with limit ensures we only fetch what we need
     _meetingsSubscription = FirebaseFirestore.instance
-        .collection('users')
+        .collection('club')
         .doc(_userId!)
         .collection('meetings')
         .where('meeting_datetime', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStartUTC))
