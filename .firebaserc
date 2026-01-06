@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "toastmasters-daily"
+    "default": "toastmasters-daily",
+    "members": "toastmasters-daily-members"
   }
 }

@@ -1,0 +1,11 @@
+firebase use default    # Switch to toastmasters-daily
+firebase use members    # Switch to toastmasters-daily-members
+
+# Deploy everything to default project
+firebase deploy --project toastmasters-daily
+
+# Deploy everything to members project
+firebase deploy --project toastmasters-daily-members
+
+# Deploy only functions to a specific project
+firebase deploy --only functions --project toastmasters-daily-members

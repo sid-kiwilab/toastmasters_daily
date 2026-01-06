@@ -19,7 +19,10 @@ const create_checkout_session_handler = async (data, context) => {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
 
-  const { price_id, user_id, email, base_url } = data;
+  const { price_id: client_price_id, user_id, email, base_url } = data;
+  
+  // Use club_price_id from config, fallback to client-provided price_id
+  const price_id = functions.config().stripe?.club_price_id || process.env.STRIPE_CLUB_PRICE_ID || client_price_id;
 
   if (!price_id || !user_id || !email) {
     throw new functions.https.HttpsError('invalid-argument', 'Missing required parameters');
@@ -224,7 +227,7 @@ exports.resume_subscription = functions.https.onCall(
 // Stripe webhook handler
 exports.handle_stripe_webhook = functions.https.onRequest(async (req, res) => {
   const sig = req.headers['stripe-signature'];
-  const webhook_secret = functions.config().stripe?.webhook_secret || process.env.STRIPE_WEBHOOK_SECRET;
+  const webhook_secret = functions.config().stripe?.club_webhook_secret || process.env.STRIPE_CLUB_WEBHOOK_SECRET;
 
   let event;
 
