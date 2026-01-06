@@ -5,18 +5,12 @@ const admin = require('firebase-admin');
 exports.create_user_document = functions.auth.user().onCreate(async (user) => {
   try {
     const db = admin.firestore();
-    
-    // Determine collection based on email prefix
-    // If email starts with "member-", use "member" collection, otherwise use "club" collection
-    const email = user.email || '';
-    const isMember = email.startsWith('member-');
-    const collectionName = isMember ? 'member' : 'club';
-    const userDocRef = db.collection(collectionName).doc(user.uid);
+    const userDocRef = db.collection('users').doc(user.uid);
     
     // Check if user document already exists (idempotency check)
     const userDocSnap = await userDocRef.get();
     if (userDocSnap.exists) {
-      console.log(`User document already exists for user ${user.uid} in ${collectionName} collection, skipping creation.`);
+      console.log(`User document already exists for user ${user.uid}, skipping creation.`);
       return;
     }
     
@@ -30,7 +24,7 @@ exports.create_user_document = functions.auth.user().onCreate(async (user) => {
       trial_end_date: admin.firestore.Timestamp.fromDate(trialEndDate),
     });
     
-    console.log(`Created user document for user ${user.uid} in ${collectionName} collection with trial ending on ${trialEndDate.toISOString()}`);
+    console.log(`Created user document for user ${user.uid} with trial ending on ${trialEndDate.toISOString()}`);
   } catch (error) {
     console.error('Error creating user document:', error);
   }
@@ -40,19 +34,13 @@ exports.create_user_document = functions.auth.user().onCreate(async (user) => {
 exports.delete_user_document = functions.auth.user().onDelete(async (user) => {
   try {
     const db = admin.firestore();
+    const userRef = db.collection('users').doc(user.uid);
     
-    // Determine collection based on email prefix
-    // If email starts with "member-", use "member" collection, otherwise use "club" collection
-    const email = user.email || '';
-    const isMember = email.startsWith('member-');
-    const collectionName = isMember ? 'member' : 'club';
-    const userRef = db.collection(collectionName).doc(user.uid);
-    
-    // Get user document to find club_code (only for club accounts)
+    // Get user document to find club_code
     const userDocSnap = await userRef.get();
     
-    // Delete club code if it exists (only for club accounts)
-    if (!isMember && userDocSnap.exists) {
+    // Delete club code if it exists
+    if (userDocSnap.exists) {
       const userData = userDocSnap.data();
       const clubCode = userData?.club_code;
       
@@ -85,7 +73,7 @@ exports.delete_user_document = functions.auth.user().onDelete(async (user) => {
     // Delete the user document itself
     await userRef.delete();
     
-    console.log(`Successfully deleted user document and all associated data for user ${user.uid} from ${collectionName} collection`);
+    console.log(`Successfully deleted user document and all associated data for user ${user.uid}`);
   } catch (error) {
     console.error('Error deleting user document and subcollections:', error);
   }
