@@ -5,12 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Toastmasters Daily</title>
     <link rel="icon" type="image/png" href="assets/favicon.png"/>
+    
+    <!-- Preload GoogleSans font -->
+    <link rel="preload" href="assets/GoogleSans.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    
     <style>
       @font-face {
         font-family: 'GoogleSans';
         src: url('assets/GoogleSans.woff2') format('woff2');
-        font-weight: normal;
+        font-weight: 100 900;
         font-style: normal;
+        font-display: swap;
       }
       
       * {
@@ -20,22 +25,493 @@
       }
       
       body {
-        background: #f5f5f5;
+        margin: 0;
+        padding: 0;
         min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: 'GoogleSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        font-family: 'GoogleSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        background: #ffffff;
+        color: #1a1f3a;
+        overflow-x: hidden;
       }
       
-      h1 {
-        font-size: 48px;
-        color: #212121;
+      .header {
+        padding: 24px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        z-index: 100;
+        background: #ffffff;
+      }
+      
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+      }
+      
+      .logo img {
+        height: 32px;
+        width: auto;
+        display: block;
+      }
+      
+      .logo-text {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1a1f3a;
+        letter-spacing: -0.3px;
+      }
+      
+      .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      
+      .header-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'GoogleSans', sans-serif;
+        background: transparent;
+        color: #1a1f3a;
+      }
+      
+      .header-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+      
+      .header-btn-primary {
+        background: #004165;
+        color: #FFFFFF;
+        font-weight: 600;
+      }
+      
+      .header-btn-primary:hover {
+        background: #003049;
+      }
+      
+      /* Hamburger menu */
+      .hamburger {
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        z-index: 101;
+      }
+      
+      .hamburger span {
+        width: 24px;
+        height: 2px;
+        background: #1a1f3a;
+        transition: all 0.3s ease;
+        border-radius: 2px;
+        display: block;
+      }
+      
+      .hamburger.active span:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+      }
+      
+      .hamburger.active span:nth-child(2) {
+        opacity: 0;
+      }
+      
+      .hamburger.active span:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+      }
+      
+      .mobile-menu {
+        display: none;
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 280px;
+        height: 100vh;
+        background: #ffffff;
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+        z-index: 99;
+        padding: 80px 24px 24px;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+      }
+      
+      .mobile-menu.active {
+        transform: translateX(0);
+      }
+      
+      .mobile-menu-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 98;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+      
+      .mobile-menu-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+      
+      .mobile-menu-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .mobile-menu-btn {
+        width: 100%;
+        padding: 14px 20px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        text-align: center;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'GoogleSans', sans-serif;
+        background: transparent;
+        color: #1a1f3a;
+        border: 1px solid #e5e7eb;
+      }
+      
+      .mobile-menu-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+      
+      .mobile-menu-btn-primary {
+        background: #004165;
+        color: #FFFFFF;
+        font-weight: 600;
+        border: none;
+      }
+      
+      .mobile-menu-btn-primary:hover {
+        background: #003049;
+      }
+      
+      .hero {
+        min-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 140px 32px 100px;
+        text-align: center;
+        position: relative;
+        background: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      
+      .hero-content {
+        max-width: 900px;
+        position: relative;
+        z-index: 1;
+      }
+      
+      .headline {
+        font-size: 80px;
+        font-weight: 900;
+        color: #0f172a;
+        letter-spacing: -3px;
+        line-height: 0.95;
+        margin-bottom: 0;
+      }
+      
+      .tagline-intro {
+        font-size: 80px;
+        font-weight: 900;
+        color: #0f172a;
+        letter-spacing: -3px;
+        line-height: 0.95;
+        margin-bottom: 8px;
+        display: block;
+      }
+      
+      .tagline-main {
+        font-size: 80px;
+        font-weight: 900;
+        color: #004165;
+        letter-spacing: -3px;
+        line-height: 0.95;
+        margin-bottom: 0;
+        display: block;
+      }
+      
+      .subtitle {
+        font-size: 22px;
         font-weight: 400;
+        color: #64748b;
+        max-width: 680px;
+        line-height: 1.7;
+        margin: 48px auto 0;
+        letter-spacing: -0.3px;
+        font-weight: 350;
+      }
+      
+      
+      .footer {
+        background: #1a1f3a;
+        color: #FFFFFF;
+        padding: 80px 32px 32px;
+        margin-top: 0;
+      }
+      
+      .footer-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      
+      .footer-content {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 64px;
+        margin-bottom: 48px;
+        padding-bottom: 48px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      
+      .footer-brand {
+        max-width: 300px;
+      }
+      
+      .footer-logo {
+        font-size: 24px;
+        font-weight: 600;
+        color: #FFFFFF;
+        letter-spacing: -0.3px;
+        margin-bottom: 12px;
+      }
+      
+      .footer-tagline {
+        font-size: 16px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.5;
+      }
+      
+      .footer-links {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 48px;
+      }
+      
+      .footer-column {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      
+      .footer-heading {
+        font-size: 16px;
+        font-weight: 600;
+        color: #FFFFFF;
+        letter-spacing: -0.2px;
+        margin-bottom: 8px;
+      }
+      
+      .footer-link {
+        font-size: 15px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+      
+      .footer-link:hover {
+        color: #FFFFFF;
+      }
+      
+      .footer-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 24px;
+      }
+      
+      .footer-copyright {
+        font-size: 14px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.6);
+      }
+      
+      .footer-made-with {
+        font-size: 14px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.6);
+      }
+      
+      @media (max-width: 768px) {
+        .headline {
+          font-size: 48px;
+          letter-spacing: -2px;
+        }
+        
+        .tagline-intro {
+          font-size: 48px;
+          letter-spacing: -2px;
+        }
+        
+        .tagline-main {
+          font-size: 48px;
+          letter-spacing: -2px;
+        }
+        
+        .subtitle {
+          font-size: 18px;
+        }
+        
+        .hero {
+          padding: 100px 24px 80px;
+        }
+        
+        
+        .footer {
+          padding: 60px 24px 24px;
+        }
+        
+        .footer-content {
+          grid-template-columns: 1fr;
+          gap: 48px;
+        }
+        
+        .footer-links {
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
+        
+        .footer-bottom {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        
+        .header {
+          padding: 20px 24px;
+        }
+        
+        .header-actions {
+          display: none;
+        }
+        
+        .hamburger {
+          display: flex;
+        }
+        
+        .mobile-menu {
+          display: block;
+        }
+        
+        .mobile-menu-overlay {
+          display: block;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>Hi</h1>
+    <div class="header">
+      <a href="/" class="logo">
+        <img src="assets/logo.png" alt="Toastmasters Daily logo">
+        <span class="logo-text">Toastmasters Daily</span>
+      </a>
+      <div class="header-actions">
+        <a href="#" class="header-btn">Member Login</a>
+        <a href="#" class="header-btn header-btn-primary">Club Login</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    
+    <div class="mobile-menu-overlay" id="mobile-overlay"></div>
+    <div class="mobile-menu" id="mobile-menu">
+      <div class="mobile-menu-actions">
+        <a href="#" class="mobile-menu-btn">Member Login</a>
+        <a href="#" class="mobile-menu-btn mobile-menu-btn-primary">Club Login</a>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-content">
+        <h1 class="headline">
+          <span class="tagline-intro">Build your voice,</span>
+          <span class="tagline-main">one day at a time</span>
+        </h1>
+        <p class="subtitle">Transform your speaking skills with AI-powered feedback, meeting management, and daily challenges.</p>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <div class="footer-logo">Toastmasters Daily</div>
+            <p class="footer-tagline">Speak better, every day</p>
+          </div>
+          
+          <div class="footer-links">
+            <div class="footer-column">
+              <h4 class="footer-heading">Legal</h4>
+              <a href="/privacy" class="footer-link">Privacy Policy</a>
+              <a href="/terms" class="footer-link">Terms of Service</a>
+            </div>
+            
+            <div class="footer-column">
+              <h4 class="footer-heading">Connect</h4>
+              <a href="https://www.toastmasters.org/" target="_blank" rel="noopener noreferrer" class="footer-link">Toastmasters International</a>
+              <a href="https://www.toastmasters.org/find-a-club" target="_blank" rel="noopener noreferrer" class="footer-link">Find a Club</a>
+            </div>
+          </div>
+        </div>
+        
+        <div class="footer-bottom">
+          <p class="footer-copyright">© <span id="current-year">2025</span> Toastmasters Daily. All rights reserved.</p>
+          <p class="footer-made-with">Made with ❤️ for Toastmasters</p>
+        </div>
+      </div>
+    </footer>
+    
+    <script>
+      // Set current year dynamically
+      document.getElementById('current-year').textContent = new Date().getFullYear();
+      
+      // Mobile menu toggle
+      const hamburger = document.getElementById('hamburger');
+      const mobileMenu = document.getElementById('mobile-menu');
+      const mobileOverlay = document.getElementById('mobile-overlay');
+      
+      hamburger.addEventListener('click', () => {
+        hamburger.classList.toggle('active');
+        mobileMenu.classList.toggle('active');
+        mobileOverlay.classList.toggle('active');
+        document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
+      });
+      
+      mobileOverlay.addEventListener('click', () => {
+        hamburger.classList.remove('active');
+        mobileMenu.classList.remove('active');
+        mobileOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      });
+    </script>
   </body>
 </html>

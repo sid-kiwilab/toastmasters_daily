@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Privacy Policy - Toastmasters Daily</title>
+    <link rel="icon" type="image/png" href="/assets/favicon.png">
+    <link rel="preload" href="/assets/GoogleSans.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <style>
+      @font-face {
+        font-family: 'GoogleSans';
+        src: url('/assets/GoogleSans.woff2') format('woff2');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        font-family: 'GoogleSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        background: #ffffff;
+        color: #1a1f3a;
+        overflow-x: hidden;
+      }
+
+      .header {
+        padding: 24px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        z-index: 10;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+      }
+      
+      .logo img {
+        height: 32px;
+        width: auto;
+        display: block;
+      }
+      
+      .logo-text {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1a1f3a;
+        letter-spacing: -0.3px;
+      }
+      
+      .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      
+      .header-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'GoogleSans', sans-serif;
+        background: transparent;
+        color: #1a1f3a;
+      }
+      
+      .header-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+      
+      .header-btn-primary {
+        background: #004165;
+        color: #FFFFFF;
+        font-weight: 600;
+      }
+      
+      .header-btn-primary:hover {
+        background: #003049;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 80px 32px;
+        background: #fafafa;
+        border-radius: 24px;
+        margin-top: 40px;
+        margin-bottom: 40px;
+      }
+
+      h1 {
+        font-size: 48px;
+        font-weight: 700;
+        color: #1a1f3a;
+        margin-bottom: 24px;
+      }
+
+      h2 {
+        font-size: 28px;
+        font-weight: 600;
+        color: #1a1f3a;
+        margin-top: 40px;
+        margin-bottom: 16px;
+      }
+
+      p {
+        font-size: 16px;
+        line-height: 1.6;
+        color: #6b7280;
+        margin-bottom: 16px;
+      }
+
+      .last-updated {
+        color: #9ca3af;
+        font-size: 14px;
+        margin-bottom: 32px;
+      }
+      
+      .footer {
+        background: #1a1f3a;
+        color: #FFFFFF;
+        padding: 80px 32px 32px;
+        margin-top: 0;
+      }
+      
+      .footer-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      
+      .footer-content {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 64px;
+        margin-bottom: 48px;
+        padding-bottom: 48px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      
+      .footer-brand {
+        max-width: 300px;
+      }
+      
+      .footer-logo {
+        font-size: 24px;
+        font-weight: 600;
+        color: #FFFFFF;
+        letter-spacing: -0.3px;
+        margin-bottom: 12px;
+      }
+      
+      .footer-tagline {
+        font-size: 16px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.5;
+      }
+      
+      .footer-links {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 48px;
+      }
+      
+      .footer-column {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      
+      .footer-heading {
+        font-size: 16px;
+        font-weight: 600;
+        color: #FFFFFF;
+        letter-spacing: -0.2px;
+        margin-bottom: 8px;
+      }
+      
+      .footer-link {
+        font-size: 15px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+      
+      .footer-link:hover {
+        color: #FFFFFF;
+      }
+      
+      .footer-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 24px;
+      }
+      
+      .footer-copyright {
+        font-size: 14px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.6);
+      }
+      
+      .footer-made-with {
+        font-size: 14px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.6);
+      }
+      
+      @media (max-width: 768px) {
+        .footer {
+          padding: 60px 24px 24px;
+        }
+        
+        .footer-content {
+          grid-template-columns: 1fr;
+          gap: 48px;
+        }
+        
+        .footer-links {
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
+        
+        .footer-bottom {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo">
+        <img src="/assets/logo.png" alt="Toastmasters Daily logo">
+        <span class="logo-text">Toastmasters Daily</span>
+      </a>
+    </div>
+
+    <div class="container">
+      <h1>Privacy Policy</h1>
+      <p class="last-updated">Last updated: January 2025</p>
+
+      <h2>Introduction</h2>
+      <p>Toastmasters Daily ("we", "our", or "us") operates a platform for speech improvement, meeting management, and Toastmasters-related services. This Privacy Policy explains how we collect, use, and protect your information when you use our services.</p>
+
+      <h2>Information We Collect</h2>
+      <p>We collect information that you provide directly to us, including:</p>
+      <p>• Account information (email address, name)</p>
+      <p>• Speech videos and recordings when you upload them for evaluation</p>
+      <p>• Meeting data and member information for club management</p>
+      <p>• Usage data and analytics to improve our services</p>
+
+      <h2>How We Use Your Information</h2>
+      <p>We use the information we collect to:</p>
+      <p>• Provide and improve our services</p>
+      <p>• Process your speech videos and generate AI-powered feedback</p>
+      <p>• Manage club meetings and member interactions</p>
+      <p>• Communicate with you about your account and our services</p>
+      <p>• Ensure security and prevent fraud</p>
+
+      <h2>Data Storage and Security</h2>
+      <p>We implement appropriate technical and organizational measures to protect your data. Your speech videos and meeting data are stored securely and are only accessible to authorized users.</p>
+
+      <h2>Data Sharing</h2>
+      <p>We do not sell your personal information. We may share your information only in the following circumstances:</p>
+      <p>• With your explicit consent</p>
+      <p>• To comply with legal obligations</p>
+      <p>• To protect our rights and safety</p>
+
+      <h2>Your Rights</h2>
+      <p>You have the right to:</p>
+      <p>• Access your personal data</p>
+      <p>• Request deletion of your data</p>
+      <p>• Opt-out of certain data processing</p>
+      <p>• Export your data</p>
+    </div>
+    
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <div class="footer-logo">Toastmasters Daily</div>
+            <p class="footer-tagline">Speak better, every day</p>
+          </div>
+          
+          <div class="footer-links">
+            <div class="footer-column">
+              <h4 class="footer-heading">Legal</h4>
+              <a href="/privacy" class="footer-link">Privacy Policy</a>
+              <a href="/terms" class="footer-link">Terms of Service</a>
+            </div>
+            
+            <div class="footer-column">
+              <h4 class="footer-heading">Connect</h4>
+              <a href="https://www.toastmasters.org/" target="_blank" rel="noopener noreferrer" class="footer-link">Toastmasters International</a>
+              <a href="https://www.toastmasters.org/find-a-club" target="_blank" rel="noopener noreferrer" class="footer-link">Find a Club</a>
+            </div>
+          </div>
+        </div>
+        
+        <div class="footer-bottom">
+          <p class="footer-copyright">© <span id="current-year">2025</span> Toastmasters Daily. All rights reserved.</p>
+          <p class="footer-made-with">Made with ❤️ for Toastmasters</p>
+        </div>
+      </div>
+    </footer>
+    
+    <script>
+      // Set current year dynamically
+      document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>
+
