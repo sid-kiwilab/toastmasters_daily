@@ -51,6 +51,22 @@ function initMemberAuth() {
   return memberAuth;
 }
 
+// Initialize only club auth (for club-specific pages)
+function initClubAuth() {
+  let clubAuth = null;
+  try {
+    const clubApp = firebase.initializeApp(FirebaseConfigs.club, 'club');
+    clubAuth = firebase.auth(clubApp);
+  } catch (e) {
+    if (e.code === 'app/duplicate-app') {
+      clubAuth = firebase.auth(firebase.app('club'));
+    } else {
+      console.warn('Club Firebase initialization error:', e);
+    }
+  }
+  return clubAuth;
+}
+
 // Get formatted error message for Firebase auth errors (uses notifications.js if available)
 function getAuthErrorMessage(error) {
   if (typeof getUserFriendlyErrorMessage !== 'undefined') {
@@ -91,6 +107,21 @@ async function logoutMember(memberAuth, redirectPath = '/') {
   try {
     if (memberAuth) {
       await memberAuth.signOut();
+    }
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    window.location.href = redirectPath;
+  } catch (error) {
+    console.error('Logout error:', error);
+    window.location.href = redirectPath;
+  }
+}
+
+// Handle logout for club auth
+async function logoutClub(clubAuth, redirectPath = '/') {
+  try {
+    if (clubAuth) {
+      await clubAuth.signOut();
     }
     localStorage.removeItem('authToken');
     sessionStorage.removeItem('authToken');

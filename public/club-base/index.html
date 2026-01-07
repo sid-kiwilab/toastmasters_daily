@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Member Base - Toastmasters Daily</title>
+  <title>Club Base - Toastmasters Daily</title>
   <link rel="icon" type="image/png" href="../assets/favicon.png"/>
   
   <style>
@@ -163,8 +163,8 @@
   </div>
   
   <div class="container">
-    <h1 class="page-title">Member Base</h1>
-    <p class="page-subtitle">Welcome to your member dashboard</p>
+    <h1 class="page-title">Club Base</h1>
+    <p class="page-subtitle">Welcome to your club dashboard</p>
     
     <div class="content-card">
       <div id="user-info-shimmer">
@@ -188,8 +188,8 @@
   
   <script>
     // Initialize Firebase
-    const memberAuth = initMemberAuth();
     const clubAuth = initClubAuth();
+    const memberAuth = initMemberAuth();
     
     let memberAuthResolved = false;
     let clubAuthResolved = false;
@@ -200,16 +200,16 @@
         return;
       }
       
-      // Check if club user is logged in, redirect to club base
-      const clubUser = clubAuth ? clubAuth.currentUser : null;
-      if (clubUser) {
-        window.location.href = '../club-base/';
+      // Check if member user is logged in, redirect to member base
+      const memberUser = memberAuth ? memberAuth.currentUser : null;
+      if (memberUser) {
+        window.location.href = '../member-base/';
         return;
       }
       
-      // Check if member user is logged in
-      const memberUser = memberAuth ? memberAuth.currentUser : null;
-      if (memberUser) {
+      // Check if club user is logged in
+      const clubUser = clubAuth ? clubAuth.currentUser : null;
+      if (clubUser) {
         // Hide shimmer
         const shimmerDiv = document.getElementById('user-info-shimmer');
         if (shimmerDiv) shimmerDiv.style.display = 'none';
@@ -218,46 +218,46 @@
         const userInfoDiv = document.getElementById('user-info');
         if (userInfoDiv) {
           userInfoDiv.innerHTML = `
-            <p><strong>Email:</strong> ${memberUser.email || 'N/A'}</p>
-            <p><strong>Display Name:</strong> ${memberUser.displayName || 'N/A'}</p>
+            <p><strong>Email:</strong> ${clubUser.email || 'N/A'}</p>
+            <p><strong>Display Name:</strong> ${clubUser.displayName || 'N/A'}</p>
           `;
           userInfoDiv.classList.remove('loading');
           userInfoDiv.classList.add('loaded');
         }
       } else {
         // User is not logged in, redirect to login
-        window.location.href = '../member-login/';
+        window.location.href = '../club-login/';
       }
-    }
-    
-    // Check club auth state
-    if (clubAuth) {
-      clubAuth.onAuthStateChanged((clubUser) => {
-        clubAuthResolved = true;
-        checkAuthAndUpdate();
-      });
-    } else {
-      clubAuthResolved = true;
-      checkAuthAndUpdate();
     }
     
     // Check member auth state
     if (memberAuth) {
-      memberAuth.onAuthStateChanged((user) => {
+      memberAuth.onAuthStateChanged((memberUser) => {
         memberAuthResolved = true;
         checkAuthAndUpdate();
       });
     } else {
+      memberAuthResolved = true;
+      checkAuthAndUpdate();
+    }
+    
+    // Check club auth state
+    if (clubAuth) {
+      clubAuth.onAuthStateChanged((user) => {
+        clubAuthResolved = true;
+        checkAuthAndUpdate();
+      });
+    } else {
       // Firebase not initialized, redirect to login
-      window.location.href = '../member-login/';
+      window.location.href = '../club-login/';
     }
     
     // Logout handler
     const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn && memberAuth) {
+    if (logoutBtn && clubAuth) {
       logoutBtn.addEventListener('click', async () => {
         try {
-          await logoutMember(memberAuth, '/');
+          await logoutClub(clubAuth, '/');
           notifications.success('Successfully signed out');
         } catch (error) {
           notifications.error('Error signing out. Redirecting...');

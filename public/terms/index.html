@@ -96,12 +96,19 @@
 
       .container {
         max-width: 800px;
-        margin: 0 auto;
+        margin: 40px auto 80px;
         padding: 80px 32px;
         background: #fafafa;
         border-radius: 24px;
-        margin-top: 40px;
-        margin-bottom: 40px;
+        margin-left: 20px;
+        margin-right: 20px;
+      }
+      
+      @media (max-width: 768px) {
+        .container {
+          padding: 40px 24px;
+          margin: 20px 16px 60px;
+        }
       }
 
       h1 {
