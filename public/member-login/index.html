@@ -223,6 +223,141 @@
     .divider span {
       padding: 0 16px;
     }
+    
+    .error-message {
+      display: none;
+      background: #FEE2E2;
+      color: #DC2626;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 20px;
+      border: 1px solid #FCA5A5;
+    }
+    
+    .error-message.show {
+      display: block;
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    /* Modal/Dialog Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+    }
+    
+    .modal-overlay.active {
+      display: flex;
+    }
+    
+    .modal {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 420px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      animation: slideUp 0.3s ease-out;
+      position: relative;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .modal-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1f3a;
+      margin: 0;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 28px;
+      color: #6B7280;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+    
+    .modal-close:hover {
+      color: #212121;
+    }
+    
+    .modal-content {
+      margin-bottom: 24px;
+    }
+    
+    .modal-text {
+      font-size: 15px;
+      color: #6B7280;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    
+    .btn-secondary {
+      background: #F3F4F6;
+      color: #374151;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'GoogleSans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    
+    .btn-secondary:hover {
+      background: #E5E7EB;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
   </style>
 </head>
 <body>
@@ -232,9 +367,9 @@
     <h1 class="title">Member Login</h1>
     <p class="subtitle">Sign in to upload and rate your speeches</p>
     
-    <form>
+    <form id="login-form">
       <div class="form-group">
-        <input type="email" placeholder="Email" required>
+        <input type="email" id="email" placeholder="Email" required>
       </div>
       
       <div class="form-group">
@@ -253,7 +388,7 @@
         <span>or</span>
       </div>
       
-      <button type="button" class="btn btn-google">
+      <button type="button" class="btn btn-google" id="google-signin-btn">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -264,7 +399,7 @@
       </button>
       
       <div class="forgot-link">
-        <a href="#">Forgot Password?</a>
+        <a href="#" id="forgot-password-link">Forgot Password?</a>
       </div>
       
       <div class="signup-link">
@@ -273,21 +408,243 @@
     </form>
   </div>
   
+  <!-- Forgot Password Modal -->
+  <div class="modal-overlay" id="forgot-password-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Reset Password</h2>
+        <button class="modal-close" id="close-forgot-modal">×</button>
+      </div>
+      <div class="modal-content">
+        <p class="modal-text">
+          Enter your email address and we'll send you a link to reset your password.
+        </p>
+        <form id="forgot-password-form">
+          <div class="form-group">
+            <input type="email" id="reset-email" placeholder="Email" required>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="cancel-reset">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="send-reset-btn">Send Reset Link</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/auth-utils.js"></script>
+  
   <script>
+    // Get form elements (declare once, reuse everywhere)
+    const loginForm = document.getElementById('login-form');
+    const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const toggleButton = document.getElementById('togglePassword');
+    const submitBtn = loginForm ? loginForm.querySelector('button[type="submit"]') : null;
+    
     let isVisible = false;
     
-    toggleButton.addEventListener('click', () => {
-      isVisible = !isVisible;
-      passwordInput.type = isVisible ? 'text' : 'password';
-      const svg = toggleButton.querySelector('svg');
-      if (isVisible) {
-        svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
-      } else {
-        svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    // Password toggle functionality
+    if (toggleButton && passwordInput) {
+      toggleButton.addEventListener('click', () => {
+        isVisible = !isVisible;
+        passwordInput.type = isVisible ? 'text' : 'password';
+        const svg = toggleButton.querySelector('svg');
+        if (svg) {
+          if (isVisible) {
+            svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+          } else {
+            svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+          }
+        }
+      });
+    }
+    
+    // Initialize Firebase
+    const memberAuth = initMemberAuth();
+    
+    // Check if user is already logged in, redirect to member base
+    if (memberAuth) {
+      memberAuth.onAuthStateChanged((user) => {
+        if (user) {
+          window.location.href = '../member-base/';
+        }
+      });
+    }
+    
+    // Use notification system for errors
+    function showError(message) {
+      notifications.error(message);
+    }
+    
+    function hideError() {
+      // Not needed with notification system, but kept for compatibility
+    }
+    
+    if (loginForm && memberAuth) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError();
+        
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        
+        if (!email || !password) {
+          showError('Please enter both email and password.');
+          return;
+        }
+        
+        try {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Signing in...';
+          
+          await memberAuth.signInWithEmailAndPassword(email, password);
+          
+          submitBtn.textContent = 'Success! Redirecting...';
+          notifications.success('Successfully signed in!');
+          setTimeout(() => {
+            window.location.href = '../member-base/';
+          }, 800);
+          
+        } catch (error) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In';
+          showError(getAuthErrorMessage(error));
+        }
+      });
+    }
+    
+    // Google Sign-In handler
+    const googleSignInBtn = document.getElementById('google-signin-btn');
+    if (googleSignInBtn && memberAuth) {
+      const originalButtonContent = googleSignInBtn.innerHTML;
+      
+      googleSignInBtn.addEventListener('click', async () => {
+        try {
+          hideError();
+          googleSignInBtn.disabled = true;
+          googleSignInBtn.innerHTML = '<span>Signing in...</span>';
+          
+          const provider = createGoogleProvider();
+          const result = await memberAuth.signInWithPopup(provider);
+          
+          googleSignInBtn.innerHTML = '<span>Success! Redirecting...</span>';
+          notifications.success('Successfully signed in with Google!');
+          setTimeout(() => {
+            window.location.href = '../member-base/';
+          }, 800);
+          
+        } catch (error) {
+          googleSignInBtn.disabled = false;
+          googleSignInBtn.innerHTML = originalButtonContent;
+          showError(getAuthErrorMessage(error));
+        }
+      });
+    } else if (!memberAuth) {
+      showError('Authentication service is not available. Please refresh the page.');
+    }
+    
+    // Forgot Password Modal
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    const forgotPasswordModal = document.getElementById('forgot-password-modal');
+    const closeForgotModal = document.getElementById('close-forgot-modal');
+    const cancelReset = document.getElementById('cancel-reset');
+    const forgotPasswordForm = document.getElementById('forgot-password-form');
+    const resetEmailInput = document.getElementById('reset-email');
+    const sendResetBtn = document.getElementById('send-reset-btn');
+    
+    // Open modal
+    if (forgotPasswordLink) {
+      forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (forgotPasswordModal) {
+          forgotPasswordModal.classList.add('active');
+          // Pre-fill email if user has entered it in login form
+          if (emailInput && emailInput.value) {
+            resetEmailInput.value = emailInput.value;
+          }
+          // Focus on email input
+          setTimeout(() => {
+            if (resetEmailInput) resetEmailInput.focus();
+          }, 100);
+        }
+      });
+    }
+    
+    // Close modal functions
+    function closeForgotPasswordModal() {
+      if (forgotPasswordModal) {
+        forgotPasswordModal.classList.remove('active');
+        if (forgotPasswordForm) forgotPasswordForm.reset();
+      }
+    }
+    
+    if (closeForgotModal) {
+      closeForgotModal.addEventListener('click', closeForgotPasswordModal);
+    }
+    
+    if (cancelReset) {
+      cancelReset.addEventListener('click', closeForgotPasswordModal);
+    }
+    
+    // Close modal when clicking overlay
+    if (forgotPasswordModal) {
+      forgotPasswordModal.addEventListener('click', (e) => {
+        if (e.target === forgotPasswordModal) {
+          closeForgotPasswordModal();
+        }
+      });
+    }
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && forgotPasswordModal && forgotPasswordModal.classList.contains('active')) {
+        closeForgotPasswordModal();
       }
     });
+    
+    // Handle password reset form submission
+    if (forgotPasswordForm && memberAuth) {
+      const originalResetBtnText = sendResetBtn ? sendResetBtn.textContent : 'Send Reset Link';
+      
+      forgotPasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = resetEmailInput.value.trim();
+        
+        if (!email) {
+          notifications.error('Please enter your email address.');
+          return;
+        }
+        
+        if (!sendResetBtn) return;
+        
+        try {
+          sendResetBtn.disabled = true;
+          sendResetBtn.textContent = 'Sending...';
+          
+          await memberAuth.sendPasswordResetEmail(email);
+          
+          // Reset button state before closing
+          sendResetBtn.disabled = false;
+          sendResetBtn.textContent = originalResetBtnText;
+          
+          notifications.success('Password reset email sent! Please check your inbox.');
+          closeForgotPasswordModal();
+          
+        } catch (error) {
+          // Reset button state on error
+          sendResetBtn.disabled = false;
+          sendResetBtn.textContent = originalResetBtnText;
+          notifications.error(getUserFriendlyErrorMessage(error));
+        }
+      });
+    }
   </script>
 </body>
 </html>

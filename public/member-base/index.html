@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Base - Toastmasters Daily</title>
+  <link rel="icon" type="image/png" href="../assets/favicon.png"/>
+  
+  <style>
+    @font-face {
+      font-family: 'GoogleSans';
+      src: url('../assets/GoogleSans.woff2') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'GoogleSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #ffffff;
+      color: #212121;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .header {
+      max-width: 1200px;
+      margin: 0 auto 40px;
+      padding: 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #E5E7EB;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    
+    .logo img {
+      height: 32px;
+      width: auto;
+    }
+    
+    .logo-text {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1a1f3a;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    
+    .page-title {
+      font-size: 48px;
+      font-weight: 900;
+      color: #1a1f3a;
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+    
+    .page-subtitle {
+      font-size: 18px;
+      color: #6B7280;
+      margin-bottom: 40px;
+    }
+    
+    .content-card {
+      background: #F9FAFB;
+      border-radius: 12px;
+      padding: 40px;
+      margin-bottom: 24px;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'GoogleSans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-logout {
+      background: #DC2626;
+      color: white;
+    }
+    
+    .btn-logout:hover {
+      background: #B91C1C;
+    }
+    
+    .user-info {
+      margin-bottom: 24px;
+    }
+    
+    .user-info p {
+      font-size: 16px;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    
+    .user-info strong {
+      color: #1a1f3a;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <a href="/" class="logo">
+      <img src="../assets/logo.png" alt="Toastmasters Daily logo">
+      <span class="logo-text">Toastmasters Daily</span>
+    </a>
+  </div>
+  
+  <div class="container">
+    <h1 class="page-title">Member Base</h1>
+    <p class="page-subtitle">Welcome to your member dashboard</p>
+    
+    <div class="content-card">
+      <div class="user-info" id="user-info">
+        <p><strong>Loading user information...</strong></p>
+      </div>
+      
+      <button id="logout-btn" class="btn btn-logout">Logout</button>
+    </div>
+  </div>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/auth-utils.js"></script>
+  
+  <script>
+    // Initialize Firebase
+    const memberAuth = initMemberAuth();
+    
+    // Check if user is logged in
+    if (memberAuth) {
+      memberAuth.onAuthStateChanged((user) => {
+        if (user) {
+          // User is logged in, show user info
+          const userInfoDiv = document.getElementById('user-info');
+          if (userInfoDiv) {
+            userInfoDiv.innerHTML = `
+              <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
+              <p><strong>Display Name:</strong> ${user.displayName || 'N/A'}</p>
+            `;
+          }
+        } else {
+          // User is not logged in, redirect to login
+          window.location.href = '../member-login/';
+        }
+      });
+    } else {
+      // Firebase not initialized, redirect to login
+      window.location.href = '../member-login/';
+    }
+    
+    // Logout handler
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn && memberAuth) {
+      logoutBtn.addEventListener('click', async () => {
+        try {
+          await logoutMember(memberAuth, '/');
+          notifications.success('Successfully signed out');
+        } catch (error) {
+          notifications.error('Error signing out. Redirecting...');
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1000);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+

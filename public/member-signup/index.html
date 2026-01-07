@@ -217,9 +217,9 @@
     <h1 class="title">Member Sign Up</h1>
     <p class="subtitle">Create an account to upload and get feedback on your speeches</p>
     
-    <form>
+    <form id="signup-form">
       <div class="form-group">
-        <input type="email" placeholder="Email" required>
+        <input type="email" id="email" placeholder="Email" required>
       </div>
       
       <div class="form-group">
@@ -264,39 +264,159 @@
     </form>
   </div>
   
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/auth-utils.js"></script>
+  
   <script>
+    // Initialize Firebase
+    const memberAuth = initMemberAuth();
+    
+    // Check if user is already logged in, redirect to member base
+    if (memberAuth) {
+      memberAuth.onAuthStateChanged((user) => {
+        if (user) {
+          window.location.href = '../member-base/';
+        }
+      });
+    }
+    
+    // Use notification system for errors
+    function showError(message) {
+      notifications.error(message);
+    }
+    
+    function hideError() {
+      // Not needed with notification system, but kept for compatibility
+    }
+    
+    // Get form elements (declare once, reuse everywhere)
+    const signupForm = document.getElementById('signup-form');
+    const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const confirmPasswordInput = document.getElementById('confirmPassword');
     const togglePassword = document.getElementById('togglePassword');
     const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
-    let passwordVisible = false;
-    let confirmPasswordVisible = false;
+    const submitBtn = signupForm ? signupForm.querySelector('button[type="submit"]') : null;
     
+    let passwordVisible = false;
+    
+    // Password toggle functionality - toggles both password fields together
     function updatePasswordVisibility(isVisible) {
-      passwordInput.type = isVisible ? 'text' : 'password';
-      confirmPasswordInput.type = isVisible ? 'text' : 'password';
+      // Update both password fields
+      if (passwordInput) {
+        passwordInput.type = isVisible ? 'text' : 'password';
+      }
+      if (confirmPasswordInput) {
+        confirmPasswordInput.type = isVisible ? 'text' : 'password';
+      }
       
-      const passwordSvg = togglePassword.querySelector('svg');
-      const confirmSvg = toggleConfirmPassword.querySelector('svg');
+      // Update both toggle icons
+      const passwordSvg = togglePassword ? togglePassword.querySelector('svg') : null;
+      const confirmSvg = toggleConfirmPassword ? toggleConfirmPassword.querySelector('svg') : null;
       
-      if (isVisible) {
-        passwordSvg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
-        confirmSvg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
-      } else {
-        passwordSvg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
-        confirmSvg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+      const svgContent = isVisible 
+        ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+      
+      if (passwordSvg) {
+        passwordSvg.innerHTML = svgContent;
+      }
+      if (confirmSvg) {
+        confirmSvg.innerHTML = svgContent;
       }
     }
     
-    togglePassword.addEventListener('click', () => {
-      passwordVisible = !passwordVisible;
-      updatePasswordVisibility(passwordVisible);
-    });
+    // Both toggle buttons toggle both password fields
+    if (togglePassword) {
+      togglePassword.addEventListener('click', () => {
+        passwordVisible = !passwordVisible;
+        updatePasswordVisibility(passwordVisible);
+      });
+    }
     
-    toggleConfirmPassword.addEventListener('click', () => {
-      passwordVisible = !passwordVisible;
-      updatePasswordVisibility(passwordVisible);
-    });
+    if (toggleConfirmPassword) {
+      toggleConfirmPassword.addEventListener('click', () => {
+        passwordVisible = !passwordVisible;
+        updatePasswordVisibility(passwordVisible);
+      });
+    }
+    
+    if (signupForm && memberAuth) {
+      signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError();
+        
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        
+        // Validation
+        if (!email || !password || !confirmPassword) {
+          showError('Please fill in all fields.');
+          return;
+        }
+        
+        if (password !== confirmPassword) {
+          showError('Passwords do not match.');
+          return;
+        }
+        
+        if (password.length < 6) {
+          showError('Password must be at least 6 characters long.');
+          return;
+        }
+        
+        try {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Creating account...';
+          
+          await memberAuth.createUserWithEmailAndPassword(email, password);
+          
+          submitBtn.textContent = 'Success! Redirecting...';
+          notifications.success('Account created successfully!');
+          setTimeout(() => {
+            window.location.href = '../member-base/';
+          }, 800);
+          
+        } catch (error) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Account';
+          showError(getAuthErrorMessage(error));
+        }
+      });
+    }
+    
+    // Google Sign-Up handler
+    const googleSignUpBtn = document.querySelector('.btn-google');
+    if (googleSignUpBtn && memberAuth) {
+      const originalButtonContent = googleSignUpBtn.innerHTML;
+      
+      googleSignUpBtn.addEventListener('click', async () => {
+        try {
+          hideError();
+          googleSignUpBtn.disabled = true;
+          googleSignUpBtn.innerHTML = '<span>Signing up...</span>';
+          
+          const provider = createGoogleProvider();
+          const result = await memberAuth.signInWithPopup(provider);
+          
+          googleSignUpBtn.innerHTML = '<span>Success! Redirecting...</span>';
+          notifications.success('Account created with Google!');
+          setTimeout(() => {
+            window.location.href = '../member-base/';
+          }, 800);
+          
+        } catch (error) {
+          googleSignUpBtn.disabled = false;
+          googleSignUpBtn.innerHTML = originalButtonContent;
+          showError(getAuthErrorMessage(error));
+        }
+      });
+    }
   </script>
 </body>
 </html>
