@@ -187,30 +187,36 @@
     
     .section-card {
       background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
+      border-radius: 0;
       padding: 0;
-      margin-bottom: 24px;
-      overflow: hidden;
+      margin-bottom: 0;
+      overflow: visible;
+      border: none;
     }
     
     .section-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #4f5660;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 16px 20px 8px;
-      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #060607;
+      padding: 0 0 24px 0;
+      margin: 5px 0 32px 0;
+      border-bottom: 1px solid #e5e7eb;
     }
     
     .section-content {
-      padding: 0 20px 20px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
     
     .profile-field {
-      padding: 16px 0;
-      border-bottom: 1px solid #e5e7eb;
+      padding: 24px 0;
+      border-bottom: 1px solid #f2f3f5;
+      display: grid;
+      grid-template-columns: 200px 1fr auto;
+      gap: 32px;
+      align-items: start;
     }
     
     .profile-field:last-child {
@@ -218,45 +224,71 @@
     }
     
     .field-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: #4f5660;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #060607;
+      text-transform: none;
+      letter-spacing: 0;
+      margin: 0;
+      padding-top: 4px;
+    }
+    
+    .field-main {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
     
     .field-value {
-      font-size: 16px;
+      font-size: 15px;
       color: #060607;
       font-weight: 400;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .field-description {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.5;
+      margin-top: 4px;
     }
     
     .field-badge {
       display: inline-flex;
       align-items: center;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
       font-weight: 600;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
     }
     
     .field-badge.verified {
-      background: #d1fae5;
-      color: #065f46;
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
     }
     
     .field-badge.not-verified {
-      background: #fee2e2;
+      background: #fef2f2;
       color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+    
+    .field-badge.active {
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
     }
     
     .field-action {
-      margin-top: 12px;
+      margin: 0;
+      display: flex;
+      align-items: flex-start;
     }
     
     .btn {
@@ -602,6 +634,11 @@
         width: 100%;
       }
       
+      .section-title {
+        margin: 21px 0 32px 0;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      
       .mobile-overlay {
         display: block;
       }
@@ -673,10 +710,13 @@
             </div>
             <div id="profile-content" style="display: none;">
               <div class="profile-field">
-                <div class="field-label">Email</div>
-                <div class="field-value">
-                  <span id="email-value"></span>
-                  <span class="field-badge" id="verification-badge"></span>
+                <div class="field-label">Email Address</div>
+                <div class="field-main">
+                  <div class="field-value">
+                    <span id="email-value"></span>
+                    <span class="field-badge" id="verification-badge"></span>
+                  </div>
+                  <div class="field-description">Used for account recovery and important notifications</div>
                 </div>
                 <div class="field-action">
                   <button id="verify-button" class="btn btn-primary" onclick="sendVerificationEmail()">
@@ -688,7 +728,11 @@
                 </div>
               </div>
               <div class="profile-field">
-                <div class="field-label">Account</div>
+                <div class="field-label">Sign Out</div>
+                <div class="field-main">
+                  <div class="field-value">Sign out of your account on this device</div>
+                  <div class="field-description">You'll need to sign in again to access your account</div>
+                </div>
                 <div class="field-action">
                   <button id="logout-btn" class="btn btn-logout">Logout</button>
                 </div>
@@ -705,18 +749,31 @@
           <div class="section-content">
             <div class="profile-field">
               <div class="field-label">Trial Period</div>
-              <div class="field-value" id="trial-date-value">
-                <span id="trial-date-text">Loading...</span>
+              <div class="field-main">
+                <div class="field-value" id="trial-date-value">
+                  <span id="trial-date-text">Loading...</span>
+                </div>
+                <div class="field-description">Your free trial allows access to all features</div>
               </div>
+              <div class="field-action"></div>
             </div>
             <div class="profile-field" id="subscription-status-field" style="display: none;">
-              <div class="field-label">Subscription Status</div>
-              <div class="field-value" id="subscription-status-value">
-                <span id="subscription-status-text">Loading...</span>
+              <div class="field-label">Subscription</div>
+              <div class="field-main">
+                <div class="field-value" id="subscription-status-value">
+                  <span id="subscription-status-text">Loading...</span>
+                </div>
+                <div class="field-description" id="subscription-description">Manage your subscription and billing</div>
               </div>
+              <div class="field-action"></div>
             </div>
             <div class="profile-field">
-              <div class="field-label">Actions</div>
+              <div class="field-label">Manage</div>
+              <div class="field-main">
+                <div class="field-value" style="color: #64748b; font-size: 14px;" id="subscription-action-description">
+                  Subscribe to continue using all features after your trial
+                </div>
+              </div>
               <div class="field-action">
                 <button id="subscribe-button" class="btn btn-primary" onclick="handleSubscribe()" style="display: none;">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
@@ -725,10 +782,10 @@
                   <span id="subscribe-button-text">Subscribe</span>
                 </button>
                 <button id="cancel-renewal-button" class="btn btn-logout" onclick="handleCancelRenewal()" style="display: none;">
-                  <span id="cancel-renewal-button-text">Stop Subscription</span>
+                  <span id="cancel-renewal-button-text">Stop Auto-Renewal</span>
                 </button>
                 <button id="resume-renewal-button" class="btn btn-primary" onclick="handleResumeRenewal()" style="display: none;">
-                  <span id="resume-renewal-button-text">Resume Subscription</span>
+                  <span id="resume-renewal-button-text">Resume Auto-Renewal</span>
                 </button>
               </div>
             </div>
@@ -936,9 +993,27 @@
                   month: 'long', 
                   day: 'numeric' 
                 });
-                subscriptionStatusText.textContent = `Active (ends on ${formattedEnd}, will not renew)`;
+                subscriptionStatusText.innerHTML = `<span class="field-badge active">Active</span> <span style="color: #64748b;">Ends ${formattedEnd}</span>`;
               } else {
-                subscriptionStatusText.textContent = 'Active';
+                subscriptionStatusText.innerHTML = `<span class="field-badge active">Active</span>`;
+              }
+            }
+            
+            const subscriptionDescription = document.getElementById('subscription-description');
+            if (subscriptionDescription) {
+              if (cancelAtPeriodEnd && currentPeriodEnd) {
+                subscriptionDescription.textContent = 'Your subscription will remain active until the end of the current billing period';
+              } else {
+                subscriptionDescription.textContent = 'Your subscription is active and will automatically renew';
+              }
+            }
+            
+            const subscriptionActionDescription = document.getElementById('subscription-action-description');
+            if (subscriptionActionDescription) {
+              if (cancelAtPeriodEnd && currentPeriodEnd) {
+                subscriptionActionDescription.textContent = 'Resume auto-renewal to continue your subscription';
+              } else {
+                subscriptionActionDescription.textContent = 'Cancel auto-renewal to stop your subscription at the end of the billing period';
               }
             }
             
@@ -960,7 +1035,12 @@
             if (resumeRenewalButton) resumeRenewalButton.style.display = 'none';
             
             if (subscriptionStatusText) {
-              subscriptionStatusText.textContent = 'Inactive';
+              subscriptionStatusText.innerHTML = `<span class="field-badge not-verified">Inactive</span>`;
+            }
+            
+            const subscriptionActionDescription = document.getElementById('subscription-action-description');
+            if (subscriptionActionDescription) {
+              subscriptionActionDescription.textContent = 'Subscribe to continue using all features after your trial';
             }
           }
         } else {
