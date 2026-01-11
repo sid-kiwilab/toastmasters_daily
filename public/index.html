@@ -304,6 +304,253 @@
         font-weight: 350;
       }
       
+      /* Featured Section - Modern & Sleek */
+      .featured-section {
+        padding: 100px 32px;
+        background: #fafafa;
+        border-top: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      
+      .featured-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+        align-items: center;
+      }
+      
+      .featured-content {
+        text-align: left;
+      }
+      
+      .featured-label {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: #004165;
+        margin-bottom: 16px;
+        padding: 6px 12px;
+        background: rgba(0, 65, 101, 0.1);
+        border-radius: 6px;
+      }
+      
+      .featured-title {
+        font-size: 42px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 20px;
+        letter-spacing: -1.2px;
+        line-height: 1.1;
+      }
+      
+      .featured-description {
+        font-size: 17px;
+        color: #64748b;
+        line-height: 1.7;
+        margin-bottom: 0;
+      }
+      
+      .featured-visual {
+        position: relative;
+        height: 300px;
+        background: #f8fafc;
+        border-radius: 20px;
+        overflow: hidden;
+      }
+      
+      .featured-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: auto;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        will-change: transform;
+      }
+      
+      /* Actions Section */
+      .actions-section {
+        padding: 100px 32px;
+        background: #ffffff;
+      }
+      
+      .actions-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      
+      .actions-header {
+        text-align: center;
+        margin-bottom: 64px;
+      }
+      
+      .actions-title {
+        font-size: 36px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 12px;
+        letter-spacing: -1px;
+      }
+      
+      .actions-subtitle {
+        font-size: 18px;
+        color: #64748b;
+        font-weight: 400;
+      }
+      
+      .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+      
+      .action-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+        display: block;
+        cursor: pointer;
+        position: relative;
+      }
+      
+      .action-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #004165;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+      }
+      
+      .action-card:hover {
+        border-color: #004165;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+      }
+      
+      .action-card:hover::before {
+        transform: scaleX(1);
+      }
+      
+      .action-image-wrapper {
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        background: #f8fafc;
+        position: relative;
+        border-radius: 20px 20px 0 0;
+      }
+      
+      .action-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        transition: transform 0.4s ease;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: auto;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        will-change: transform;
+      }
+      
+      .action-card:hover .action-image {
+        transform: scale(1.05);
+      }
+      
+      .action-content {
+        padding: 28px;
+      }
+      
+      .action-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+      }
+      
+      .action-description {
+        font-size: 15px;
+        color: #64748b;
+        line-height: 1.6;
+        margin: 0;
+      }
+      
+      @media (max-width: 968px) {
+        .featured-container {
+          grid-template-columns: 1fr;
+          gap: 40px;
+        }
+        
+        .featured-content {
+          text-align: center;
+        }
+        
+        .featured-title {
+          font-size: 36px;
+        }
+        
+        .featured-visual {
+          height: auto;
+          aspect-ratio: 4 / 3;
+          min-height: 250px;
+        }
+      }
+      
+      @media (max-width: 768px) {
+        .featured-section {
+          padding: 80px 24px;
+        }
+        
+        .featured-visual {
+          height: auto;
+          aspect-ratio: 4 / 3;
+          min-height: 250px;
+        }
+        
+        .actions-section {
+          padding: 80px 24px;
+        }
+        
+        .actions-title {
+          font-size: 32px;
+        }
+        
+        .actions-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        
+        .action-image-wrapper {
+          height: auto;
+          aspect-ratio: 16 / 9;
+          min-height: 200px;
+        }
+        
+        .action-image {
+          object-fit: cover;
+        }
+      }
       
       .footer {
         background: #1a1f3a;
@@ -505,6 +752,50 @@
         <p class="subtitle">Transform your speaking skills with AI-powered feedback, meeting management, and daily challenges.</p>
       </div>
     </div>
+
+    <!-- Featured Section -->
+    <section class="featured-section">
+      <div class="featured-container">
+        <div class="featured-content">
+          <span class="featured-label">Coming Soon</span>
+          <h2 class="featured-title">Rate My Speech with AI</h2>
+          <p class="featured-description">Get instant, detailed feedback on your speeches. Analyze vocal variety, clarity, filler words, pacing, and more to elevate your speaking skills.</p>
+        </div>
+        <div class="featured-visual">
+          <img src="assets/rate_speech_classic.webp" alt="Rate My Speech" class="featured-image" loading="eager" fetchpriority="high">
+        </div>
+      </div>
+    </section>
+
+    <!-- Actions Section -->
+    <section class="actions-section">
+      <div class="actions-container">
+        <div class="actions-header">
+          <h2 class="actions-title">What would you like to do?</h2>
+          <p class="actions-subtitle">Choose an action to get started</p>
+        </div>
+        <div class="actions-grid">
+          <a href="#" class="action-card" onclick="event.preventDefault(); alert('Join Meeting - Feature coming soon');">
+            <div class="action-image-wrapper">
+              <img src="assets/join_meeting_classic.webp" alt="Join Meeting" class="action-image" loading="eager" fetchpriority="high">
+            </div>
+            <div class="action-content">
+              <h3 class="action-title">Join Meeting</h3>
+              <p class="action-description">Enter club code to join an active meeting</p>
+            </div>
+          </a>
+          <a href="club-base/" class="action-card">
+            <div class="action-image-wrapper">
+              <img src="assets/create_meeting_classic.webp" alt="Create Meeting" class="action-image" loading="eager" fetchpriority="high">
+            </div>
+            <div class="action-content">
+              <h3 class="action-title">Create Meeting</h3>
+              <p class="action-description">Start a new meeting for your club</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
 
     <footer class="footer">
       <div class="footer-container">
