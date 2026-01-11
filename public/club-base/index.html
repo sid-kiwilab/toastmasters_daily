@@ -703,7 +703,35 @@
         <div class="section-card">
           <h2 class="section-title">Subscription</h2>
           <div class="section-content">
-            <p style="color: #64748b;">Subscription details coming soon...</p>
+            <div class="profile-field">
+              <div class="field-label">Trial Period</div>
+              <div class="field-value" id="trial-date-value">
+                <span id="trial-date-text">Loading...</span>
+              </div>
+            </div>
+            <div class="profile-field" id="subscription-status-field" style="display: none;">
+              <div class="field-label">Subscription Status</div>
+              <div class="field-value" id="subscription-status-value">
+                <span id="subscription-status-text">Loading...</span>
+              </div>
+            </div>
+            <div class="profile-field">
+              <div class="field-label">Actions</div>
+              <div class="field-action">
+                <button id="subscribe-button" class="btn btn-primary" onclick="handleSubscribe()" style="display: none;">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  <span id="subscribe-button-text">Subscribe</span>
+                </button>
+                <button id="cancel-renewal-button" class="btn btn-logout" onclick="handleCancelRenewal()" style="display: none;">
+                  <span id="cancel-renewal-button-text">Stop Subscription</span>
+                </button>
+                <button id="resume-renewal-button" class="btn btn-primary" onclick="handleResumeRenewal()" style="display: none;">
+                  <span id="resume-renewal-button-text">Resume Subscription</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -766,6 +794,8 @@
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
   <script src="../js/firebase-config.js"></script>
   <script src="../js/notifications.js"></script>
   <script src="../js/auth-utils.js"></script>
@@ -823,6 +853,266 @@
     const clubAuth = initClubAuth();
     const memberAuth = initMemberAuth();
     
+    // Initialize Firestore and Functions
+    let clubDb = null;
+    let clubFunctions = null;
+    try {
+      const clubApp = firebase.app('club');
+      clubDb = firebase.firestore(clubApp);
+      clubFunctions = firebase.functions(clubApp);
+    } catch (e) {
+      console.error('Error initializing Firestore/Functions:', e);
+    }
+    
+    // Subscription state
+    let subscriptionUnsubscribe = null;
+    let isCreatingCheckoutSession = false;
+    let isCancellingSubscription = false;
+    let isResumingSubscription = false;
+    
+    // Load and watch subscription data
+    function loadSubscriptionData(userId) {
+      if (!clubDb || !userId) return;
+      
+      // Unsubscribe from previous listener if exists
+      if (subscriptionUnsubscribe) {
+        subscriptionUnsubscribe();
+        subscriptionUnsubscribe = null;
+      }
+      
+      const trialDateText = document.getElementById('trial-date-text');
+      const subscriptionStatusField = document.getElementById('subscription-status-field');
+      const subscriptionStatusText = document.getElementById('subscription-status-text');
+      const subscribeButton = document.getElementById('subscribe-button');
+      const cancelRenewalButton = document.getElementById('cancel-renewal-button');
+      const resumeRenewalButton = document.getElementById('resume-renewal-button');
+      
+      // Set up real-time listener
+      subscriptionUnsubscribe = clubDb.collection('users').doc(userId).onSnapshot((doc) => {
+        if (doc.exists) {
+          const userData = doc.data();
+          const trialEndDate = userData.trial_end_date;
+          const subscriptionStatus = userData.subscription;
+          const cancelAtPeriodEnd = userData.subscription_cancel_at_period_end;
+          const currentPeriodEnd = userData.subscription_current_period_end;
+          
+          // Update trial date
+          if (trialEndDate && trialDateText) {
+            const trialDate = trialEndDate.toDate();
+            const now = new Date();
+            const formattedDate = trialDate.toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            
+            const daysRemaining = Math.ceil((trialDate - now) / (1000 * 60 * 60 * 24));
+            
+            if (daysRemaining > 0) {
+              trialDateText.textContent = `Ends on ${formattedDate} (${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} remaining)`;
+            } else {
+              trialDateText.textContent = `Ended on ${formattedDate}`;
+            }
+          } else if (trialDateText) {
+            trialDateText.textContent = 'No trial started';
+          }
+          
+          // Update subscription status
+          const now = new Date();
+          const isActive = subscriptionStatus === 'active' || 
+            (trialEndDate && trialEndDate.toDate() > now);
+          
+          if (isActive && subscriptionStatus === 'active') {
+            // Show subscription status
+            if (subscriptionStatusField) subscriptionStatusField.style.display = 'block';
+            
+            if (subscriptionStatusText) {
+              if (cancelAtPeriodEnd && currentPeriodEnd) {
+                const periodEnd = currentPeriodEnd.toDate();
+                const formattedEnd = periodEnd.toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                });
+                subscriptionStatusText.textContent = `Active (ends on ${formattedEnd}, will not renew)`;
+              } else {
+                subscriptionStatusText.textContent = 'Active';
+              }
+            }
+            
+            // Show cancel or resume button
+            if (cancelAtPeriodEnd) {
+              if (subscribeButton) subscribeButton.style.display = 'none';
+              if (cancelRenewalButton) cancelRenewalButton.style.display = 'none';
+              if (resumeRenewalButton) resumeRenewalButton.style.display = 'inline-flex';
+            } else {
+              if (subscribeButton) subscribeButton.style.display = 'none';
+              if (cancelRenewalButton) cancelRenewalButton.style.display = 'inline-flex';
+              if (resumeRenewalButton) resumeRenewalButton.style.display = 'none';
+            }
+          } else {
+            // Show subscribe button
+            if (subscriptionStatusField) subscriptionStatusField.style.display = 'none';
+            if (subscribeButton) subscribeButton.style.display = 'inline-flex';
+            if (cancelRenewalButton) cancelRenewalButton.style.display = 'none';
+            if (resumeRenewalButton) resumeRenewalButton.style.display = 'none';
+            
+            if (subscriptionStatusText) {
+              subscriptionStatusText.textContent = 'Inactive';
+            }
+          }
+        } else {
+          // No document, show subscribe
+          if (trialDateText) trialDateText.textContent = 'No trial data found';
+          if (subscriptionStatusField) subscriptionStatusField.style.display = 'none';
+          if (subscribeButton) subscribeButton.style.display = 'inline-flex';
+          if (cancelRenewalButton) cancelRenewalButton.style.display = 'none';
+          if (resumeRenewalButton) resumeRenewalButton.style.display = 'none';
+        }
+      }, (error) => {
+        console.error('Error loading subscription data:', error);
+      });
+    }
+    
+    // Handle subscribe button click
+    async function handleSubscribe() {
+      const clubUser = clubAuth ? clubAuth.currentUser : null;
+      if (!clubUser) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please log in to subscribe');
+        }
+        return;
+      }
+      
+      // Check email verification
+      if (!clubUser.emailVerified) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please verify your email address before subscribing. Check your inbox for a verification email.');
+        }
+        return;
+      }
+      
+      if (isCreatingCheckoutSession) return;
+      
+      const subscribeButton = document.getElementById('subscribe-button');
+      const subscribeButtonText = document.getElementById('subscribe-button-text');
+      
+      isCreatingCheckoutSession = true;
+      if (subscribeButton) subscribeButton.disabled = true;
+      if (subscribeButtonText) subscribeButtonText.textContent = 'Processing...';
+      
+      try {
+        const priceId = 'price_1SVPGsCFYmZ3GbaT4UO5fRvQ';
+        const baseUrl = window.location.origin;
+        
+        // Call Firebase function to create checkout session
+        const createCheckoutSession = clubFunctions.httpsCallable('create_checkout_session');
+        const result = await createCheckoutSession({
+          price_id: priceId,
+          user_id: clubUser.uid,
+          email: clubUser.email,
+          base_url: baseUrl  // Base URL for redirect pages
+        });
+        
+        const sessionUrl = result.data.url;
+        
+        if (sessionUrl) {
+          // Navigate to checkout in the same page
+          window.location.href = sessionUrl;
+        } else {
+          throw new Error('No checkout URL returned');
+        }
+      } catch (error) {
+        console.error('Error creating checkout session:', error);
+        isCreatingCheckoutSession = false;
+        if (subscribeButton) {
+          subscribeButton.disabled = false;
+          if (subscribeButtonText) subscribeButtonText.textContent = 'Subscribe';
+        }
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Failed to start checkout. Please try again.');
+        }
+      }
+    }
+    
+    // Handle cancel renewal
+    async function handleCancelRenewal() {
+      if (!confirm('Are you sure you want to cancel auto-renewal?\n\nYour subscription will remain active until the end of the current billing period. After that, it will not renew automatically.')) {
+        return;
+      }
+      
+      if (isCancellingSubscription) return;
+      
+      const cancelButton = document.getElementById('cancel-renewal-button');
+      const cancelButtonText = document.getElementById('cancel-renewal-button-text');
+      
+      isCancellingSubscription = true;
+      if (cancelButton) cancelButton.disabled = true;
+      if (cancelButtonText) cancelButtonText.textContent = 'Processing...';
+      
+      try {
+        const cancelSubscription = clubFunctions.httpsCallable('cancel_subscription');
+        await cancelSubscription();
+        
+        if (typeof notifications !== 'undefined') {
+          notifications.success('Auto-renewal canceled. Subscription will end at the current period.');
+        }
+      } catch (error) {
+        console.error('Error canceling subscription:', error);
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Failed to cancel auto-renewal. Please try again.');
+        }
+      } finally {
+        isCancellingSubscription = false;
+        if (cancelButton) {
+          cancelButton.disabled = false;
+          if (cancelButtonText) cancelButtonText.textContent = 'Stop Subscription';
+        }
+      }
+    }
+    
+    // Handle resume renewal
+    async function handleResumeRenewal() {
+      if (!confirm('Resume automatic subscription renewal?\n\nYour subscription will automatically renew at the end of each billing period.')) {
+        return;
+      }
+      
+      if (isResumingSubscription) return;
+      
+      const resumeButton = document.getElementById('resume-renewal-button');
+      const resumeButtonText = document.getElementById('resume-renewal-button-text');
+      
+      isResumingSubscription = true;
+      if (resumeButton) resumeButton.disabled = true;
+      if (resumeButtonText) resumeButtonText.textContent = 'Processing...';
+      
+      try {
+        const resumeSubscription = clubFunctions.httpsCallable('resume_subscription');
+        const result = await resumeSubscription();
+        
+        if (result.data != null) {
+          if (typeof notifications !== 'undefined') {
+            notifications.success('Auto-renewal resumed successfully');
+          }
+        } else {
+          throw new Error('No response from server');
+        }
+      } catch (error) {
+        console.error('Error resuming subscription:', error);
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Failed to resume auto-renewal. Please try again.');
+        }
+      } finally {
+        isResumingSubscription = false;
+        if (resumeButton) {
+          resumeButton.disabled = false;
+          if (resumeButtonText) resumeButtonText.textContent = 'Resume Subscription';
+        }
+      }
+    }
+    
     let memberAuthResolved = false;
     let clubAuthResolved = false;
     
@@ -871,6 +1161,9 @@
             }
           }
         }
+        
+        // Load subscription data
+        loadSubscriptionData(clubUser.uid);
       } else {
         // User is not logged in, redirect to login
         window.location.href = '../club-login/';
