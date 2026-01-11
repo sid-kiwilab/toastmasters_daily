@@ -583,6 +583,12 @@
         color: #FFFFFF;
         letter-spacing: -0.2px;
         margin-bottom: 16px;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+      }
+      
+      .footer-logo:hover {
+        opacity: 0.8;
       }
       
       .footer-tagline {
@@ -801,7 +807,7 @@
       <div class="footer-container">
         <div class="footer-content">
           <div class="footer-brand">
-            <div class="footer-logo">Toastmasters Daily</div>
+            <a href="/" class="footer-logo" style="text-decoration: none; color: inherit; display: block;">Toastmasters Daily</a>
             <p class="footer-tagline">Speak better, every day</p>
           </div>
           
