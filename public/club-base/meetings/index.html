@@ -518,6 +518,10 @@
       border: 1px solid #e5e7eb;
       border-radius: 10px;
       transition: all 0.2s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
     }
     
     .meeting-detail-item:hover {
@@ -526,13 +530,20 @@
       transform: translateY(-1px);
     }
     
+    .meeting-detail-item a,
+    .meeting-detail-item button {
+      pointer-events: auto;
+    }
+    
     .meeting-detail-item:last-child {
       margin-bottom: 0;
     }
     
     .meeting-detail-item-header {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
       gap: 12px;
     }
     
@@ -546,13 +557,12 @@
       gap: 8px;
       margin-top: 12px;
       padding-top: 12px;
-      border-top: 1px solid #e5e7eb;
     }
     
     .meeting-detail-actions-btn {
       width: 100%;
       padding: 10px 14px;
-      background: transparent;
+      background: #f8fafc;
       border: 1px solid #e5e7eb;
       border-radius: 8px;
       cursor: pointer;
@@ -644,10 +654,10 @@
     }
     
     .meeting-detail-delete-btn {
-      padding: 6px;
+      padding: 10px;
       background: transparent;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       color: #dc2626;
       opacity: 0.6;
@@ -669,25 +679,60 @@
     }
     
     .meeting-detail-delete-btn svg {
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
+    }
+    
+    .meeting-detail-visit-btn {
+      padding: 10px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #004165;
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-right: 8px;
+    }
+    
+    .meeting-detail-visit-btn:hover {
+      opacity: 1;
+      background: #f0f9ff;
+    }
+    
+    .meeting-detail-visit-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .meeting-detail-item-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0;
     }
     
     /* Meeting Actions Dialog */
     .meeting-action-item {
-      padding: 14px 16px;
-      display: flex;
+      padding: 10px 16px;
+      display: inline-flex;
       align-items: center;
       gap: 12px;
       cursor: pointer;
-      transition: background 0.2s ease;
-      border-radius: 8px;
+      transition: all 0.2s ease;
+      border-radius: 4px;
       text-decoration: none;
       color: #060607;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 500;
+      font-family: 'GoogleSans', sans-serif;
       margin-bottom: 8px;
-      border: 1px solid #e5e7eb;
+      border: none;
+      background: #f2f3f5;
+      width: auto;
     }
     
     .meeting-action-item:last-child {
@@ -695,18 +740,59 @@
     }
     
     .meeting-action-item:hover {
-      background: #f8fafc;
-      border-color: #004165;
+      background: #e3e5e8;
     }
     
     .meeting-action-item svg {
-      width: 20px;
-      height: 20px;
-      color: #64748b;
+      width: 18px;
+      height: 18px;
+      color: #060607;
     }
     
     .meeting-action-item:hover svg {
-      color: #004165;
+      color: #060607;
+    }
+    
+    .meeting-action-item-primary {
+      background: #004165;
+      color: white;
+      width: 100%;
+    }
+    
+    .meeting-action-item-primary:hover {
+      background: #003049;
+    }
+    
+    .meeting-action-item-primary svg {
+      color: white;
+    }
+    
+    .meeting-action-item-primary:hover svg {
+      color: white;
+    }
+    
+    .meeting-action-group {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .meeting-action-group:last-of-type {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    
+    .meeting-action-group-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
     }
     
     .create-meeting-button-container {
@@ -1768,25 +1854,17 @@
             
             const actionsSection = `
               <div class="meeting-detail-item-actions">
-                <button class="meeting-detail-actions-btn" onclick="showMeetingActionsDialog('${meeting.id}', '${escapeHtml(meeting.title || 'Untitled Meeting')}', ${meeting.agendaUrl ? "'" + meeting.agendaUrl.replace(/'/g, "\\'").replace(/\\/g, '\\\\') + "'" : 'null'})">
+                <button class="meeting-detail-actions-btn" onclick="event.stopPropagation(); event.preventDefault(); showMeetingActionsDialog('${meeting.id}', '${escapeHtml(meeting.title || 'Untitled Meeting')}', ${meeting.agendaUrl ? "'" + meeting.agendaUrl.replace(/'/g, "\\'").replace(/\\/g, '\\\\') + "'" : 'null'})">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                   </svg>
                   <span>Actions</span>
                 </button>
-                ${canCreateMeetings ? `
-                  <button class="meeting-detail-delete-btn-full" onclick="deleteMeeting('${meeting.id}')">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    <span>Delete</span>
-                  </button>
-                ` : ''}
               </div>
             `;
             
             return `
-              <div class="meeting-detail-item">
+              <a href="/meetings/${meeting.id}" class="meeting-detail-item" target="_blank">
                 <div class="meeting-detail-item-header">
                   <div class="meeting-detail-item-content">
                     <div class="meeting-detail-title">
@@ -1802,9 +1880,23 @@
                       </div>
                     ` : '<div class="meeting-detail-time">No time specified</div>'}
                   </div>
+                  <div class="meeting-detail-item-header-actions">
+                    <button class="meeting-detail-visit-btn" onclick="event.stopPropagation(); event.preventDefault(); window.open('/meetings/${meeting.id}', '_blank')" title="Visit meeting">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </button>
+                    ${canCreateMeetings ? `
+                      <button class="meeting-detail-delete-btn" onclick="event.stopPropagation(); event.preventDefault(); deleteMeeting('${meeting.id}')" title="Delete meeting">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    ` : ''}
+                  </div>
                 </div>
                 ${actionsSection}
-              </div>
+              </a>
             `;
           }).join('');
         } else {
@@ -2461,12 +2553,6 @@
         overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
         
-        // Update the visit meeting link
-        const visitLink = document.getElementById('meeting-actions-visit-link');
-        if (visitLink) {
-          visitLink.href = `/meetings/${meetingId}`;
-        }
-        
         // Show/hide view agenda button
         const viewAgendaBtn = document.getElementById('meeting-actions-view-agenda');
         if (viewAgendaBtn) {
@@ -2840,37 +2926,37 @@
       <h3 class="dialog-title">Meeting Actions</h3>
       <p class="dialog-message" style="margin-bottom: 16px; color: #64748b; font-size: 14px;" id="meeting-actions-dialog-title"></p>
       <div style="display: flex; flex-direction: column; gap: 0;">
-        <a href="#" id="meeting-actions-visit-link" class="meeting-action-item" target="_blank" onclick="hideMeetingActionsDialog()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-          Visit Meeting
-        </a>
-        <button class="meeting-action-item" onclick="uploadAgenda()" id="meeting-actions-upload-agenda">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-          Upload Agenda
-        </button>
-        <button class="meeting-action-item" onclick="setupPolls()" id="meeting-actions-setup-polls">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-          </svg>
-          Set Up Polls
-        </button>
-        <a href="#" id="meeting-actions-view-agenda" class="meeting-action-item" target="_blank" onclick="hideMeetingActionsDialog()" style="display: none;">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          View Agenda
-        </a>
-        <button class="meeting-action-item" onclick="viewPolls()" id="meeting-actions-view-polls" style="display: none;">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          View Polls
-        </button>
+        <div class="meeting-action-group">
+          <div class="meeting-action-group-title">Agenda</div>
+          <button class="meeting-action-item" onclick="uploadAgenda()" id="meeting-actions-upload-agenda">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Upload Agenda
+          </button>
+          <a href="#" id="meeting-actions-view-agenda" class="meeting-action-item" target="_blank" onclick="hideMeetingActionsDialog()" style="display: none;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            View Agenda
+          </a>
+        </div>
+        
+        <div class="meeting-action-group">
+          <div class="meeting-action-group-title">Polls</div>
+          <button class="meeting-action-item" onclick="setupPolls()" id="meeting-actions-setup-polls">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            Set Up Polls
+          </button>
+          <button class="meeting-action-item" onclick="viewPolls()" id="meeting-actions-view-polls" style="display: none;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            View Polls
+          </button>
+        </div>
       </div>
       <input type="file" id="agenda-file-input" accept=".pdf" style="display: none;" onchange="handleAgendaFileSelect(event)">
       <div class="dialog-actions" style="margin-top: 24px;">
