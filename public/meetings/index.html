@@ -32,215 +32,302 @@
       color: #1a1f3a;
     }
     
-    .header {
-      padding: 24px 32px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #ffffff;
-      border-bottom: 1px solid #e5e7eb;
+    
+    /* Main Content */
+    .main-content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 40px;
     }
     
-    .logo {
+    .meeting-header {
+      margin-bottom: 16px;
+    }
+    
+    .meeting-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #212121;
+      letter-spacing: -1px;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    
+    .welcome-greeting {
+      font-size: 24px;
+      font-weight: 600;
+      color: #424242;
+      line-height: 1.3;
+      margin-bottom: 32px;
+    }
+    
+    .decorative-line {
       display: flex;
       align-items: center;
       gap: 12px;
-      text-decoration: none;
+      margin-bottom: 40px;
     }
     
-    .logo img {
-      height: 32px;
-      width: auto;
+    .decorative-line-segment {
+      height: 3px;
+      border-radius: 2px;
     }
     
-    .logo-text {
+    .decorative-line-segment-1 {
+      width: 40px;
+      background: linear-gradient(90deg, #C41E3A, #003366);
+    }
+    
+    .decorative-line-segment-2 {
+      width: 60px;
+      background: #E0E0E0;
+    }
+    
+    .decorative-line-segment-3 {
+      width: 40px;
+      background: linear-gradient(90deg, #003366, #C41E3A);
+    }
+    
+    .section-header {
       font-size: 24px;
-      font-weight: 600;
-      color: #1a1f3a;
+      font-weight: 700;
+      color: #212121;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
     }
     
-    /* Hero Section */
-    .hero {
-      min-height: 60vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 100px 32px 80px;
-      text-align: center;
-      position: relative;
+    .action-card {
       background: #ffffff;
-      border-bottom: 1px solid #e5e7eb;
+      border: 2px solid #E0E0E0;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+      cursor: pointer;
     }
     
-    .hero-content {
-      max-width: 900px;
-      position: relative;
-      z-index: 1;
+    .action-card:hover {
+      border-color: #004165;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
     
-    .meeting-icon-large {
-      width: 100px;
-      height: 100px;
-      border-radius: 20px;
+    .action-card-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
       background: linear-gradient(135deg, #004165, #003049);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 32px;
+      flex-shrink: 0;
     }
     
-    .meeting-icon-large svg {
-      width: 50px;
-      height: 50px;
+    .action-card-icon svg {
+      width: 28px;
+      height: 28px;
       color: #FFFFFF;
     }
     
-    .meeting-title {
-      font-size: 64px;
-      font-weight: 900;
-      color: #0f172a;
-      letter-spacing: -2px;
-      line-height: 0.95;
-      margin-bottom: 24px;
+    .action-card-content {
+      flex: 1;
     }
     
-    .meeting-datetime-hero {
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      gap: 8px;
+    .action-card-title {
       font-size: 18px;
-      color: #64748b;
+      font-weight: 600;
+      color: #212121;
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+    
+    .action-card-description {
+      font-size: 14px;
       font-weight: 400;
-      margin-bottom: 0;
-      max-width: 680px;
-      margin-left: auto;
-      margin-right: auto;
-      line-height: 1.7;
+      color: #757575;
+      line-height: 1.5;
+      word-wrap: break-word;
+      max-height: 3em;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
-    .meeting-datetime-hero svg {
-      width: 20px;
-      height: 20px;
-      color: #94a3b8;
+    .action-card-arrow {
+      width: 24px;
+      height: 24px;
+      color: #757575;
       flex-shrink: 0;
-      margin-top: 3px;
     }
     
-    .meeting-datetime-hero span {
-      text-align: center;
+    .exit-meeting-section {
+      margin-top: 40px;
     }
     
-    /* Main Content Sections */
-    .main-content {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 100px 32px;
-    }
-    
-    .section-title {
-      font-size: 36px;
-      font-weight: 800;
-      color: #0f172a;
-      margin-bottom: 32px;
-      letter-spacing: -1px;
-    }
-    
-    /* Club Info Section */
-    .club-info-card {
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 20px;
-      padding: 32px;
-      margin-bottom: 48px;
-    }
-    
-    .club-info-title {
-      font-size: 22px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 16px;
-      letter-spacing: -0.5px;
-    }
-    
-    .club-name-link {
-      font-size: 20px;
-      font-weight: 600;
-      color: #004165;
-      text-decoration: none;
-      margin-bottom: 8px;
-      display: block;
-    }
-    
-    .club-name-link:hover {
-      text-decoration: underline;
-    }
-    
-    .club-location {
+    /* Exit Meeting Dialog */
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
       display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      font-size: 16px;
-      color: #64748b;
-      margin-top: 8px;
-    }
-    
-    .club-location svg {
-      width: 18px;
-      height: 18px;
-      color: #94a3b8;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-    
-    /* Description Section */
-    .description-section {
-      margin-top: 48px;
-    }
-    
-    .description-content {
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 20px;
-      padding: 48px;
-      font-size: 17px;
-      line-height: 1.7;
-      color: #64748b;
-      white-space: pre-wrap;
-    }
-    
-    /* Agenda Section */
-    .agenda-section {
-      margin-top: 48px;
-    }
-    
-    .agenda-link {
-      display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 14px 24px;
-      background: #004165;
-      color: #FFFFFF;
-      text-decoration: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 600;
-      transition: background 0.2s ease;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
     }
     
-    .agenda-link:hover {
+    .dialog-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .dialog {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+    
+    .dialog-overlay.active .dialog {
+      transform: scale(1);
+    }
+    
+    .dialog-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #060607;
+      margin-bottom: 12px;
+    }
+    
+    .dialog-message {
+      font-size: 16px;
+      color: #4f5660;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    
+    .dialog-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    
+    .dialog-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'GoogleSans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .dialog-btn-cancel {
+      background: #f2f3f5;
+      color: #060607;
+    }
+    
+    .dialog-btn-cancel:hover {
+      background: #e3e5e8;
+    }
+    
+    .dialog-btn-confirm {
+      background: #004165;
+      color: #ffffff;
+    }
+    
+    .dialog-btn-confirm:hover {
       background: #003049;
     }
     
-    .agenda-link svg {
-      width: 20px;
-      height: 20px;
+    .dialog-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
+    
+    /* PDF Viewer Modal */
+    .pdf-viewer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000000;
+      z-index: 10000;
+      display: none;
+      overflow: hidden;
+    }
+    
+    .pdf-viewer-overlay.active {
+      display: block;
+    }
+    
+    .pdf-close-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 10001;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .pdf-close-btn:hover {
+      background: #ffffff;
+      transform: scale(1.1);
+    }
+    
+    .pdf-close-btn svg {
+      width: 24px;
+      height: 24px;
+      color: #212121;
+    }
+    
+    .pdf-viewer-object {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #000000;
+    }
+    
+    /* Hide PDF viewer UI elements */
+    .pdf-viewer-overlay ::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .pdf-viewer-overlay * {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
     
     .loading-container {
       min-height: 70vh;
-      padding: 100px 32px;
+      padding: 32px 40px;
     }
     
     .shimmer {
@@ -255,32 +342,6 @@
       100% { background-position: 200% 0; }
     }
     
-    .shimmer-hero-icon {
-      width: 100px;
-      height: 100px;
-      margin: 0 auto 32px;
-      border-radius: 20px;
-    }
-    
-    .shimmer-hero-title {
-      width: 400px;
-      height: 80px;
-      margin: 0 auto 24px;
-      max-width: 100%;
-    }
-    
-    .shimmer-hero-datetime {
-      width: 250px;
-      height: 24px;
-      margin: 0 auto;
-      max-width: 100%;
-    }
-    
-    .shimmer-card {
-      width: 100%;
-      height: 120px;
-      margin-bottom: 24px;
-    }
     
     .error-container {
       display: flex;
@@ -326,66 +387,53 @@
     }
     
     @media (max-width: 768px) {
-      .hero {
-        padding: 80px 24px 60px;
-        min-height: 50vh;
-      }
-      
-      .meeting-icon-large {
-        width: 80px;
-        height: 80px;
-        margin-bottom: 24px;
+      .main-content {
+        padding: 32px 24px;
       }
       
       .meeting-title {
-        font-size: 48px;
-        letter-spacing: -1.5px;
-      }
-      
-      .meeting-datetime-hero {
-        font-size: 16px;
-      }
-      
-      .main-content {
-        padding: 80px 24px;
-      }
-      
-      .section-title {
         font-size: 28px;
-        letter-spacing: -0.8px;
       }
       
-      .club-info-card {
-        padding: 24px;
+      .welcome-greeting {
+        font-size: 20px;
       }
       
-      .description-content {
-        padding: 32px;
-        font-size: 16px;
+      .section-header {
+        font-size: 20px;
+      }
+      
+      .action-card {
+        padding: 20px;
+      }
+      
+      .action-card-icon {
+        width: 48px;
+        height: 48px;
+      }
+      
+      .action-card-icon svg {
+        width: 24px;
+        height: 24px;
+      }
+      
+      .loading-container {
+        padding: 32px 24px;
       }
     }
   </style>
 </head>
 <body>
-  <header class="header">
-    <a href="/" class="logo">
-      <img src="../assets/logo.png" alt="Toastmasters Daily">
-      <span class="logo-text">Toastmasters Daily</span>
-    </a>
-  </header>
-  
   <main>
     <div id="loading-state" class="loading-container">
-      <section class="hero">
-        <div class="hero-content">
-          <div class="shimmer shimmer-hero-icon"></div>
-          <div class="shimmer shimmer-hero-title"></div>
-          <div class="shimmer shimmer-hero-datetime"></div>
-        </div>
-      </section>
       <div class="main-content">
-        <div class="shimmer shimmer-card"></div>
-        <div class="shimmer shimmer-card"></div>
+        <div class="shimmer" style="width: 60%; height: 32px; margin-bottom: 16px;"></div>
+        <div class="shimmer" style="width: 40%; height: 24px; margin-bottom: 32px;"></div>
+        <div class="shimmer" style="width: 140px; height: 3px; margin-bottom: 40px;"></div>
+        <div class="shimmer" style="width: 150px; height: 24px; margin-bottom: 16px;"></div>
+        <div class="shimmer" style="width: 100%; height: 80px; margin-bottom: 16px; border-radius: 12px;"></div>
+        <div class="shimmer" style="width: 150px; height: 24px; margin-top: 40px; margin-bottom: 16px;"></div>
+        <div class="shimmer" style="width: 100%; height: 80px; margin-bottom: 16px; border-radius: 12px;"></div>
       </div>
     </div>
     
@@ -396,60 +444,84 @@
     </div>
     
     <div id="meeting-content" style="display: none;">
-      <!-- Hero Section -->
-      <section class="hero">
-        <div class="hero-content">
-          <div class="meeting-icon-large">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h1 class="meeting-title" id="meeting-title"></h1>
-          <div class="meeting-datetime-hero" id="meeting-datetime-hero" style="display: none;">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span id="meeting-datetime-text"></span>
-          </div>
-        </div>
-      </section>
-      
       <!-- Main Content -->
       <div class="main-content">
-        <!-- Club Info Section -->
-        <div id="club-info-section" style="display: none;">
-          <div class="club-info-card">
-            <div class="club-info-title">Hosted by</div>
-            <a href="#" id="club-name-link" class="club-name-link"></a>
-            <div class="club-location" id="club-location" style="display: none;">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span id="club-location-text"></span>
-            </div>
+        <!-- Meeting Header -->
+        <div class="meeting-header">
+          <h1 class="meeting-title" id="meeting-title"></h1>
+          <div class="welcome-greeting" id="welcome-greeting">Welcome!</div>
+          
+          <!-- Decorative Line -->
+          <div class="decorative-line">
+            <div class="decorative-line-segment decorative-line-segment-1"></div>
+            <div class="decorative-line-segment decorative-line-segment-2"></div>
+            <div class="decorative-line-segment decorative-line-segment-3"></div>
           </div>
         </div>
         
-        <!-- Description Section -->
-        <div id="description-section" class="description-section" style="display: none;">
-          <h2 class="section-title">About this Meeting</h2>
-          <div id="description-content" class="description-content"></div>
+        <!-- Quick Actions Section -->
+        <div class="quick-actions-section">
+          <h2 class="section-header">Quick Actions</h2>
+          
+          <!-- View Agenda Card -->
+          <div id="agenda-card" class="action-card" style="display: none;">
+            <div class="action-card-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div class="action-card-content">
+              <div class="action-card-title">View Agenda</div>
+              <div class="action-card-description">Open agenda in full screen</div>
+            </div>
+            <svg class="action-card-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
         </div>
         
-        <!-- Agenda Section -->
-        <div id="agenda-section" class="agenda-section" style="display: none;">
-          <h2 class="section-title">Agenda</h2>
-          <a href="#" id="agenda-link" class="agenda-link" target="_blank">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <!-- Exit Meeting Section -->
+        <div class="exit-meeting-section">
+          <div class="action-card" onclick="showExitMeetingDialog()">
+            <div class="action-card-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+            <div class="action-card-content">
+              <div class="action-card-title">Exit Meeting</div>
+              <div class="action-card-description">Leave the meeting</div>
+            </div>
+            <svg class="action-card-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
-            Download Agenda
-          </a>
+          </div>
         </div>
       </div>
     </div>
   </main>
+  
+  <!-- PDF Viewer Modal -->
+  <div class="pdf-viewer-overlay" id="pdf-viewer-overlay">
+    <button class="pdf-close-btn" onclick="closePdfViewer()" title="Close">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+    <object id="pdf-viewer-object" class="pdf-viewer-object" type="application/pdf" data=""></object>
+  </div>
+  
+  <!-- Exit Meeting Dialog -->
+  <div class="dialog-overlay" id="exit-meeting-dialog-overlay" onclick="if(event.target === this) hideExitMeetingDialog()">
+    <div class="dialog">
+      <h3 class="dialog-title">Exit Meeting</h3>
+      <p class="dialog-message">Are you sure you want to exit the meeting?</p>
+      <div class="dialog-actions">
+        <button class="dialog-btn dialog-btn-cancel" onclick="hideExitMeetingDialog()">Cancel</button>
+        <button class="dialog-btn dialog-btn-confirm" id="exit-meeting-confirm-btn" onclick="confirmExitMeeting()">Exit</button>
+      </div>
+    </div>
+  </div>
   
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -504,6 +576,102 @@
       return `${dayName}, ${dateStr} at ${timeStr}`;
     }
     
+    // Get random exciting welcome message
+    function getRandomWelcomeMessage() {
+      const messages = [
+        'Hi there! 👋',
+        "Let's have fun!",
+        'Hey!',
+        'Welcome aboard!',
+        'Hello!',
+        'Glad you\'re here!',
+        'Welcome to the meeting!',
+        'Great to see you!',
+        'Ready to get started?',
+        'Excited to have you here!',
+        'Welcome! Let\'s make it great!',
+        'Hello and welcome!',
+        'So glad you could join!',
+        'Welcome! Time to shine!',
+        'Hey there! Ready to go?'
+      ];
+      return messages[Math.floor(Math.random() * messages.length)];
+    }
+    
+    // PDF Viewer functions
+    function openPdfViewer(pdfUrl) {
+      const overlay = document.getElementById('pdf-viewer-overlay');
+      const pdfObject = document.getElementById('pdf-viewer-object');
+      const header = document.querySelector('.header');
+      const meetingContent = document.getElementById('meeting-content');
+      
+      // Hide header and main content
+      if (header) header.style.display = 'none';
+      if (meetingContent) meetingContent.style.display = 'none';
+      
+      // Set PDF URL - add parameters to hide all PDF viewer UI
+      pdfObject.data = pdfUrl + '#toolbar=0&navpanes=0&scrollbar=1&view=FitH';
+      
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      document.body.style.background = '#000000';
+    }
+    
+    function closePdfViewer() {
+      const overlay = document.getElementById('pdf-viewer-overlay');
+      const pdfObject = document.getElementById('pdf-viewer-object');
+      const header = document.querySelector('.header');
+      const meetingContent = document.getElementById('meeting-content');
+      
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+      document.body.style.background = '#ffffff';
+      
+      // Show header and main content again
+      if (header) header.style.display = 'flex';
+      if (meetingContent) meetingContent.style.display = 'block';
+      
+      // Clear PDF data to stop loading
+      setTimeout(() => {
+        pdfObject.data = '';
+      }, 300);
+    }
+    
+    // Exit Meeting Dialog functions
+    function showExitMeetingDialog() {
+      const overlay = document.getElementById('exit-meeting-dialog-overlay');
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function hideExitMeetingDialog() {
+      const overlay = document.getElementById('exit-meeting-dialog-overlay');
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+    
+    function confirmExitMeeting() {
+      // Redirect to club page if club code exists, otherwise go to home
+      if (window.clubCode) {
+        window.location.href = `/clubs/${window.clubCode}`;
+      } else {
+        window.location.href = '/';
+      }
+    }
+    
+    // Close PDF viewer on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const pdfOverlay = document.getElementById('pdf-viewer-overlay');
+        const exitDialog = document.getElementById('exit-meeting-dialog-overlay');
+        if (pdfOverlay.classList.contains('active')) {
+          closePdfViewer();
+        } else if (exitDialog.classList.contains('active')) {
+          hideExitMeetingDialog();
+        }
+      }
+    });
+    
     async function loadMeetingData() {
       const meetingId = getMeetingIdFromUrl();
       
@@ -554,41 +722,23 @@
         // Display meeting title
         document.getElementById('meeting-title').textContent = meetingData?.title || 'Untitled Meeting';
         
-        // Display meeting datetime
-        if (meetingData?.meeting_datetime) {
-          const meetingDate = meetingData.meeting_datetime.toDate();
-          document.getElementById('meeting-datetime-hero').style.display = 'flex';
-          document.getElementById('meeting-datetime-text').textContent = formatDateTime(meetingDate);
-        }
+        // Display random welcome message
+        document.getElementById('welcome-greeting').textContent = getRandomWelcomeMessage();
         
-        // Display club info
-        if (userData?.club_name) {
-          document.getElementById('club-info-section').style.display = 'block';
-          const clubNameLink = document.getElementById('club-name-link');
-          clubNameLink.textContent = userData.club_name;
-          
-          // Get club code if available
-          if (userData?.club_code) {
-            clubNameLink.href = `/clubs/${userData.club_code}`;
-          }
-          
-          if (userData?.club_location) {
-            document.getElementById('club-location').style.display = 'flex';
-            document.getElementById('club-location-text').textContent = userData.club_location;
-          }
-        }
-        
-        // Display description
-        if (meetingData?.description) {
-          document.getElementById('description-section').style.display = 'block';
-          document.getElementById('description-content').textContent = meetingData.description;
-        }
-        
-        // Display agenda link
+        // Display agenda card
         const agendaUrl = meetingData?.agenda_url || meetingData?.agendaUrl;
         if (agendaUrl) {
-          document.getElementById('agenda-section').style.display = 'block';
-          document.getElementById('agenda-link').href = agendaUrl;
+          const agendaCard = document.getElementById('agenda-card');
+          agendaCard.style.display = 'flex';
+          agendaCard.onclick = (e) => {
+            e.preventDefault();
+            openPdfViewer(agendaUrl);
+          };
+        }
+        
+        // Store club code for exit meeting redirect
+        if (userData?.club_code) {
+          window.clubCode = userData.club_code;
         }
         
         showMeetingContent();
