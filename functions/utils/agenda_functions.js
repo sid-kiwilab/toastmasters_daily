@@ -80,7 +80,7 @@ const upload_agenda_handler = async (data, context) => {
       }
       
       // Update only the user's meetings document with agenda_url
-      const userMeetingRef = db.collection('club').doc(creator_id).collection('meetings').doc(data.meetingId);
+      const userMeetingRef = db.collection('users').doc(creator_id).collection('meetings').doc(data.meetingId);
       await userMeetingRef.update({
         agenda_url: publicUrl
       });

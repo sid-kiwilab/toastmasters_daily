@@ -124,7 +124,7 @@ const get_speech_upload_url_handler = async (data, context) => {
     const filePath = `speeches/${userId}/${timestamp}-${sanitizedFileName}`;
     
     // Generate unique video ID
-    const videoId = db.collection('club').doc(userId).collection('videos').doc().id;
+    const videoId = db.collection('users').doc(userId).collection('videos').doc().id;
     
     // Build public URL
     const publicUrl = r2Config.publicUrl 
@@ -144,7 +144,7 @@ const get_speech_upload_url_handler = async (data, context) => {
     // Use transaction to atomically create document with ready status
     // Since URL generation succeeded, we can safely create the document
     await db.runTransaction(async (transaction) => {
-      const videoRef = db.collection('club').doc(userId).collection('videos').doc(videoId);
+      const videoRef = db.collection('users').doc(userId).collection('videos').doc(videoId);
       
       // Check if document already exists (shouldn't happen, but be safe)
       const existingDoc = await transaction.get(videoRef);
@@ -227,7 +227,7 @@ const update_video_status_handler = async (data, context) => {
 
     // Use transaction to atomically check current state and update
     const result = await db.runTransaction(async (transaction) => {
-      const videoRef = db.collection('club').doc(userId).collection('videos').doc(videoId);
+      const videoRef = db.collection('users').doc(userId).collection('videos').doc(videoId);
       const videoDoc = await transaction.get(videoRef);
 
       if (!videoDoc.exists) {
@@ -294,7 +294,7 @@ const complete_video_upload_handler = async (data, context) => {
 
     // Use transaction to atomically update status
     const result = await db.runTransaction(async (transaction) => {
-      const videoRef = db.collection('club').doc(userId).collection('videos').doc(videoId);
+      const videoRef = db.collection('users').doc(userId).collection('videos').doc(videoId);
       const videoDoc = await transaction.get(videoRef);
 
       if (!videoDoc.exists) {

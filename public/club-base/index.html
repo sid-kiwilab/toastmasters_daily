@@ -177,14 +177,6 @@
       overflow-y: auto;
     }
     
-    .content-section {
-      display: none;
-    }
-    
-    .content-section.active {
-      display: block;
-    }
-    
     .section-card {
       background: #ffffff;
       border-radius: 0;
@@ -472,6 +464,22 @@
       }
     }
     
+    .field-content-loading {
+      display: none;
+    }
+    
+    .field-content-loaded {
+      display: inline;
+    }
+    
+    #verify-button.field-content-loaded {
+      display: inline-flex;
+    }
+    
+    #verification-badge.field-content-loaded {
+      display: inline-flex;
+    }
+    
     .user-info.loading {
       opacity: 0;
     }
@@ -579,7 +587,7 @@
       color: rgba(255, 255, 255, 0.6);
     }
     
-    @media (max-width: 768px) {
+    @media (max-width: 1024px) {
       .footer {
         padding: 40px 24px 20px;
       }
@@ -642,6 +650,46 @@
       .mobile-overlay {
         display: block;
       }
+      
+      .profile-field {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 20px 0;
+      }
+      
+      .field-label {
+        padding-top: 0;
+        margin-bottom: 8px;
+      }
+      
+      .field-action {
+        margin-top: 8px;
+        justify-content: flex-start;
+      }
+      
+      .field-value {
+        flex-wrap: wrap;
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+      
+      .field-description {
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+      
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .main-content {
+        padding: 80px 16px 24px;
+      }
+      
+      .section-content {
+        overflow-x: hidden;
+      }
     }
   </style>
 </head>
@@ -662,7 +710,7 @@
         <p class="sidebar-subtitle">Dashboard</p>
       </div>
       <nav class="sidebar-nav">
-        <a href="#" class="nav-item active" data-section="profile" onclick="switchSection('profile', event)">
+        <a href="./" class="nav-item active">
           <div class="nav-item-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -670,7 +718,7 @@
           </div>
           <span>Profile</span>
         </a>
-        <a href="#" class="nav-item" data-section="subscription" onclick="switchSection('subscription', event)">
+        <a href="./subscription/" class="nav-item">
           <div class="nav-item-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -678,7 +726,7 @@
           </div>
           <span>Subscription</span>
         </a>
-        <a href="#" class="nav-item" data-section="meetings" onclick="switchSection('meetings', event)">
+        <a href="./meetings/" class="nav-item">
           <div class="nav-item-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -700,109 +748,42 @@
     <!-- Main Content Area -->
     <div class="main-content">
       <!-- Profile Section -->
-      <div class="content-section active" id="profile-section">
-        <div class="section-card">
-          <h2 class="section-title">My Account</h2>
-          <div class="section-content">
-            <div id="profile-shimmer">
-              <div class="shimmer shimmer-line" style="margin-bottom: 16px;"></div>
-              <div class="shimmer shimmer-line" style="width: 200px; margin-bottom: 16px;"></div>
+      <div class="section-card">
+        <h2 class="section-title">My Account</h2>
+        <div class="section-content">
+          <div class="profile-field">
+            <div class="field-label">Email Address</div>
+            <div class="field-main">
+              <div class="field-value">
+                <span id="email-shimmer" class="shimmer shimmer-line"></span>
+                <span id="email-value" class="field-content-loading"></span>
+                <span id="verification-badge-shimmer" class="shimmer" style="width: 80px; height: 24px; display: inline-block; vertical-align: middle;"></span>
+                <span class="field-badge field-content-loading" id="verification-badge"></span>
+              </div>
+              <div class="field-description">Used for account recovery and important notifications</div>
             </div>
-            <div id="profile-content" style="display: none;">
-              <div class="profile-field">
-                <div class="field-label">Email Address</div>
-                <div class="field-main">
-                  <div class="field-value">
-                    <span id="email-value"></span>
-                    <span class="field-badge" id="verification-badge"></span>
-                  </div>
-                  <div class="field-description">Used for account recovery and important notifications</div>
-                </div>
-                <div class="field-action">
-                  <button id="verify-button" class="btn btn-primary" onclick="sendVerificationEmail()">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span id="verify-button-text">Verify Email</span>
-                  </button>
-                </div>
-              </div>
-              <div class="profile-field">
-                <div class="field-label">Sign Out</div>
-                <div class="field-main">
-                  <div class="field-value">Sign out of your account on this device</div>
-                  <div class="field-description">You'll need to sign in again to access your account</div>
-                </div>
-                <div class="field-action">
-                  <button id="logout-btn" class="btn btn-logout">Logout</button>
-                </div>
-              </div>
+            <div class="field-action">
+              <span id="verify-button-shimmer" class="shimmer" style="width: 120px; height: 36px; display: inline-block;"></span>
+              <button id="verify-button" class="btn btn-primary field-content-loading" onclick="sendVerificationEmail()" style="display: none;">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span id="verify-button-text">Verify Email</span>
+              </button>
+            </div>
+          </div>
+          <div class="profile-field">
+            <div class="field-label">Sign Out</div>
+            <div class="field-main">
+              <div class="field-value">Sign out of your account on this device</div>
+              <div class="field-description">You'll need to sign in again to access your account</div>
+            </div>
+            <div class="field-action">
+              <button id="logout-btn" class="btn btn-logout">Logout</button>
             </div>
           </div>
         </div>
       </div>
-      
-      <!-- Subscription Section -->
-      <div class="content-section" id="subscription-section">
-        <div class="section-card">
-          <h2 class="section-title">Subscription</h2>
-          <div class="section-content">
-            <div class="profile-field">
-              <div class="field-label">Trial Period</div>
-              <div class="field-main">
-                <div class="field-value" id="trial-date-value">
-                  <span id="trial-date-text">Loading...</span>
-                </div>
-                <div class="field-description">Your free trial allows access to all features</div>
-              </div>
-              <div class="field-action"></div>
-            </div>
-            <div class="profile-field" id="subscription-status-field" style="display: none;">
-              <div class="field-label">Subscription</div>
-              <div class="field-main">
-                <div class="field-value" id="subscription-status-value">
-                  <span id="subscription-status-text">Loading...</span>
-                </div>
-                <div class="field-description" id="subscription-description">Manage your subscription and billing</div>
-              </div>
-              <div class="field-action"></div>
-            </div>
-            <div class="profile-field">
-              <div class="field-label">Manage</div>
-              <div class="field-main">
-                <div class="field-value" style="color: #64748b; font-size: 14px;" id="subscription-action-description">
-                  Subscribe to continue using all features after your trial
-                </div>
-              </div>
-              <div class="field-action">
-                <button id="subscribe-button" class="btn btn-primary" onclick="handleSubscribe()" style="display: none;">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                  <span id="subscribe-button-text">Subscribe</span>
-                </button>
-                <button id="cancel-renewal-button" class="btn btn-logout" onclick="handleCancelRenewal()" style="display: none;">
-                  <span id="cancel-renewal-button-text">Stop Auto-Renewal</span>
-                </button>
-                <button id="resume-renewal-button" class="btn btn-primary" onclick="handleResumeRenewal()" style="display: none;">
-                  <span id="resume-renewal-button-text">Resume Auto-Renewal</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Meetings Section -->
-      <div class="content-section" id="meetings-section">
-        <div class="section-card">
-          <h2 class="section-title">Meetings</h2>
-          <div class="section-content">
-            <p style="color: #64748b;">Meetings management coming soon...</p>
-          </div>
-        </div>
-      </div>
-      
     </div>
   </div>
   
@@ -861,6 +842,18 @@
     // Set current year
     document.getElementById('current-year').textContent = new Date().getFullYear();
     
+    // Set active navigation item based on current URL
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+      const href = item.getAttribute('href');
+      if (href && (currentPath === '/club-base/' || currentPath === '/club-base/index.html') && href === './') {
+        item.classList.add('active');
+      } else if (href && currentPath.includes(href.replace('./', '')) && href !== './' && href !== '/') {
+        item.classList.add('active');
+      }
+    });
+    
     // Toggle sidebar on mobile
     function toggleSidebar() {
       const sidebar = document.querySelector('.sidebar');
@@ -873,325 +866,9 @@
       document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
     }
     
-    // Section switching
-    function switchSection(sectionName, event) {
-      if (event) {
-        event.preventDefault();
-      }
-      
-      // Hide all sections
-      document.querySelectorAll('.content-section').forEach(section => {
-        section.classList.remove('active');
-      });
-      
-      // Remove active class from all nav items
-      document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-      });
-      
-      // Show selected section
-      const targetSection = document.getElementById(sectionName + '-section');
-      if (targetSection) {
-        targetSection.classList.add('active');
-      }
-      
-      // Add active class to clicked nav item
-      if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-      }
-      
-      // Close sidebar on mobile after selection
-      if (window.innerWidth <= 768) {
-        toggleSidebar();
-      }
-    }
-    
     // Initialize Firebase
     const clubAuth = initClubAuth();
     const memberAuth = initMemberAuth();
-    
-    // Initialize Firestore and Functions
-    let clubDb = null;
-    let clubFunctions = null;
-    try {
-      const clubApp = firebase.app('club');
-      clubDb = firebase.firestore(clubApp);
-      clubFunctions = firebase.functions(clubApp);
-    } catch (e) {
-      console.error('Error initializing Firestore/Functions:', e);
-    }
-    
-    // Subscription state
-    let subscriptionUnsubscribe = null;
-    let isCreatingCheckoutSession = false;
-    let isCancellingSubscription = false;
-    let isResumingSubscription = false;
-    
-    // Load and watch subscription data
-    function loadSubscriptionData(userId) {
-      if (!clubDb || !userId) return;
-      
-      // Unsubscribe from previous listener if exists
-      if (subscriptionUnsubscribe) {
-        subscriptionUnsubscribe();
-        subscriptionUnsubscribe = null;
-      }
-      
-      const trialDateText = document.getElementById('trial-date-text');
-      const subscriptionStatusField = document.getElementById('subscription-status-field');
-      const subscriptionStatusText = document.getElementById('subscription-status-text');
-      const subscribeButton = document.getElementById('subscribe-button');
-      const cancelRenewalButton = document.getElementById('cancel-renewal-button');
-      const resumeRenewalButton = document.getElementById('resume-renewal-button');
-      
-      // Set up real-time listener
-      subscriptionUnsubscribe = clubDb.collection('users').doc(userId).onSnapshot((doc) => {
-        if (doc.exists) {
-          const userData = doc.data();
-          const trialEndDate = userData.trial_end_date;
-          const subscriptionStatus = userData.subscription;
-          const cancelAtPeriodEnd = userData.subscription_cancel_at_period_end;
-          const currentPeriodEnd = userData.subscription_current_period_end;
-          
-          // Update trial date
-          if (trialEndDate && trialDateText) {
-            const trialDate = trialEndDate.toDate();
-            const now = new Date();
-            const formattedDate = trialDate.toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-            
-            const daysRemaining = Math.ceil((trialDate - now) / (1000 * 60 * 60 * 24));
-            
-            if (daysRemaining > 0) {
-              trialDateText.textContent = `Ends on ${formattedDate} (${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} remaining)`;
-            } else {
-              trialDateText.textContent = `Ended on ${formattedDate}`;
-            }
-          } else if (trialDateText) {
-            trialDateText.textContent = 'No trial started';
-          }
-          
-          // Update subscription status
-          const now = new Date();
-          const isActive = subscriptionStatus === 'active' || 
-            (trialEndDate && trialEndDate.toDate() > now);
-          
-          if (isActive && subscriptionStatus === 'active') {
-            // Show subscription status
-            if (subscriptionStatusField) subscriptionStatusField.style.display = 'block';
-            
-            if (subscriptionStatusText) {
-              if (cancelAtPeriodEnd && currentPeriodEnd) {
-                const periodEnd = currentPeriodEnd.toDate();
-                const formattedEnd = periodEnd.toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                });
-                subscriptionStatusText.innerHTML = `<span class="field-badge active">Active</span> <span style="color: #64748b;">Ends ${formattedEnd}</span>`;
-              } else {
-                subscriptionStatusText.innerHTML = `<span class="field-badge active">Active</span>`;
-              }
-            }
-            
-            const subscriptionDescription = document.getElementById('subscription-description');
-            if (subscriptionDescription) {
-              if (cancelAtPeriodEnd && currentPeriodEnd) {
-                subscriptionDescription.textContent = 'Your subscription will remain active until the end of the current billing period';
-              } else {
-                subscriptionDescription.textContent = 'Your subscription is active and will automatically renew';
-              }
-            }
-            
-            const subscriptionActionDescription = document.getElementById('subscription-action-description');
-            if (subscriptionActionDescription) {
-              if (cancelAtPeriodEnd && currentPeriodEnd) {
-                subscriptionActionDescription.textContent = 'Resume auto-renewal to continue your subscription';
-              } else {
-                subscriptionActionDescription.textContent = 'Cancel auto-renewal to stop your subscription at the end of the billing period';
-              }
-            }
-            
-            // Show cancel or resume button
-            if (cancelAtPeriodEnd) {
-              if (subscribeButton) subscribeButton.style.display = 'none';
-              if (cancelRenewalButton) cancelRenewalButton.style.display = 'none';
-              if (resumeRenewalButton) resumeRenewalButton.style.display = 'inline-flex';
-            } else {
-              if (subscribeButton) subscribeButton.style.display = 'none';
-              if (cancelRenewalButton) cancelRenewalButton.style.display = 'inline-flex';
-              if (resumeRenewalButton) resumeRenewalButton.style.display = 'none';
-            }
-          } else {
-            // Show subscribe button
-            if (subscriptionStatusField) subscriptionStatusField.style.display = 'none';
-            if (subscribeButton) subscribeButton.style.display = 'inline-flex';
-            if (cancelRenewalButton) cancelRenewalButton.style.display = 'none';
-            if (resumeRenewalButton) resumeRenewalButton.style.display = 'none';
-            
-            if (subscriptionStatusText) {
-              subscriptionStatusText.innerHTML = `<span class="field-badge not-verified">Inactive</span>`;
-            }
-            
-            const subscriptionActionDescription = document.getElementById('subscription-action-description');
-            if (subscriptionActionDescription) {
-              subscriptionActionDescription.textContent = 'Subscribe to continue using all features after your trial';
-            }
-          }
-        } else {
-          // No document, show subscribe
-          if (trialDateText) trialDateText.textContent = 'No trial data found';
-          if (subscriptionStatusField) subscriptionStatusField.style.display = 'none';
-          if (subscribeButton) subscribeButton.style.display = 'inline-flex';
-          if (cancelRenewalButton) cancelRenewalButton.style.display = 'none';
-          if (resumeRenewalButton) resumeRenewalButton.style.display = 'none';
-        }
-      }, (error) => {
-        console.error('Error loading subscription data:', error);
-      });
-    }
-    
-    // Handle subscribe button click
-    async function handleSubscribe() {
-      const clubUser = clubAuth ? clubAuth.currentUser : null;
-      if (!clubUser) {
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Please log in to subscribe');
-        }
-        return;
-      }
-      
-      // Check email verification
-      if (!clubUser.emailVerified) {
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Please verify your email address before subscribing. Check your inbox for a verification email.');
-        }
-        return;
-      }
-      
-      if (isCreatingCheckoutSession) return;
-      
-      const subscribeButton = document.getElementById('subscribe-button');
-      const subscribeButtonText = document.getElementById('subscribe-button-text');
-      
-      isCreatingCheckoutSession = true;
-      if (subscribeButton) subscribeButton.disabled = true;
-      if (subscribeButtonText) subscribeButtonText.textContent = 'Processing...';
-      
-      try {
-        const priceId = 'price_1SVPGsCFYmZ3GbaT4UO5fRvQ';
-        const baseUrl = window.location.origin;
-        
-        // Call Firebase function to create checkout session
-        const createCheckoutSession = clubFunctions.httpsCallable('create_checkout_session');
-        const result = await createCheckoutSession({
-          price_id: priceId,
-          user_id: clubUser.uid,
-          email: clubUser.email,
-          base_url: baseUrl  // Base URL for redirect pages
-        });
-        
-        const sessionUrl = result.data.url;
-        
-        if (sessionUrl) {
-          // Navigate to checkout in the same page
-          window.location.href = sessionUrl;
-        } else {
-          throw new Error('No checkout URL returned');
-        }
-      } catch (error) {
-        console.error('Error creating checkout session:', error);
-        isCreatingCheckoutSession = false;
-        if (subscribeButton) {
-          subscribeButton.disabled = false;
-          if (subscribeButtonText) subscribeButtonText.textContent = 'Subscribe';
-        }
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Failed to start checkout. Please try again.');
-        }
-      }
-    }
-    
-    // Handle cancel renewal
-    async function handleCancelRenewal() {
-      if (!confirm('Are you sure you want to cancel auto-renewal?\n\nYour subscription will remain active until the end of the current billing period. After that, it will not renew automatically.')) {
-        return;
-      }
-      
-      if (isCancellingSubscription) return;
-      
-      const cancelButton = document.getElementById('cancel-renewal-button');
-      const cancelButtonText = document.getElementById('cancel-renewal-button-text');
-      
-      isCancellingSubscription = true;
-      if (cancelButton) cancelButton.disabled = true;
-      if (cancelButtonText) cancelButtonText.textContent = 'Processing...';
-      
-      try {
-        const cancelSubscription = clubFunctions.httpsCallable('cancel_subscription');
-        await cancelSubscription();
-        
-        if (typeof notifications !== 'undefined') {
-          notifications.success('Auto-renewal canceled. Subscription will end at the current period.');
-        }
-      } catch (error) {
-        console.error('Error canceling subscription:', error);
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Failed to cancel auto-renewal. Please try again.');
-        }
-      } finally {
-        isCancellingSubscription = false;
-        if (cancelButton) {
-          cancelButton.disabled = false;
-          if (cancelButtonText) cancelButtonText.textContent = 'Stop Subscription';
-        }
-      }
-    }
-    
-    // Handle resume renewal
-    async function handleResumeRenewal() {
-      if (!confirm('Resume automatic subscription renewal?\n\nYour subscription will automatically renew at the end of each billing period.')) {
-        return;
-      }
-      
-      if (isResumingSubscription) return;
-      
-      const resumeButton = document.getElementById('resume-renewal-button');
-      const resumeButtonText = document.getElementById('resume-renewal-button-text');
-      
-      isResumingSubscription = true;
-      if (resumeButton) resumeButton.disabled = true;
-      if (resumeButtonText) resumeButtonText.textContent = 'Processing...';
-      
-      try {
-        const resumeSubscription = clubFunctions.httpsCallable('resume_subscription');
-        const result = await resumeSubscription();
-        
-        if (result.data != null) {
-          if (typeof notifications !== 'undefined') {
-            notifications.success('Auto-renewal resumed successfully');
-          }
-        } else {
-          throw new Error('No response from server');
-        }
-      } catch (error) {
-        console.error('Error resuming subscription:', error);
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Failed to resume auto-renewal. Please try again.');
-        }
-      } finally {
-        isResumingSubscription = false;
-        if (resumeButton) {
-          resumeButton.disabled = false;
-          if (resumeButtonText) resumeButtonText.textContent = 'Resume Subscription';
-        }
-      }
-    }
     
     let memberAuthResolved = false;
     let clubAuthResolved = false;
@@ -1212,38 +889,46 @@
       // Check if club user is logged in
       const clubUser = clubAuth ? clubAuth.currentUser : null;
       if (clubUser) {
-        // Hide shimmer, show content
-        const shimmerDiv = document.getElementById('profile-shimmer');
-        if (shimmerDiv) shimmerDiv.style.display = 'none';
+        // Hide shimmer elements
+        const emailShimmer = document.getElementById('email-shimmer');
+        const verificationBadgeShimmer = document.getElementById('verification-badge-shimmer');
+        const verifyButtonShimmer = document.getElementById('verify-button-shimmer');
         
-        const contentDiv = document.getElementById('profile-content');
-        if (contentDiv) {
-          contentDiv.style.display = 'block';
-          const emailValue = document.getElementById('email-value');
-          const verificationBadge = document.getElementById('verification-badge');
-          const verifyButton = document.getElementById('verify-button');
-          const verifyButtonText = document.getElementById('verify-button-text');
-          
-          if (emailValue) {
-            emailValue.textContent = clubUser.email || 'N/A';
-          }
-          
-          const isVerified = clubUser.emailVerified;
-          if (verificationBadge) {
-            if (isVerified) {
-              verificationBadge.textContent = 'Verified';
-              verificationBadge.className = 'field-badge verified';
-              if (verifyButton) verifyButton.style.display = 'none';
-            } else {
-              verificationBadge.textContent = 'Not verified';
-              verificationBadge.className = 'field-badge not-verified';
-              if (verifyButton) verifyButton.style.display = 'inline-flex';
+        if (emailShimmer) emailShimmer.style.display = 'none';
+        if (verificationBadgeShimmer) verificationBadgeShimmer.style.display = 'none';
+        if (verifyButtonShimmer) verifyButtonShimmer.style.display = 'none';
+        
+        // Show content elements
+        const emailValue = document.getElementById('email-value');
+        const verificationBadge = document.getElementById('verification-badge');
+        const verifyButton = document.getElementById('verify-button');
+        const verifyButtonText = document.getElementById('verify-button-text');
+        
+        if (emailValue) {
+          emailValue.textContent = clubUser.email || 'N/A';
+          emailValue.classList.remove('field-content-loading');
+          emailValue.classList.add('field-content-loaded');
+        }
+        
+        const isVerified = clubUser.emailVerified;
+        if (verificationBadge) {
+          verificationBadge.classList.remove('field-content-loading');
+          verificationBadge.classList.add('field-content-loaded');
+          if (isVerified) {
+            verificationBadge.textContent = 'Verified';
+            verificationBadge.className = 'field-badge verified field-content-loaded';
+            if (verifyButton) verifyButton.style.display = 'none';
+          } else {
+            verificationBadge.textContent = 'Not verified';
+            verificationBadge.className = 'field-badge not-verified field-content-loaded';
+            if (verifyButton) {
+              verifyButton.classList.remove('field-content-loading');
+              verifyButton.classList.add('field-content-loaded');
+              verifyButton.style.display = 'inline-flex';
             }
           }
         }
         
-        // Load subscription data
-        loadSubscriptionData(clubUser.uid);
       } else {
         // User is not logged in, redirect to login
         window.location.href = '../club-login/';

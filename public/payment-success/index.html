@@ -101,8 +101,8 @@
       </svg>
     </div>
     <h1>Payment Successful!</h1>
-    <p>Your subscription has been activated successfully. You will be redirected to your dashboard shortly.</p>
-    <a href="/club-base/" class="btn">Go to Dashboard</a>
+    <p>Your subscription has been activated successfully. You will be redirected to your subscription page shortly.</p>
+    <a href="/club-base/subscription/" class="btn">Go to Subscription</a>
     <p class="redirect-info">Redirecting automatically in <span id="countdown">5</span> seconds...</p>
   </div>
   
@@ -117,7 +117,7 @@
       }
       if (countdown <= 0) {
         clearInterval(timer);
-        window.location.href = '/club-base/';
+        window.location.href = '/club-base/subscription/';
       }
     }, 1000);
   </script>

@@ -27,7 +27,7 @@ const create_meeting_handler = async (data, context) => {
     }
     
     // Verify subscription is active OR trial is active
-    const userDoc = await db.collection('club').doc(data.creator_id).get();
+    const userDoc = await db.collection('users').doc(data.creator_id).get();
     
     if (!userDoc.exists) {
       console.error('User document not found:', data.creator_id);
@@ -77,7 +77,7 @@ const create_meeting_handler = async (data, context) => {
     
     // Add meeting to user's meetings collection (use same auto-generated ID)
     const user_meeting_ref = db
-      .collection('club')
+      .collection('users')
       .doc(data.creator_id)
       .collection('meetings')
       .doc(meeting_id); // Use the same auto-generated ID
@@ -135,7 +135,7 @@ const delete_meeting_handler = async (data, context) => {
       // Read both documents first
       const active_meeting_ref = db.collection('active_meetings').doc(meeting_id);
       const user_meeting_ref = db
-        .collection('club')
+        .collection('users')
         .doc(creator_id)
         .collection('meetings')
         .doc(meeting_id);
