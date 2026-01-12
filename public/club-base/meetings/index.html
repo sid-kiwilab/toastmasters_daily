@@ -3650,15 +3650,68 @@
       }
     };
     
-    // Delete poll
-    window.deletePoll = async function(pollId, meetingId) {
-      if (!confirm('Are you sure you want to delete this poll?')) return;
+    // Show delete poll confirmation dialog
+    window.showDeletePollDialog = function(pollId, meetingId) {
+      const overlay = document.getElementById('delete-poll-dialog-overlay');
+      if (!overlay) return;
+      
+      // Store poll ID and meeting ID for confirmation
+      overlay.setAttribute('data-poll-id', pollId);
+      overlay.setAttribute('data-meeting-id', meetingId);
+      
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    };
+    
+    // Hide delete poll dialog
+    window.hideDeletePollDialog = function() {
+      const overlay = document.getElementById('delete-poll-dialog-overlay');
+      if (overlay) {
+        const deleteBtn = document.getElementById('delete-poll-confirm-btn');
+        const cancelBtn = document.getElementById('delete-poll-cancel-btn');
+        const dialogMessage = overlay.querySelector('.dialog-message');
+        
+        // Reset dialog state
+        resetDeletePollDialog(deleteBtn, cancelBtn, dialogMessage);
+        
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        overlay.removeAttribute('data-poll-id');
+        overlay.removeAttribute('data-meeting-id');
+      }
+    };
+    
+    // Confirm delete poll
+    window.confirmDeletePoll = async function() {
+      const overlay = document.getElementById('delete-poll-dialog-overlay');
+      if (!overlay) return;
+      
+      const pollId = overlay.getAttribute('data-poll-id');
+      const meetingId = overlay.getAttribute('data-meeting-id');
+      if (!pollId || !meetingId) return;
+      
+      const deleteBtn = document.getElementById('delete-poll-confirm-btn');
+      const cancelBtn = document.getElementById('delete-poll-cancel-btn');
+      const dialogMessage = overlay.querySelector('.dialog-message');
+      
+      // Disable buttons and show loading state
+      if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Deleting...';
+      }
+      if (cancelBtn) {
+        cancelBtn.disabled = true;
+      }
+      if (dialogMessage) {
+        dialogMessage.textContent = 'Deleting poll...';
+      }
       
       const clubUser = clubAuth ? clubAuth.currentUser : null;
       if (!clubUser || !clubDb) {
         if (typeof notifications !== 'undefined') {
           notifications.error('Please log in to delete polls');
         }
+        resetDeletePollDialog(deleteBtn, cancelBtn, dialogMessage);
         return;
       }
       
@@ -3666,6 +3719,9 @@
         await clubDb.collection('users').doc(clubUser.uid)
           .collection('meetings').doc(meetingId)
           .collection('polls').doc(pollId).delete();
+        
+        // Success - close dialog
+        hideDeletePollDialog();
         
         loadPolls(meetingId);
         
@@ -3677,7 +3733,27 @@
         if (typeof notifications !== 'undefined') {
           notifications.error('Failed to delete poll. Please try again.');
         }
+        resetDeletePollDialog(deleteBtn, cancelBtn, dialogMessage);
       }
+    };
+    
+    // Reset delete poll dialog to initial state
+    function resetDeletePollDialog(deleteBtn, cancelBtn, dialogMessage) {
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'Delete';
+      }
+      if (cancelBtn) {
+        cancelBtn.disabled = false;
+      }
+      if (dialogMessage) {
+        dialogMessage.textContent = 'Are you sure you want to delete this poll? This action cannot be undone.';
+      }
+    }
+    
+    // Delete poll (opens dialog)
+    window.deletePoll = function(pollId, meetingId) {
+      showDeletePollDialog(pollId, meetingId);
     };
     
     // View polls
@@ -4110,6 +4186,18 @@
       
       <div class="dialog-actions">
         <button class="dialog-btn dialog-btn-cancel" onclick="hideSetupPollsDialog()">Close</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Delete Poll Confirmation Dialog -->
+  <div class="dialog-overlay" id="delete-poll-dialog-overlay" onclick="if(event.target === this) hideDeletePollDialog()">
+    <div class="dialog">
+      <h3 class="dialog-title">Delete Poll</h3>
+      <p class="dialog-message">Are you sure you want to delete this poll? This action cannot be undone.</p>
+      <div class="dialog-actions">
+        <button class="dialog-btn dialog-btn-cancel" id="delete-poll-cancel-btn" onclick="hideDeletePollDialog()">Cancel</button>
+        <button class="dialog-btn dialog-btn-confirm" id="delete-poll-confirm-btn" onclick="confirmDeletePoll()">Delete</button>
       </div>
     </div>
   </div>
