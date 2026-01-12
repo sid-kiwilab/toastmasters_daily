@@ -1011,7 +1011,7 @@
         <div class="section-content">
           <div id="upcoming-meetings-section" class="upcoming-meetings-section">
             <div class="upcoming-meetings-header">
-              <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+              <div class="upcoming-meetings-title">Upcoming Meeting</div>
             </div>
             <div class="upcoming-meetings-grid">
               <div class="upcoming-meeting-shimmer"></div>
@@ -1366,7 +1366,7 @@
         if (meetingsMap.size === 0 && !meetingsLoaded) {
           upcomingSection.innerHTML = `
             <div class="upcoming-meetings-header">
-              <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+              <div class="upcoming-meetings-title">Upcoming Meeting</div>
             </div>
             <div class="upcoming-meetings-grid">
               <div class="upcoming-meeting-shimmer"></div>
@@ -1460,7 +1460,7 @@
             
             upcomingSection.innerHTML = `
               <div class="upcoming-meetings-header">
-                <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+                <div class="upcoming-meetings-title">Upcoming Meeting</div>
               </div>
               <div class="upcoming-meetings-grid">
                 <div class="upcoming-meeting-card" onclick="selectDate('${nextMeeting.dateKey}')">
@@ -1482,7 +1482,7 @@
             console.error('Error formatting next meeting:', e, nextMeeting);
             upcomingSection.innerHTML = `
               <div class="upcoming-meetings-header">
-                <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+                <div class="upcoming-meetings-title">Upcoming Meeting</div>
               </div>
               <div class="no-upcoming-meetings">
                 <div class="no-upcoming-meetings-text">Error loading meeting details</div>
@@ -1493,7 +1493,7 @@
         } else {
           upcomingSection.innerHTML = `
             <div class="upcoming-meetings-header">
-              <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+              <div class="upcoming-meetings-title">Upcoming Meeting</div>
             </div>
             <div class="no-upcoming-meetings">
               <div class="no-upcoming-meetings-text">No upcoming meetings</div>
@@ -1700,7 +1700,7 @@
           if (upcomingSection) {
             upcomingSection.innerHTML = `
               <div class="upcoming-meetings-header">
-                <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+                <div class="upcoming-meetings-title">Upcoming Meeting</div>
               </div>
               <div class="no-upcoming-meetings">
                 <div class="no-upcoming-meetings-text">Error loading meetings</div>
