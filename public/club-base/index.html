@@ -961,6 +961,21 @@
               </div>
             </div>
           </div>
+          <div class="profile-field" id="visit-club-field" style="display: none;">
+            <div class="field-label">Visit My Club</div>
+            <div class="field-main">
+              <div class="field-value">View your public club page</div>
+              <div class="field-description">See how your club appears to members and guests</div>
+            </div>
+            <div class="field-action">
+              <a id="visit-club-btn" href="#" class="btn btn-primary" onclick="visitMyClub(event)">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                <span>Visit My Club</span>
+              </a>
+            </div>
+          </div>
           <div class="profile-field">
             <div class="field-label">Sign Out</div>
             <div class="field-main">
@@ -1305,6 +1320,9 @@
           
           // Show Generate button if no code, actions (download + regenerate) if code exists
           const clubCodeActions = document.getElementById('club-code-actions');
+          const visitClubField = document.getElementById('visit-club-field');
+          const visitClubBtn = document.getElementById('visit-club-btn');
+          
           if (clubCodeValueNum != null) {
             if (clubCodeGenerateBtn) clubCodeGenerateBtn.style.display = 'none';
             if (clubCodeActions) {
@@ -1312,6 +1330,11 @@
               clubCodeActions.classList.add('field-content-loaded');
               clubCodeActions.style.display = 'flex';
             }
+            // Show "Visit My Club" button
+            if (visitClubField) visitClubField.style.display = 'grid';
+            // Update link
+            const clubUrl = `/clubs/${clubCodeValueNum.toString()}`;
+            if (visitClubBtn) visitClubBtn.href = clubUrl;
           } else {
             if (clubCodeActions) clubCodeActions.style.display = 'none';
             if (clubCodeGenerateBtn) {
@@ -1319,6 +1342,8 @@
               clubCodeGenerateBtn.classList.add('field-content-loaded');
               clubCodeGenerateBtn.style.display = 'inline-flex';
             }
+            // Hide "Visit My Club" button
+            if (visitClubField) visitClubField.style.display = 'none';
           }
         }
       }, (error) => {
@@ -1816,6 +1841,19 @@
         if (generateBtn) {
           generateBtn.disabled = false;
           generateBtn.textContent = 'Generate Club Code';
+        }
+      }
+    }
+    
+    // Visit My Club function
+    function visitMyClub(event) {
+      event.preventDefault();
+      const clubCode = clubCodeForDownload;
+      if (clubCode) {
+        window.open(`/clubs/${clubCode}`, '_blank');
+      } else {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('No club code available');
         }
       }
     }

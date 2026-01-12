@@ -25,6 +25,10 @@
     ],
     "rewrites": [
       {
+        "source": "/clubs/**",
+        "destination": "/clubs/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

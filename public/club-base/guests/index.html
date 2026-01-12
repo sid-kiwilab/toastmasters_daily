@@ -944,6 +944,9 @@
         const guestsSnapshot = await query.get();
         
         if (guestsSnapshot.empty) {
+          // Update stats to show zeros
+          updateStats();
+          
           guestsList.innerHTML = `
             <div class="no-guests">
               <svg class="no-guests-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

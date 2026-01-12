@@ -1,9 +1,8 @@
 @echo off
-echo Starting server on http://localhost:8080
-echo Serving files from: %CD%\public
+echo Starting HTTP server with URL rewriting...
+echo This will serve files with proper rewrite rules for /clubs routes
 echo.
 echo Press Ctrl+C to stop the server
 echo.
-cd public
-python -m http.server 8080
+python start-server.py
 
