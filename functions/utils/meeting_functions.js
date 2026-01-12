@@ -60,12 +60,29 @@ const create_meeting_handler = async (data, context) => {
       };
     }
     
+    // Convert meeting_datetime if provided
+    let meeting_datetime = null;
+    if (data.meeting_datetime) {
+      // If it's a timestamp string or number, convert it
+      if (typeof data.meeting_datetime === 'string' || typeof data.meeting_datetime === 'number') {
+        meeting_datetime = admin.firestore.Timestamp.fromDate(new Date(data.meeting_datetime));
+      } else if (data.meeting_datetime.seconds) {
+        // If it's already a Firestore timestamp-like object
+        meeting_datetime = admin.firestore.Timestamp.fromMillis(data.meeting_datetime.seconds * 1000);
+      }
+    }
+    
     // Create meeting document with minimal required fields
     const meeting_doc = {
       title: data.title,
       creator_id: data.creator_id,
       created_at: admin.firestore.FieldValue.serverTimestamp()
     };
+    
+    // Add meeting_datetime if provided
+    if (meeting_datetime) {
+      meeting_doc.meeting_datetime = meeting_datetime;
+    }
     
     // Use batch write to ensure both operations happen atomically
     const batch = db.batch();

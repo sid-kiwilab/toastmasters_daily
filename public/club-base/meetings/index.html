@@ -387,6 +387,60 @@
       border: 1px solid #e5e7eb;
       border-radius: 16px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    
+    .selected-date-details.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+      background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+    }
+    
+    .selected-date-details.disabled::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 16px;
+      z-index: 1;
+    }
+    
+    .disabled-overlay-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ffffff;
+      padding: 16px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 2;
+      text-align: center;
+      max-width: 280px;
+      pointer-events: none;
+    }
+    
+    .disabled-overlay-message-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #060607;
+      margin-bottom: 8px;
+    }
+    
+    .disabled-overlay-message-text {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+    
+    .btn-create-meeting.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
     }
     
     @media (min-width: 1025px) {
@@ -476,6 +530,17 @@
       margin-bottom: 0;
     }
     
+    .meeting-detail-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .meeting-detail-item-content {
+      flex: 1;
+    }
+    
     .meeting-detail-title {
       font-size: 16px;
       font-weight: 600;
@@ -506,6 +571,229 @@
       width: 14px;
       height: 14px;
       opacity: 0.6;
+    }
+    
+    .meeting-detail-delete-btn {
+      padding: 6px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #dc2626;
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .meeting-detail-delete-btn:hover {
+      opacity: 1;
+      background: #fef2f2;
+    }
+    
+    .meeting-detail-delete-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    .meeting-detail-delete-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .create-meeting-button-container {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .btn-create-meeting {
+      width: 100%;
+      padding: 12px 16px;
+      background: #004165;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'GoogleSans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-create-meeting:hover {
+      background: #003049;
+    }
+    
+    .btn-create-meeting:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    
+    /* Create Meeting Dialog */
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    
+    .dialog-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .dialog {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+    
+    .dialog-overlay.active .dialog {
+      transform: scale(1);
+    }
+    
+    .dialog-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #060607;
+      margin-bottom: 20px;
+    }
+    
+    .dialog-message {
+      font-size: 16px;
+      color: #4f5660;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    
+    .dialog-btn-confirm {
+      background: #dc2626;
+      color: white;
+    }
+    
+    .dialog-btn-confirm:hover {
+      background: #b91c1c;
+    }
+    
+    .dialog-form-group {
+      margin-bottom: 20px;
+    }
+    
+    .dialog-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #060607;
+      margin-bottom: 8px;
+    }
+    
+    .dialog-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'GoogleSans', sans-serif;
+      transition: border-color 0.2s ease;
+    }
+    
+    .dialog-input:focus {
+      outline: none;
+      border-color: #004165;
+    }
+    
+    .dialog-form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    
+    .dialog-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+    
+    .dialog-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'GoogleSans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .dialog-btn-cancel {
+      background: #f2f3f5;
+      color: #060607;
+    }
+    
+    .dialog-btn-cancel:hover {
+      background: #e3e5e8;
+    }
+    
+    .dialog-btn-submit {
+      background: #004165;
+      color: white;
+    }
+    
+    .dialog-btn-submit:hover {
+      background: #003049;
+    }
+    
+    .dialog-btn-submit:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    
+    .dialog-btn-confirm:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    
+    .dialog-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) {
+      .dialog-form-row {
+        grid-template-columns: 1fr;
+      }
     }
     
     .create-meeting-form {
@@ -1101,6 +1389,7 @@
     
     // Initialize Firestore and Functions
     let clubDb = null;
+    let clubFunctions = null;
     try {
       const clubApp = firebase.app('club');
       clubDb = firebase.firestore(clubApp);
@@ -1114,8 +1403,8 @@
     let meetingsMap = new Map(); // Map of date strings to meetings
     let meetingsUnsubscribe = null;
     let selectedDate = new Date(); // Selected date object (default to today)
-    let clubFunctions = null;
     let meetingsLoaded = false; // Track if meetings data has finished loading
+    let canCreateMeetings = false; // Track if user has active subscription or trial
     
     // Calendar functions
     function formatDateKey(date) {
@@ -1272,7 +1561,47 @@
         updateSelectedDateDetails();
       }
       
-      function updateSelectedDateDetails() {
+      function checkSubscriptionStatus(userId) {
+      if (!clubDb || !userId) return;
+      
+      clubDb.collection('users').doc(userId).get().then((doc) => {
+        if (doc.exists) {
+          const userData = doc.data();
+          const subscriptionStatus = userData?.subscription;
+          const trialEndDate = userData?.trial_end_date;
+          
+          // Check if subscription is active
+          const isSubscriptionActive = subscriptionStatus === 'active';
+          
+          // Check if trial is active (trial_end_date exists and hasn't passed)
+          let isTrialActive = false;
+          if (trialEndDate) {
+            try {
+              const trialEnd = trialEndDate.toDate ? trialEndDate.toDate() : new Date(trialEndDate);
+              const now = new Date();
+              isTrialActive = trialEnd > now;
+            } catch (e) {
+              console.error('Error parsing trial end date:', e);
+            }
+          }
+          
+          // User can create meetings if either subscription is active OR trial is active
+          canCreateMeetings = isSubscriptionActive || isTrialActive;
+          
+          // Update UI
+          updateSelectedDateDetails();
+        } else {
+          canCreateMeetings = false;
+          updateSelectedDateDetails();
+        }
+      }).catch((error) => {
+        console.error('Error checking subscription status:', error);
+        canCreateMeetings = false;
+        updateSelectedDateDetails();
+      });
+    }
+    
+    function updateSelectedDateDetails() {
         const selectedDateContainer = document.getElementById('selected-date-container');
         if (!selectedDateContainer) return;
         
@@ -1315,20 +1644,32 @@
                 console.warn('Error formatting meeting time:', e);
               }
             }
+            const deleteButton = canCreateMeetings ? `
+              <button class="meeting-detail-delete-btn" onclick="deleteMeeting('${meeting.id}')" title="Delete meeting">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            ` : '';
             return `
               <div class="meeting-detail-item">
-                <div class="meeting-detail-title">
-                  <span class="meeting-detail-title-icon"></span>
-                  ${meeting.title || 'Untitled Meeting'}
-                </div>
-                ${timeStr ? `
-                  <div class="meeting-detail-time">
-                    <svg class="meeting-detail-time-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    ${timeStr}
+                <div class="meeting-detail-item-header">
+                  <div class="meeting-detail-item-content">
+                    <div class="meeting-detail-title">
+                      <span class="meeting-detail-title-icon"></span>
+                      ${meeting.title || 'Untitled Meeting'}
+                    </div>
+                    ${timeStr ? `
+                      <div class="meeting-detail-time">
+                        <svg class="meeting-detail-time-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        ${timeStr}
+                      </div>
+                    ` : '<div class="meeting-detail-time">No time specified</div>'}
                   </div>
-                ` : '<div class="meeting-detail-time">No time specified</div>'}
+                  ${deleteButton}
+                </div>
               </div>
             `;
           }).join('');
@@ -1336,8 +1677,16 @@
           meetingsHtml = '<div class="no-meetings">No meetings scheduled for this date</div>';
         }
         
+        const disabledClass = canCreateMeetings ? '' : 'disabled';
+        const disabledMessage = canCreateMeetings ? '' : `
+          <div class="disabled-overlay-message">
+            <div class="disabled-overlay-message-title">Subscription Required</div>
+            <div class="disabled-overlay-message-text">You need an active subscription or trial to create or manage meetings. Please subscribe to continue.</div>
+          </div>
+        `;
+        
         selectedDateContainer.innerHTML = `
-          <div class="selected-date-details">
+          <div class="selected-date-details ${disabledClass}">
             <div class="selected-date-header">
               <div class="selected-date-header-icon">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1354,6 +1703,18 @@
               ${selectedMeetings.length > 0 ? '<div class="meeting-details-list-title">Meetings</div>' : ''}
               ${meetingsHtml}
             </div>
+            
+            <div class="create-meeting-button-container">
+              <button class="btn-create-meeting ${canCreateMeetings ? '' : 'disabled'}" 
+                      onclick="${canCreateMeetings ? 'showCreateMeetingDialog()' : 'showSubscriptionMessage()'}"
+                      ${canCreateMeetings ? '' : 'title="You need an active subscription or trial to create meetings"'}>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Create Meeting
+              </button>
+            </div>
+            ${disabledMessage}
           </div>
         `;
       }
@@ -1730,6 +2091,8 @@
       // Check if club user is logged in
       const clubUser = clubAuth ? clubAuth.currentUser : null;
       if (clubUser) {
+        // Check subscription status
+        checkSubscriptionStatus(clubUser.uid);
         // Render calendar first (empty state)
         renderCalendar();
         updateSelectedDateDetails();
@@ -1762,7 +2125,339 @@
       // Firebase not initialized, redirect to login
       window.location.href = '../../club-login/';
     }
+    
+    // Show create meeting dialog
+    window.showCreateMeetingDialog = function() {
+      const overlay = document.getElementById('create-meeting-dialog-overlay');
+      const titleInput = document.getElementById('dialog-meeting-title');
+      const dateInput = document.getElementById('dialog-meeting-date');
+      const timeInput = document.getElementById('dialog-meeting-time');
+      
+      if (!overlay || !selectedDate) return;
+      
+      // Set default date to selected date
+      if (dateInput && selectedDate) {
+        const dateKey = formatDateKey(selectedDate);
+        const [y, m, d] = dateKey.split('-').map(Number);
+        dateInput.value = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      }
+      
+      // Set default time
+      if (timeInput) {
+        timeInput.value = '19:00';
+      }
+      
+      // Clear title
+      if (titleInput) {
+        titleInput.value = '';
+      }
+      
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      
+      // Focus on title input
+      setTimeout(() => {
+        if (titleInput) titleInput.focus();
+      }, 100);
+    };
+    
+    // Hide create meeting dialog
+    window.hideCreateMeetingDialog = function() {
+      const overlay = document.getElementById('create-meeting-dialog-overlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    };
+    
+    // Show subscription required message
+    window.showSubscriptionMessage = function() {
+      if (typeof notifications !== 'undefined') {
+        notifications.error('You need an active subscription or trial to create meetings. Please subscribe to continue.');
+      }
+    };
+    
+    // Show delete meeting confirmation dialog
+    window.showDeleteMeetingDialog = function(meetingId) {
+      const overlay = document.getElementById('delete-meeting-dialog-overlay');
+      if (!overlay) return;
+      
+      // Store meeting ID for confirmation
+      overlay.setAttribute('data-meeting-id', meetingId);
+      
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    };
+    
+    // Hide delete meeting dialog
+    window.hideDeleteMeetingDialog = function() {
+      const overlay = document.getElementById('delete-meeting-dialog-overlay');
+      if (overlay) {
+        const deleteBtn = document.getElementById('delete-meeting-confirm-btn');
+        const cancelBtn = document.getElementById('delete-meeting-cancel-btn');
+        const dialogMessage = overlay.querySelector('.dialog-message');
+        
+        // Reset dialog state
+        resetDeleteDialog(deleteBtn, cancelBtn, dialogMessage);
+        
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        overlay.removeAttribute('data-meeting-id');
+      }
+    };
+    
+    // Confirm delete meeting
+    window.confirmDeleteMeeting = async function() {
+      const overlay = document.getElementById('delete-meeting-dialog-overlay');
+      if (!overlay) return;
+      
+      const meetingId = overlay.getAttribute('data-meeting-id');
+      if (!meetingId) return;
+      
+      const deleteBtn = document.getElementById('delete-meeting-confirm-btn');
+      const cancelBtn = document.getElementById('delete-meeting-cancel-btn');
+      const dialogMessage = overlay.querySelector('.dialog-message');
+      
+      // Disable buttons and show loading state
+      if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Deleting...';
+      }
+      if (cancelBtn) {
+        cancelBtn.disabled = true;
+      }
+      if (dialogMessage) {
+        dialogMessage.textContent = 'Deleting meeting...';
+      }
+      
+      const clubUser = clubAuth ? clubAuth.currentUser : null;
+      if (!clubUser) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please log in to delete a meeting');
+        }
+        resetDeleteDialog(deleteBtn, cancelBtn, dialogMessage);
+        return;
+      }
+      
+      if (!canCreateMeetings) {
+        showSubscriptionMessage();
+        resetDeleteDialog(deleteBtn, cancelBtn, dialogMessage);
+        return;
+      }
+      
+      if (!clubFunctions) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Firebase Functions not initialized. Please refresh the page.');
+        }
+        resetDeleteDialog(deleteBtn, cancelBtn, dialogMessage);
+        return;
+      }
+      
+      try {
+        // Call Firebase function to delete meeting
+        const deleteMeetingFn = clubFunctions.httpsCallable('delete_meeting');
+        const result = await deleteMeetingFn({
+          meeting_id: meetingId,
+          creator_id: clubUser.uid
+        });
+        
+        // Check for errors
+        if (result.data && !result.data.success) {
+          const errorMsg = result.data.error || 'Failed to delete meeting';
+          if (typeof notifications !== 'undefined') {
+            notifications.error(errorMsg);
+          }
+          resetDeleteDialog(deleteBtn, cancelBtn, dialogMessage);
+          return;
+        }
+        
+        // Success - close dialog
+        hideDeleteMeetingDialog();
+        
+        if (typeof notifications !== 'undefined') {
+          notifications.success('Meeting deleted successfully');
+        }
+        
+        // The real-time listener will automatically update the UI
+      } catch (error) {
+        console.error('Error deleting meeting:', error);
+        if (typeof notifications !== 'undefined') {
+          const errorMsg = error.message || 'Failed to delete meeting. Please try again.';
+          notifications.error(errorMsg);
+        }
+        resetDeleteDialog(deleteBtn, cancelBtn, dialogMessage);
+      }
+    };
+    
+    // Reset delete dialog to initial state
+    function resetDeleteDialog(deleteBtn, cancelBtn, dialogMessage) {
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'Delete';
+      }
+      if (cancelBtn) {
+        cancelBtn.disabled = false;
+      }
+      if (dialogMessage) {
+        dialogMessage.textContent = 'Are you sure you want to delete this meeting? This action cannot be undone.';
+      }
+    }
+    
+    // Delete meeting (opens dialog)
+    window.deleteMeeting = function(meetingId) {
+      showDeleteMeetingDialog(meetingId);
+    };
+    
+    // Submit create meeting form
+    window.submitCreateMeeting = async function() {
+      const clubUser = clubAuth ? clubAuth.currentUser : null;
+      if (!clubUser) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please log in to create a meeting');
+        }
+        return;
+      }
+      
+      if (!canCreateMeetings) {
+        showSubscriptionMessage();
+        return;
+      }
+      
+      if (!clubFunctions) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Firebase Functions not initialized. Please refresh the page.');
+        }
+        return;
+      }
+      
+      const titleInput = document.getElementById('dialog-meeting-title');
+      const dateInput = document.getElementById('dialog-meeting-date');
+      const timeInput = document.getElementById('dialog-meeting-time');
+      const createBtn = document.getElementById('dialog-create-btn');
+      
+      if (!titleInput || !dateInput || !timeInput) return;
+      
+      const title = titleInput.value.trim();
+      const dateStr = dateInput.value;
+      const timeStr = timeInput.value;
+      
+      if (!title) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please enter a meeting title');
+        }
+        return;
+      }
+      
+      if (!dateStr) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please select a date');
+        }
+        return;
+      }
+      
+      if (!timeStr) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please select a time');
+        }
+        return;
+      }
+      
+      // Combine date and time
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const meetingDateTime = new Date(year, month - 1, day, hours, minutes);
+      
+      // Disable button
+      if (createBtn) {
+        createBtn.disabled = true;
+        createBtn.textContent = 'Creating...';
+      }
+      
+      try {
+        // Convert datetime to ISO string for Firebase function
+        const meetingDateTimeISO = meetingDateTime.toISOString();
+        
+        // Call Firebase function to create meeting with datetime
+        const createMeetingFn = clubFunctions.httpsCallable('create_meeting');
+        const result = await createMeetingFn({
+          title: title,
+          creator_id: clubUser.uid,
+          meeting_datetime: meetingDateTimeISO
+        });
+        
+        // Check for errors first
+        if (result.data && !result.data.success) {
+          const errorMsg = result.data.error || 'Failed to create meeting';
+          if (typeof notifications !== 'undefined') {
+            notifications.error(errorMsg);
+          }
+          return;
+        }
+        
+        // If meeting created successfully
+        if (result.data && result.data.success && result.data.meeting && result.data.meeting.id) {
+          // Close dialog
+          hideCreateMeetingDialog();
+          
+          if (typeof notifications !== 'undefined') {
+            notifications.success('Meeting created successfully');
+          }
+        } else {
+          throw new Error('No meeting ID returned');
+        }
+      } catch (error) {
+        console.error('Error creating meeting:', error);
+        if (typeof notifications !== 'undefined') {
+          const errorMsg = error.message || 'Failed to create meeting. Please try again.';
+          notifications.error(errorMsg);
+        }
+      } finally {
+        if (createBtn) {
+          createBtn.disabled = false;
+          createBtn.textContent = 'Create Meeting';
+        }
+      }
+    };
   </script>
+  
+  <!-- Create Meeting Dialog -->
+  <div class="dialog-overlay" id="create-meeting-dialog-overlay" onclick="if(event.target === this) hideCreateMeetingDialog()">
+    <div class="dialog">
+      <h3 class="dialog-title">Create Meeting</h3>
+      <form id="create-meeting-form" onsubmit="event.preventDefault(); submitCreateMeeting();">
+        <div class="dialog-form-group">
+          <label class="dialog-label" for="dialog-meeting-title">Meeting Title</label>
+          <input type="text" id="dialog-meeting-title" class="dialog-input" placeholder="Enter meeting title" required />
+        </div>
+        <div class="dialog-form-row">
+          <div class="dialog-form-group">
+            <label class="dialog-label" for="dialog-meeting-date">Date</label>
+            <input type="date" id="dialog-meeting-date" class="dialog-input" required />
+          </div>
+          <div class="dialog-form-group">
+            <label class="dialog-label" for="dialog-meeting-time">Time</label>
+            <input type="time" id="dialog-meeting-time" class="dialog-input" value="19:00" required />
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="dialog-btn dialog-btn-cancel" onclick="hideCreateMeetingDialog()">Cancel</button>
+          <button type="submit" class="dialog-btn dialog-btn-submit" id="dialog-create-btn">Create Meeting</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Delete Meeting Confirmation Dialog -->
+  <div class="dialog-overlay" id="delete-meeting-dialog-overlay" onclick="if(event.target === this) hideDeleteMeetingDialog()">
+    <div class="dialog">
+      <h3 class="dialog-title">Delete Meeting</h3>
+      <p class="dialog-message">Are you sure you want to delete this meeting? This action cannot be undone.</p>
+      <div class="dialog-actions">
+        <button class="dialog-btn dialog-btn-cancel" id="delete-meeting-cancel-btn" onclick="hideDeleteMeetingDialog()">Cancel</button>
+        <button class="dialog-btn dialog-btn-confirm" id="delete-meeting-confirm-btn" onclick="confirmDeleteMeeting()">Delete</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
 
