@@ -202,6 +202,536 @@
       gap: 0;
     }
     
+    .calendar-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    
+    @media (min-width: 1025px) {
+      .calendar-wrapper {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 40px;
+      }
+    }
+    
+    /* Calendar Styles */
+    .calendar-container {
+      flex: 1;
+      max-width: 900px;
+    }
+    
+    @media (min-width: 1025px) {
+      .calendar-container {
+        flex: 0 0 60%;
+        max-width: none;
+      }
+    }
+    
+    #selected-date-container {
+      flex: 0 0 35%;
+    }
+    
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding: 0 4px;
+    }
+    
+    .calendar-nav-btn {
+      background: #ffffff;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #060607;
+      transition: all 0.2s ease;
+      font-family: 'GoogleSans', sans-serif;
+    }
+    
+    .calendar-nav-btn:hover {
+      background: #f8fafc;
+      border-color: #004165;
+      color: #004165;
+    }
+    
+    .calendar-nav-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .calendar-month-year {
+      font-size: 24px;
+      font-weight: 700;
+      color: #060607;
+      letter-spacing: -0.5px;
+    }
+    
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: #e5e7eb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+    
+    .calendar-day-header {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      padding: 16px 8px;
+      background: #f8fafc;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .calendar-day {
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      background: #ffffff;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      padding: 8px;
+    }
+    
+    .calendar-day:hover {
+      background: #f8fafc;
+      z-index: 1;
+    }
+    
+    .calendar-day.other-month {
+      color: #cbd5e1;
+      background: #fafbfc;
+    }
+    
+    .calendar-day.other-month:hover {
+      background: #f1f5f9;
+    }
+    
+    .calendar-day.today {
+      background: #eff6ff;
+      border-left: 3px solid #004165;
+    }
+    
+    .calendar-day.today .day-number {
+      color: #004165;
+      font-weight: 700;
+    }
+    
+    .calendar-day.has-meeting {
+      background: #ecfdf5;
+      border-left: 3px solid #047857;
+    }
+    
+    .calendar-day.has-meeting .day-number {
+      color: #047857;
+      font-weight: 600;
+    }
+    
+    .calendar-day.has-meeting.today {
+      background: #d1fae5;
+      border-left: 3px solid #047857;
+    }
+    
+    .calendar-day.selected {
+      background: #dbeafe;
+      border: 2px solid #004165;
+      border-left: 3px solid #004165;
+    }
+    
+    .calendar-day.selected.has-meeting {
+      background: #d1fae5;
+      border: 2px solid #047857;
+      border-left: 3px solid #047857;
+    }
+    
+    .day-number {
+      font-size: 15px;
+      color: #060607;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    
+    .meeting-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #047857;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+    
+    .meeting-count {
+      font-size: 11px;
+      color: #047857;
+      font-weight: 600;
+      margin-top: auto;
+      padding-top: 4px;
+    }
+    
+    .selected-date-details {
+      padding: 20px;
+      background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    @media (min-width: 1025px) {
+      .selected-date-details {
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+      }
+    }
+    
+    .selected-date-header {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .selected-date-header-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #004165 0%, #003049 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+    
+    .selected-date-header-icon svg {
+      width: 20px;
+      height: 20px;
+      color: white;
+    }
+    
+    .selected-date-header-content {
+      flex: 1;
+    }
+    
+    .selected-date-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    
+    .selected-date-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #060607;
+      line-height: 1.3;
+    }
+    
+    .meeting-details-list {
+      margin-bottom: 0;
+    }
+    
+    .meeting-details-list-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    
+    .meeting-detail-item {
+      padding: 14px;
+      margin-bottom: 10px;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+    }
+    
+    .meeting-detail-item:hover {
+      border-color: #004165;
+      box-shadow: 0 2px 8px rgba(0, 65, 101, 0.1);
+      transform: translateY(-1px);
+    }
+    
+    .meeting-detail-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .meeting-detail-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #060607;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .meeting-detail-title-icon {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #004165;
+      flex-shrink: 0;
+    }
+    
+    .meeting-detail-time {
+      font-size: 14px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .meeting-detail-time-icon {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+    
+    .create-meeting-form {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #060607;
+      margin-bottom: 8px;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'GoogleSans', sans-serif;
+      transition: border-color 0.2s ease;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: #004165;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    
+    .btn-create {
+      background: #004165;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'GoogleSans', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    
+    .btn-create:hover {
+      background: #003049;
+    }
+    
+    .btn-create:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    
+    .no-meetings {
+      text-align: center;
+      padding: 20px 16px;
+      color: #64748b;
+      font-size: 14px;
+    }
+    
+    .upcoming-meetings-section {
+      margin-bottom: 40px;
+    }
+    
+    .upcoming-meetings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .upcoming-meetings-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #060607;
+      letter-spacing: -0.5px;
+    }
+    
+    .upcoming-meetings-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      width: 100%;
+    }
+    
+    .upcoming-meeting-card {
+      background: linear-gradient(135deg, #004165 0%, #003049 100%);
+      border-radius: 12px;
+      padding: 20px;
+      color: white;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .upcoming-meeting-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100px;
+      height: 100px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      transform: translate(30%, -30%);
+    }
+    
+    .upcoming-meeting-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 65, 101, 0.3);
+    }
+    
+    .upcoming-meeting-date {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+    
+    .upcoming-meeting-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+    
+    .upcoming-meeting-time {
+      font-size: 14px;
+      opacity: 0.9;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .upcoming-meeting-time svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .no-upcoming-meetings {
+      text-align: center;
+      padding: 24px 16px;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 2px dashed #e5e7eb;
+    }
+    
+    .no-upcoming-meetings-text {
+      font-size: 15px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    
+    .no-upcoming-meetings-hint {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    
+    .upcoming-meeting-shimmer {
+      background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+      border-radius: 12px;
+      padding: 20px;
+      min-height: 120px;
+      animation: shimmer 1.5s infinite;
+      background-size: 200% 100%;
+    }
+    
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+      100% {
+        background-position: 200% 0;
+      }
+    }
+    
+    .meetings-list {
+      margin-top: 32px;
+    }
+    
+    .meetings-list-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #060607;
+      margin-bottom: 16px;
+    }
+    
+    .meeting-item {
+      padding: 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      background: #ffffff;
+    }
+    
+    .meeting-item-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #060607;
+      margin-bottom: 8px;
+    }
+    
+    .meeting-item-date {
+      font-size: 13px;
+      color: #64748b;
+    }
+    
+    .loading-calendar {
+      text-align: center;
+      padding: 40px;
+      color: #64748b;
+    }
+    
     .footer {
       background: #1a1f3a;
       color: #FFFFFF;
@@ -363,6 +893,61 @@
       .mobile-overlay {
         display: block;
       }
+      
+      .calendar-grid {
+        gap: 1px;
+      }
+      
+      .calendar-day {
+        min-height: 60px;
+        padding: 6px 4px;
+      }
+      
+      .day-number {
+        font-size: 13px;
+      }
+      
+      .meeting-indicator {
+        width: 5px;
+        height: 5px;
+      }
+      
+      .calendar-header {
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      
+      .calendar-month-year {
+        font-size: 20px;
+        width: 100%;
+        text-align: center;
+        order: -1;
+      }
+      
+      .calendar-nav-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .selected-date-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      
+      .upcoming-meetings-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .upcoming-meetings-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
     }
   </style>
 </head>
@@ -424,7 +1009,20 @@
       <div class="section-card">
         <h2 class="section-title">Meetings</h2>
         <div class="section-content">
-          <p style="color: #64748b;">Meetings management coming soon...</p>
+          <div id="upcoming-meetings-section" class="upcoming-meetings-section">
+            <div class="upcoming-meetings-header">
+              <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+            </div>
+            <div class="upcoming-meetings-grid">
+              <div class="upcoming-meeting-shimmer"></div>
+            </div>
+          </div>
+          <div class="calendar-wrapper">
+            <div class="calendar-container" id="calendar-container">
+              <div class="loading-calendar">Loading calendar...</div>
+            </div>
+            <div id="selected-date-container"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -501,6 +1099,618 @@
     const clubAuth = initClubAuth();
     const memberAuth = initMemberAuth();
     
+    // Initialize Firestore and Functions
+    let clubDb = null;
+    try {
+      const clubApp = firebase.app('club');
+      clubDb = firebase.firestore(clubApp);
+      clubFunctions = firebase.functions(clubApp);
+    } catch (e) {
+      console.error('Error initializing Firestore/Functions:', e);
+    }
+    
+    // Calendar state
+    let currentDate = new Date();
+    let meetingsMap = new Map(); // Map of date strings to meetings
+    let meetingsUnsubscribe = null;
+    let selectedDate = new Date(); // Selected date object (default to today)
+    let clubFunctions = null;
+    let meetingsLoaded = false; // Track if meetings data has finished loading
+    
+    // Calendar functions
+    function formatDateKey(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    
+    function getDaysInMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    }
+    
+    function getFirstDayOfMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    }
+    
+    function isToday(date) {
+      const today = new Date();
+      return date.getDate() === today.getDate() &&
+             date.getMonth() === today.getMonth() &&
+             date.getFullYear() === today.getFullYear();
+    }
+    
+    function renderCalendar() {
+      const container = document.getElementById('calendar-container');
+      if (!container) return;
+      
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(currentDate);
+      const firstDay = getFirstDayOfMonth(currentDate);
+      
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'];
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      // Get next upcoming meeting (future dates only)
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      let nextMeeting = null;
+      let earliestDateTime = null;
+      
+      meetingsMap.forEach((meetings, dateKey) => {
+        const [y, m, d] = dateKey.split('-').map(Number);
+        const meetingDate = new Date(y, m - 1, d);
+        meetingDate.setHours(0, 0, 0, 0);
+        
+        if (meetingDate >= today) {
+          meetings.forEach(meeting => {
+            let meetingDateTime = null;
+            try {
+              if (meeting.meetingDateTime) {
+                // Handle Firestore timestamp
+                if (meeting.meetingDateTime.toDate) {
+                  meetingDateTime = meeting.meetingDateTime.toDate();
+                } else if (meeting.meetingDateTime instanceof Date) {
+                  meetingDateTime = meeting.meetingDateTime;
+                } else {
+                  meetingDateTime = new Date(meeting.meetingDateTime);
+                }
+              } else {
+                // If no time, use start of day
+                meetingDateTime = new Date(meetingDate);
+                meetingDateTime.setHours(0, 0, 0, 0);
+              }
+              
+              // Validate date
+              if (isNaN(meetingDateTime.getTime())) {
+                console.warn('Invalid meeting date:', meeting);
+                return;
+              }
+              
+              // Check if this meeting is in the future
+              if (meetingDateTime > now) {
+                if (!earliestDateTime || meetingDateTime < earliestDateTime) {
+                  earliestDateTime = meetingDateTime;
+                  nextMeeting = {
+                    date: meetingDate,
+                    dateKey: dateKey,
+                    meetingDateTime: meetingDateTime,
+                    ...meeting
+                  };
+                }
+              }
+            } catch (e) {
+              console.error('Error processing meeting date:', e, meeting);
+            }
+          });
+        }
+      });
+      
+      let html = `
+        <div class="calendar-header">
+          <button class="calendar-nav-btn" onclick="previousMonth()">← Previous</button>
+          <div class="calendar-month-year">${monthNames[month]} ${year}</div>
+          <button class="calendar-nav-btn" onclick="nextMonth()">Next →</button>
+        </div>
+        <div class="calendar-grid">
+      `;
+      
+      // Day headers
+      dayNames.forEach(day => {
+        html += `<div class="calendar-day-header">${day}</div>`;
+      });
+      
+      // Empty cells for days before month starts
+      const prevMonthDays = getDaysInMonth(new Date(year, month - 1, 1));
+      for (let i = firstDay - 1; i >= 0; i--) {
+        const day = prevMonthDays - i;
+        const prevDate = new Date(year, month - 1, day);
+        const dateKey = formatDateKey(prevDate);
+        const isSelected = selectedDate && formatDateKey(selectedDate) === dateKey;
+        const selectedClass = isSelected ? 'selected' : '';
+        html += `<div class="calendar-day other-month ${selectedClass}" data-date-key="${dateKey}" onclick="selectDate('${dateKey}')"><span class="day-number">${day}</span></div>`;
+      }
+      
+      // Days of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dateKey = formatDateKey(date);
+        const meetings = meetingsMap.get(dateKey) || [];
+        const hasMeeting = meetings.length > 0;
+        const todayClass = isToday(date) ? 'today' : '';
+        const meetingClass = hasMeeting ? 'has-meeting' : '';
+        const isSelected = selectedDate && formatDateKey(selectedDate) === dateKey;
+        const selectedClass = isSelected ? 'selected' : '';
+        
+        html += `
+          <div class="calendar-day ${todayClass} ${meetingClass} ${selectedClass}" data-date-key="${dateKey}" onclick="selectDate('${dateKey}')">
+            <span class="day-number">${day}</span>
+            ${hasMeeting ? `<div class="meeting-indicator"></div><div class="meeting-count">${meetings.length} meeting${meetings.length > 1 ? 's' : ''}</div>` : ''}
+          </div>
+        `;
+      }
+      
+      // Empty cells for days after month ends
+      const totalCells = firstDay + daysInMonth;
+      const remainingCells = 42 - totalCells; // 6 rows * 7 days
+      for (let day = 1; day <= remainingCells; day++) {
+        const nextDate = new Date(year, month + 1, day);
+        const dateKey = formatDateKey(nextDate);
+        const isSelected = selectedDate && formatDateKey(selectedDate) === dateKey;
+        const selectedClass = isSelected ? 'selected' : '';
+        html += `<div class="calendar-day other-month ${selectedClass}" data-date-key="${dateKey}" onclick="selectDate('${dateKey}')"><span class="day-number">${day}</span></div>`;
+      }
+      
+      html += '</div>';
+      
+        container.innerHTML = html;
+        
+        // Update selected date details separately
+        updateSelectedDateDetails();
+      }
+      
+      function updateSelectedDateDetails() {
+        const selectedDateContainer = document.getElementById('selected-date-container');
+        if (!selectedDateContainer) return;
+        
+        if (!selectedDate) {
+          selectedDateContainer.innerHTML = '';
+          return;
+        }
+        
+        const selectedDateKey = formatDateKey(selectedDate);
+        const selectedMeetings = meetingsMap.get(selectedDateKey) || [];
+        const dateStr = selectedDate.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        
+        let meetingsHtml = '';
+        if (selectedMeetings.length > 0) {
+          meetingsHtml = selectedMeetings.map(meeting => {
+            let timeStr = '';
+            if (meeting.meetingDateTime) {
+              try {
+                let meetingTime;
+                if (meeting.meetingDateTime.toDate) {
+                  meetingTime = meeting.meetingDateTime.toDate();
+                } else if (meeting.meetingDateTime instanceof Date) {
+                  meetingTime = meeting.meetingDateTime;
+                } else {
+                  meetingTime = new Date(meeting.meetingDateTime);
+                }
+                
+                if (!isNaN(meetingTime.getTime())) {
+                  timeStr = meetingTime.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  });
+                }
+              } catch (e) {
+                console.warn('Error formatting meeting time:', e);
+              }
+            }
+            return `
+              <div class="meeting-detail-item">
+                <div class="meeting-detail-title">
+                  <span class="meeting-detail-title-icon"></span>
+                  ${meeting.title || 'Untitled Meeting'}
+                </div>
+                ${timeStr ? `
+                  <div class="meeting-detail-time">
+                    <svg class="meeting-detail-time-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    ${timeStr}
+                  </div>
+                ` : '<div class="meeting-detail-time">No time specified</div>'}
+              </div>
+            `;
+          }).join('');
+        } else {
+          meetingsHtml = '<div class="no-meetings">No meetings scheduled for this date</div>';
+        }
+        
+        selectedDateContainer.innerHTML = `
+          <div class="selected-date-details">
+            <div class="selected-date-header">
+              <div class="selected-date-header-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div class="selected-date-header-content">
+                <div class="selected-date-title">Selected Date</div>
+                <div class="selected-date-value">${dateStr}</div>
+              </div>
+            </div>
+            
+            <div class="meeting-details-list">
+              ${selectedMeetings.length > 0 ? '<div class="meeting-details-list-title">Meetings</div>' : ''}
+              ${meetingsHtml}
+            </div>
+          </div>
+        `;
+      }
+      
+      function updateUpcomingMeetingsSection() {
+        const upcomingSection = document.getElementById('upcoming-meetings-section');
+        if (!upcomingSection) return;
+        
+        // If meetings map is empty and data hasn't loaded yet, keep shimmer
+        if (meetingsMap.size === 0 && !meetingsLoaded) {
+          upcomingSection.innerHTML = `
+            <div class="upcoming-meetings-header">
+              <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+            </div>
+            <div class="upcoming-meetings-grid">
+              <div class="upcoming-meeting-shimmer"></div>
+            </div>
+          `;
+          upcomingSection.style.display = 'block';
+          return;
+        }
+        
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        let nextMeeting = null;
+        let earliestDateTime = null;
+        
+        meetingsMap.forEach((meetings, dateKey) => {
+          const [y, m, d] = dateKey.split('-').map(Number);
+          const meetingDate = new Date(y, m - 1, d);
+          meetingDate.setHours(0, 0, 0, 0);
+          
+          if (meetingDate >= today) {
+            meetings.forEach(meeting => {
+              let meetingDateTime = null;
+              try {
+                if (meeting.meetingDateTime) {
+                  if (meeting.meetingDateTime.toDate) {
+                    meetingDateTime = meeting.meetingDateTime.toDate();
+                  } else if (meeting.meetingDateTime instanceof Date) {
+                    meetingDateTime = meeting.meetingDateTime;
+                  } else {
+                    meetingDateTime = new Date(meeting.meetingDateTime);
+                  }
+                } else {
+                  meetingDateTime = new Date(meetingDate);
+                  meetingDateTime.setHours(0, 0, 0, 0);
+                }
+                
+                if (isNaN(meetingDateTime.getTime())) {
+                  return;
+                }
+                
+                if (meetingDateTime > now) {
+                  if (!earliestDateTime || meetingDateTime < earliestDateTime) {
+                    earliestDateTime = meetingDateTime;
+                    nextMeeting = {
+                      date: meetingDate,
+                      dateKey: dateKey,
+                      meetingDateTime: meetingDateTime,
+                      ...meeting
+                    };
+                  }
+                }
+              } catch (e) {
+                console.error('Error processing meeting date:', e, meeting);
+              }
+            });
+          }
+        });
+        
+        if (nextMeeting) {
+          try {
+            const dateStr = nextMeeting.date.toLocaleDateString('en-US', { 
+              weekday: 'long',
+              month: 'long', 
+              day: 'numeric',
+              year: 'numeric'
+            });
+            
+            let timeStr = '';
+            if (nextMeeting.meetingDateTime) {
+              try {
+                let meetingTime;
+                if (nextMeeting.meetingDateTime.toDate) {
+                  meetingTime = nextMeeting.meetingDateTime.toDate();
+                } else if (nextMeeting.meetingDateTime instanceof Date) {
+                  meetingTime = nextMeeting.meetingDateTime;
+                } else {
+                  meetingTime = new Date(nextMeeting.meetingDateTime);
+                }
+                
+                if (!isNaN(meetingTime.getTime())) {
+                  timeStr = meetingTime.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  });
+                }
+              } catch (e) {
+                console.warn('Error formatting time:', e);
+              }
+            }
+            
+            upcomingSection.innerHTML = `
+              <div class="upcoming-meetings-header">
+                <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+              </div>
+              <div class="upcoming-meetings-grid">
+                <div class="upcoming-meeting-card" onclick="selectDate('${nextMeeting.dateKey}')">
+                  <div class="upcoming-meeting-date">${dateStr}</div>
+                  <div class="upcoming-meeting-title">${nextMeeting.title || 'Untitled Meeting'}</div>
+                  ${timeStr ? `
+                    <div class="upcoming-meeting-time">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      ${timeStr}
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+            upcomingSection.style.display = 'block';
+          } catch (e) {
+            console.error('Error formatting next meeting:', e, nextMeeting);
+            upcomingSection.innerHTML = `
+              <div class="upcoming-meetings-header">
+                <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+              </div>
+              <div class="no-upcoming-meetings">
+                <div class="no-upcoming-meetings-text">Error loading meeting details</div>
+              </div>
+            `;
+            upcomingSection.style.display = 'block';
+          }
+        } else {
+          upcomingSection.innerHTML = `
+            <div class="upcoming-meetings-header">
+              <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+            </div>
+            <div class="no-upcoming-meetings">
+              <div class="no-upcoming-meetings-text">No upcoming meetings</div>
+              <div class="no-upcoming-meetings-hint">Select a date below to create a meeting</div>
+            </div>
+          `;
+          upcomingSection.style.display = 'block';
+        }
+      }
+    
+    // Make navigation functions globally accessible
+    window.previousMonth = function() {
+      currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+      renderCalendar();
+    };
+    
+    window.nextMonth = function() {
+      currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+      renderCalendar();
+    };
+    
+    // Select a date
+    window.selectDate = function(dateKey) {
+      const [year, month, day] = dateKey.split('-').map(Number);
+      selectedDate = new Date(year, month - 1, day);
+      
+      renderCalendar();
+      updateSelectedDateDetails();
+    };
+    
+    // Create meeting (make globally accessible)
+    window.createMeeting = async function() {
+      const clubUser = clubAuth ? clubAuth.currentUser : null;
+      if (!clubUser) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please log in to create a meeting');
+        }
+        return;
+      }
+      
+      const titleInput = document.getElementById('meeting-title');
+      const dateInput = document.getElementById('meeting-date');
+      const timeInput = document.getElementById('meeting-time');
+      const createBtn = document.getElementById('create-meeting-btn');
+      
+      if (!titleInput || !dateInput || !timeInput) return;
+      
+      const title = titleInput.value.trim();
+      const dateStr = dateInput.value;
+      const timeStr = timeInput.value;
+      
+      if (!title) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please enter a meeting title');
+        }
+        return;
+      }
+      
+      if (!dateStr) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please select a date');
+        }
+        return;
+      }
+      
+      if (!timeStr) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please select a time');
+        }
+        return;
+      }
+      
+      // Combine date and time
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const meetingDateTime = new Date(year, month - 1, day, hours, minutes);
+      
+      // Disable button
+      if (createBtn) {
+        createBtn.disabled = true;
+        createBtn.textContent = 'Creating...';
+      }
+      
+      try {
+        // Call Firebase function to create meeting
+        const createMeetingFn = clubFunctions.httpsCallable('create_meeting');
+        const result = await createMeetingFn({
+          title: title,
+          creator_id: clubUser.uid
+        });
+        
+        // If meeting created, update it with datetime
+        if (result.data && result.data.success && result.data.meeting && result.data.meeting.id) {
+          const meetingId = result.data.meeting.id;
+          
+          // Update the meeting with datetime using Firestore Timestamp
+          const timestamp = firebase.firestore.Timestamp.fromDate(meetingDateTime);
+          
+          // Update user's meetings collection
+          await clubDb.collection('users').doc(clubUser.uid)
+            .collection('meetings').doc(meetingId)
+            .update({
+              meeting_datetime: timestamp
+            });
+          
+          // Also update active_meetings
+          await clubDb.collection('active_meetings').doc(meetingId)
+            .update({
+              meeting_datetime: timestamp
+            });
+          
+          // Clear form
+          if (titleInput) titleInput.value = '';
+          if (dateInput && selectedDate) {
+            const dateKey = formatDateKey(selectedDate);
+            const [y, m, d] = dateKey.split('-').map(Number);
+            dateInput.value = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          }
+          if (timeInput) timeInput.value = '19:00';
+          
+          if (typeof notifications !== 'undefined') {
+            notifications.success('Meeting created successfully');
+          }
+        } else {
+          throw new Error('No meeting ID returned');
+        }
+      } catch (error) {
+        console.error('Error creating meeting:', error);
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Failed to create meeting. Please try again.');
+        }
+      } finally {
+        if (createBtn) {
+          createBtn.disabled = false;
+          createBtn.textContent = 'Create Meeting';
+        }
+      }
+    };
+    
+    function loadMeetings(userId) {
+      if (!clubDb || !userId) return;
+      
+      // Unsubscribe from previous listener if exists
+      if (meetingsUnsubscribe) {
+        meetingsUnsubscribe();
+        meetingsUnsubscribe = null;
+      }
+      
+      // Set up real-time listener
+      meetingsUnsubscribe = clubDb.collection('users').doc(userId)
+        .collection('meetings')
+        .onSnapshot((snapshot) => {
+          meetingsMap.clear();
+          
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.meeting_datetime) {
+            try {
+              // Convert Firestore timestamp to local date
+              let meetingDate;
+              if (data.meeting_datetime.toDate) {
+                meetingDate = data.meeting_datetime.toDate();
+              } else if (data.meeting_datetime instanceof Date) {
+                meetingDate = data.meeting_datetime;
+              } else {
+                meetingDate = new Date(data.meeting_datetime);
+              }
+              
+              // Validate date
+              if (isNaN(meetingDate.getTime())) {
+                console.warn('Invalid meeting_datetime for doc:', doc.id, data.meeting_datetime);
+                return;
+              }
+              
+              const dateKey = formatDateKey(meetingDate);
+              
+              if (!meetingsMap.has(dateKey)) {
+                meetingsMap.set(dateKey, []);
+              }
+              
+              meetingsMap.get(dateKey).push({
+                id: doc.id,
+                title: data.title || 'Untitled Meeting',
+                meetingDateTime: data.meeting_datetime,
+                agendaUrl: data.agenda_url || data.agendaUrl
+              });
+            } catch (e) {
+              console.error('Error processing meeting:', e, doc.id, data);
+            }
+          }
+        });
+          
+          meetingsLoaded = true; // Mark that data has finished loading
+          updateUpcomingMeetingsSection();
+          renderCalendar();
+          updateSelectedDateDetails();
+        }, (error) => {
+          console.error('Error loading meetings:', error);
+          const container = document.getElementById('calendar-container');
+          if (container) {
+            container.innerHTML = '<div class="loading-calendar">Error loading meetings. Please refresh the page.</div>';
+          }
+          const upcomingSection = document.getElementById('upcoming-meetings-section');
+          if (upcomingSection) {
+            upcomingSection.innerHTML = `
+              <div class="upcoming-meetings-header">
+                <div class="upcoming-meetings-title">Next Upcoming Meeting</div>
+              </div>
+              <div class="no-upcoming-meetings">
+                <div class="no-upcoming-meetings-text">Error loading meetings</div>
+              </div>
+            `;
+            upcomingSection.style.display = 'block';
+          }
+        });
+    }
+    
     let memberAuthResolved = false;
     let clubAuthResolved = false;
     
@@ -519,7 +1729,13 @@
       
       // Check if club user is logged in
       const clubUser = clubAuth ? clubAuth.currentUser : null;
-      if (!clubUser) {
+      if (clubUser) {
+        // Render calendar first (empty state)
+        renderCalendar();
+        updateSelectedDateDetails();
+        // Then load meetings (will trigger re-render when data arrives)
+        loadMeetings(clubUser.uid);
+      } else {
         // User is not logged in, redirect to login
         window.location.href = '../../club-login/';
       }
