@@ -598,6 +598,172 @@
         line-height: 1.4;
       }
       
+      /* Join Meeting Dialog */
+      .dialog-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+      
+      .dialog-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+      
+      .dialog {
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transform: scale(0.95);
+        transition: transform 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .dialog-overlay.active .dialog {
+        transform: scale(1);
+      }
+      
+      .dialog-accent {
+        width: 60px;
+        height: 4px;
+        background: linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%);
+        border-radius: 2px;
+        margin-bottom: 24px;
+      }
+      
+      .dialog-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #060607;
+        margin-bottom: 8px;
+        text-align: center;
+      }
+      
+      .dialog-message {
+        font-size: 16px;
+        color: #4f5660;
+        margin-bottom: 24px;
+        line-height: 1.5;
+        text-align: center;
+      }
+      
+      .dialog-input-wrapper {
+        width: 280px;
+        margin-bottom: 24px;
+      }
+      
+      .dialog-input {
+        width: 100%;
+        padding: 16px 20px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #060607;
+        transition: border-color 0.2s ease;
+        font-family: 'GoogleSans', sans-serif;
+        text-align: center;
+        letter-spacing: 8px;
+        background: #ffffff;
+      }
+      
+      .dialog-input::placeholder {
+        letter-spacing: 8px;
+        color: #9CA3AF;
+      }
+      
+      .dialog-input:focus {
+        outline: none;
+        border-color: #004165;
+      }
+      
+      .dialog-input.error {
+        border-color: #dc2626;
+      }
+      
+      .dialog-error {
+        color: #dc2626;
+        font-size: 14px;
+        margin-top: 8px;
+        margin-bottom: 0;
+        display: none;
+        text-align: center;
+      }
+      
+      .dialog-error.show {
+        display: block;
+      }
+      
+      .dialog-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 0;
+      }
+      
+      .dialog-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        font-family: 'GoogleSans', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      
+      .dialog-btn-cancel {
+        display: none;
+      }
+      
+      .dialog-btn-primary {
+        background: #004165;
+        color: white;
+        min-width: 120px;
+      }
+      
+      .dialog-btn-primary:hover {
+        background: #003049;
+      }
+      
+      .dialog-btn-primary:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
+      
+      .dialog-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: inline-block;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
       .footer-links {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -781,7 +947,7 @@
           <p class="actions-subtitle">Choose an action to get started</p>
         </div>
         <div class="actions-grid">
-          <a href="#" class="action-card" onclick="event.preventDefault(); alert('Join Meeting - Feature coming soon');">
+          <a href="#" class="action-card" onclick="event.preventDefault(); showJoinMeetingDialog();">
             <div class="action-image-wrapper">
               <img src="assets/join_meeting_classic.webp" alt="Join Meeting" class="action-image" loading="eager" fetchpriority="high">
             </div>
@@ -802,6 +968,24 @@
         </div>
       </div>
     </section>
+
+    <!-- Join Meeting Dialog -->
+    <div class="dialog-overlay" id="join-meeting-dialog-overlay" onclick="if(event.target === this) hideJoinMeetingDialog()">
+      <div class="dialog">
+        <h3 class="dialog-title">Enter club code to join</h3>
+        <p class="dialog-message">Best speeches coming your way!</p>
+        <div class="dialog-input-wrapper">
+          <input type="text" id="club-code-input" class="dialog-input" placeholder="1234 5678" maxlength="9" inputmode="numeric">
+          <div class="dialog-error" id="club-code-error"></div>
+        </div>
+        <div class="dialog-actions">
+          <button class="dialog-btn dialog-btn-primary" id="join-meeting-submit-btn" onclick="joinMeeting()">
+            <span id="join-btn-text">Join</span>
+            <div id="join-btn-spinner" class="dialog-spinner" style="display: none;"></div>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <footer class="footer">
       <div class="footer-container">
@@ -836,6 +1020,7 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/notifications.js"></script>
     <script src="js/auth-utils.js"></script>
@@ -847,6 +1032,7 @@
       // Initialize Firebase apps
       let memberAuth = null;
       let clubAuth = null;
+      let clubDb = null;
       let isLoggedIn = false;
       
       try {
@@ -866,6 +1052,7 @@
         // Initialize club Firebase app
         const clubApp = firebase.initializeApp(FirebaseConfigs.club, 'club');
         clubAuth = firebase.auth(clubApp);
+        clubDb = firebase.firestore(clubApp);
       } catch (e) {
         console.warn('Club Firebase already initialized or error:', e);
         try {
@@ -1126,6 +1313,143 @@
         mobileOverlay.classList.remove('active');
         document.body.style.overflow = '';
       });
+      
+      // Join Meeting Dialog Functions
+      function showJoinMeetingDialog() {
+        const overlay = document.getElementById('join-meeting-dialog-overlay');
+        const input = document.getElementById('club-code-input');
+        const error = document.getElementById('club-code-error');
+        
+        if (overlay) {
+          overlay.classList.add('active');
+          document.body.style.overflow = 'hidden';
+          
+          // Clear previous input and error
+          if (input) {
+            input.value = '';
+            input.classList.remove('error');
+            input.focus();
+            
+            // Format code with space after 4 digits
+            input.addEventListener('input', function(e) {
+              let value = this.value.replace(/[^0-9]/g, '');
+              
+              // Limit to 8 digits
+              if (value.length > 8) {
+                value = value.substring(0, 8);
+              }
+              
+              // Add space after 4 digits
+              if (value.length > 4) {
+                value = value.substring(0, 4) + ' ' + value.substring(4);
+              }
+              
+              this.value = value;
+            });
+            
+            // Allow Enter key to submit
+            input.addEventListener('keypress', function(e) {
+              if (e.key === 'Enter') {
+                joinMeeting();
+              }
+            });
+          }
+          if (error) {
+            error.textContent = '';
+            error.classList.remove('show');
+          }
+          
+          // Reset button state
+          const submitBtn = document.getElementById('join-meeting-submit-btn');
+          const btnText = document.getElementById('join-btn-text');
+          const btnSpinner = document.getElementById('join-btn-spinner');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            if (btnText) btnText.style.display = 'inline';
+            if (btnSpinner) btnSpinner.style.display = 'none';
+          }
+        }
+      }
+      
+      function hideJoinMeetingDialog() {
+        const overlay = document.getElementById('join-meeting-dialog-overlay');
+        if (overlay) {
+          overlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+      }
+      
+      async function joinMeeting() {
+        const input = document.getElementById('club-code-input');
+        const error = document.getElementById('club-code-error');
+        const submitBtn = document.getElementById('join-meeting-submit-btn');
+        const btnText = document.getElementById('join-btn-text');
+        const btnSpinner = document.getElementById('join-btn-spinner');
+        
+        if (!input || !error || !submitBtn) return;
+        
+        // Get digits only (remove space)
+        const clubCode = input.value.replace(/[^0-9]/g, '');
+        
+        // Clear previous error
+        error.textContent = '';
+        error.classList.remove('show');
+        input.classList.remove('error');
+        
+        // Validate format
+        if (!clubCode) {
+          error.textContent = 'Please enter a club code';
+          error.classList.add('show');
+          input.classList.add('error');
+          input.focus();
+          return;
+        }
+        
+        if (clubCode.length !== 8) {
+          error.textContent = 'Club code must be 8 digits';
+          error.classList.add('show');
+          input.classList.add('error');
+          input.focus();
+          return;
+        }
+        
+        // Disable button and show loading
+        submitBtn.disabled = true;
+        if (btnText) btnText.style.display = 'none';
+        if (btnSpinner) btnSpinner.style.display = 'block';
+        
+        try {
+          if (!clubDb) {
+            throw new Error('Database not initialized');
+          }
+          
+          // Check if club code exists
+          const clubCodeDoc = await clubDb.collection('club_codes').doc(clubCode).get();
+          
+          if (!clubCodeDoc.exists) {
+            error.textContent = 'Club code not found. Please check and try again.';
+            error.classList.add('show');
+            input.classList.add('error');
+            input.focus();
+            submitBtn.disabled = false;
+            if (btnText) btnText.style.display = 'inline';
+            if (btnSpinner) btnSpinner.style.display = 'none';
+            return;
+          }
+          
+          // Valid club code - redirect to club page
+          window.location.href = `/clubs/${clubCode}`;
+          
+        } catch (err) {
+          console.error('Error joining meeting:', err);
+          error.textContent = 'An error occurred. Please try again.';
+          error.classList.add('show');
+          input.classList.add('error');
+          submitBtn.disabled = false;
+          if (btnText) btnText.style.display = 'inline';
+          if (btnSpinner) btnSpinner.style.display = 'none';
+        }
+      }
     </script>
   </body>
 </html>
