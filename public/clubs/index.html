@@ -370,25 +370,40 @@
     }
     
     .loading-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       min-height: 70vh;
       padding: 100px 32px;
     }
     
-    .loading-spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid #f0f0f0;
-      border-top-color: #004165;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+    .shimmer {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
     }
     
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    
+    .shimmer-hero-title {
+      width: 400px;
+      height: 80px;
+      margin: 0 auto 24px;
+      max-width: 100%;
+    }
+    
+    .shimmer-hero-location {
+      width: 300px;
+      height: 24px;
+      margin: 0 auto;
+      max-width: 100%;
+    }
+    
+    .shimmer-meeting-card {
+      width: 100%;
+      height: 120px;
+      margin-bottom: 16px;
     }
     
     .error-container {
@@ -445,7 +460,16 @@
   
   <main>
     <div id="loading-state" class="loading-container">
-      <div class="loading-spinner"></div>
+      <section class="hero">
+        <div class="hero-content">
+          <div class="shimmer shimmer-hero-title"></div>
+          <div class="shimmer shimmer-hero-location"></div>
+        </div>
+      </section>
+      <div class="main-content">
+        <div class="shimmer shimmer-meeting-card"></div>
+        <div class="shimmer shimmer-meeting-card"></div>
+      </div>
     </div>
     
     <div id="error-state" class="error-container" style="display: none;">
