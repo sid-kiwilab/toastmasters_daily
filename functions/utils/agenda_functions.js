@@ -33,53 +33,50 @@ const upload_agenda_handler = async (data, context) => {
     // Get Firebase Storage bucket
     const bucket = admin.storage().bucket();
     
-    // Create file path: agendas/{meetingId}.pdf
-    const filePath = `agendas/${data.meetingId}.pdf`;
+    // Get creator_id first to build the file path
+    const db = admin.firestore();
+    const activeMeetingRef = db.collection('active_meetings').doc(data.meetingId);
+    const activeMeetingDoc = await activeMeetingRef.get();
+    
+    if (!activeMeetingDoc.exists) {
+      return { success: false, error: 'Meeting not found' };
+    }
+    
+    const creator_id = activeMeetingDoc.data().creator_id;
+    if (!creator_id) {
+      return { success: false, error: 'Meeting creator not found' };
+    }
+    
+    // Create unique file path with timestamp: agendas/{user_id}/{meetingId}_{timestamp}.pdf
+    const timestamp = Date.now();
+    const filePath = `agendas/${creator_id}/${data.meetingId}_${timestamp}.pdf`;
     
     // Convert base64 to buffer
     const fileBuffer = Buffer.from(data.fileData, 'base64');
     
-    // Upload file to Firebase Storage
+    // Upload file to Firebase Storage (no need to check/delete, each upload is unique)
     const file = bucket.file(filePath);
-    
-    // Check if file already exists
-    const [exists] = await file.exists();
     
     await file.save(fileBuffer, {
       metadata: {
         contentType: 'application/pdf',
         metadata: {
           meeting_id: data.meetingId,
+          user_id: creator_id,
           original_file_name: data.fileName,
           uploaded_at: new Date().toISOString()
         }
       }
     });
 
-    // Make the file publicly readable (optional - you can adjust this)
+    // Make the file publicly readable
     await file.makePublic();
     
-    // Get the public URL
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
-    
-    // Store agenda reference in Firestore - only in users collection
-    const db = admin.firestore();
+    // Get the public URL with timestamp for cache-busting
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}?t=${timestamp}`;
     
     try {
-      // First get creator_id from active_meetings
-      const activeMeetingRef = db.collection('active_meetings').doc(data.meetingId);
-      const activeMeetingDoc = await activeMeetingRef.get();
-      
-      if (!activeMeetingDoc.exists) {
-        return { success: false, error: 'Meeting not found' };
-      }
-      
-      const creator_id = activeMeetingDoc.data().creator_id;
-      if (!creator_id) {
-        return { success: false, error: 'Meeting creator not found' };
-      }
-      
-      // Update only the user's meetings document with agenda_url
+      // Update the user's meetings document with the new agenda_url
       const userMeetingRef = db.collection('users').doc(creator_id).collection('meetings').doc(data.meetingId);
       await userMeetingRef.update({
         agenda_url: publicUrl

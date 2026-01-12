@@ -1768,7 +1768,7 @@
             
             const actionsSection = `
               <div class="meeting-detail-item-actions">
-                <button class="meeting-detail-actions-btn" onclick="showMeetingActionsDialog('${meeting.id}', '${escapeHtml(meeting.title || 'Untitled Meeting')}')">
+                <button class="meeting-detail-actions-btn" onclick="showMeetingActionsDialog('${meeting.id}', '${escapeHtml(meeting.title || 'Untitled Meeting')}', ${meeting.agendaUrl ? "'" + meeting.agendaUrl.replace(/'/g, "\\'").replace(/\\/g, '\\\\') + "'" : 'null'})">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                   </svg>
@@ -2450,12 +2450,14 @@
     }
     
     // Show meeting actions dialog
-    window.showMeetingActionsDialog = function(meetingId, meetingTitle) {
+    window.showMeetingActionsDialog = function(meetingId, meetingTitle, agendaUrl) {
       const overlay = document.getElementById('meeting-actions-dialog-overlay');
       const titleElement = document.getElementById('meeting-actions-dialog-title');
       
       if (overlay && titleElement) {
         titleElement.textContent = meetingTitle || 'Untitled Meeting';
+        overlay.setAttribute('data-meeting-id', meetingId);
+        overlay.setAttribute('data-agenda-url', agendaUrl || '');
         overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
         
@@ -2464,7 +2466,202 @@
         if (visitLink) {
           visitLink.href = `/meetings/${meetingId}`;
         }
+        
+        // Show/hide view agenda button
+        const viewAgendaBtn = document.getElementById('meeting-actions-view-agenda');
+        if (viewAgendaBtn) {
+          if (agendaUrl) {
+            viewAgendaBtn.href = agendaUrl;
+            viewAgendaBtn.style.display = 'flex';
+          } else {
+            viewAgendaBtn.style.display = 'none';
+          }
+        }
+        
+        // Check if polls exist and show/hide view polls button
+        checkPollsExist(meetingId).then(hasPolls => {
+          const viewPollsBtn = document.getElementById('meeting-actions-view-polls');
+          if (viewPollsBtn) {
+            viewPollsBtn.style.display = hasPolls ? 'flex' : 'none';
+          }
+        });
       }
+    };
+    
+    // Check if polls exist for a meeting
+    async function checkPollsExist(meetingId) {
+      const clubUser = clubAuth ? clubAuth.currentUser : null;
+      if (!clubUser || !clubDb) return false;
+      
+      try {
+        const pollsSnapshot = await clubDb
+          .collection('users')
+          .doc(clubUser.uid)
+          .collection('meetings')
+          .doc(meetingId)
+          .collection('polls')
+          .limit(1)
+          .get();
+        
+        return !pollsSnapshot.empty;
+      } catch (error) {
+        console.error('Error checking polls:', error);
+        return false;
+      }
+    }
+    
+    // Upload agenda
+    window.uploadAgenda = function() {
+      const fileInput = document.getElementById('agenda-file-input');
+      if (fileInput) {
+        fileInput.click();
+      }
+    };
+    
+    // Handle agenda file selection
+    window.handleAgendaFileSelect = async function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Only PDF files are allowed');
+        }
+        return;
+      }
+      
+      const overlay = document.getElementById('meeting-actions-dialog-overlay');
+      const meetingId = overlay ? overlay.getAttribute('data-meeting-id') : null;
+      
+      if (!meetingId) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Meeting ID not found');
+        }
+        return;
+      }
+      
+      const clubUser = clubAuth ? clubAuth.currentUser : null;
+      if (!clubUser) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Please log in to upload agenda');
+        }
+        return;
+      }
+      
+      if (!clubFunctions) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Firebase Functions not initialized');
+        }
+        return;
+      }
+      
+      // Show loading state
+      const uploadBtn = document.getElementById('meeting-actions-upload-agenda');
+      const originalText = uploadBtn ? uploadBtn.innerHTML : '';
+      if (uploadBtn) {
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> Uploading...';
+      }
+      
+      try {
+        // Read file as base64
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          try {
+            const base64Data = e.target.result.split(',')[1]; // Remove data:application/pdf;base64, prefix
+            
+            const uploadAgendaFn = clubFunctions.httpsCallable('upload_agenda');
+            const result = await uploadAgendaFn({
+              meetingId: meetingId,
+              fileData: base64Data,
+              fileName: file.name
+            });
+            
+            if (result.data && result.data.success) {
+              if (typeof notifications !== 'undefined') {
+                notifications.success('Agenda uploaded successfully!');
+              }
+              
+              // Update the agenda URL in the overlay
+              if (overlay && result.data.agenda && result.data.agenda.download_url) {
+                overlay.setAttribute('data-agenda-url', result.data.agenda.download_url);
+                const viewAgendaBtn = document.getElementById('meeting-actions-view-agenda');
+                if (viewAgendaBtn) {
+                  viewAgendaBtn.href = result.data.agenda.download_url;
+                  viewAgendaBtn.style.display = 'flex';
+                }
+              }
+              
+              // Reload meetings to update the UI
+              loadMeetings();
+            } else {
+              const errorMsg = result.data?.error || 'Failed to upload agenda';
+              if (typeof notifications !== 'undefined') {
+                notifications.error(errorMsg);
+              }
+            }
+          } catch (error) {
+            console.error('Error uploading agenda:', error);
+            if (typeof notifications !== 'undefined') {
+              notifications.error('Error uploading agenda: ' + error.message);
+            }
+          } finally {
+            // Reset button state
+            if (uploadBtn) {
+              uploadBtn.disabled = false;
+              uploadBtn.innerHTML = originalText;
+            }
+            // Reset file input
+            if (event.target) {
+              event.target.value = '';
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Error reading file');
+        }
+        if (uploadBtn) {
+          uploadBtn.disabled = false;
+          uploadBtn.innerHTML = originalText;
+        }
+      }
+    };
+    
+    // Set up polls
+    window.setupPolls = function() {
+      const overlay = document.getElementById('meeting-actions-dialog-overlay');
+      const meetingId = overlay ? overlay.getAttribute('data-meeting-id') : null;
+      
+      if (!meetingId) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Meeting ID not found');
+        }
+        return;
+      }
+      
+      hideMeetingActionsDialog();
+      // Navigate to polls setup page
+      window.location.href = `../polls/?meetingId=${meetingId}`;
+    };
+    
+    // View polls
+    window.viewPolls = function() {
+      const overlay = document.getElementById('meeting-actions-dialog-overlay');
+      const meetingId = overlay ? overlay.getAttribute('data-meeting-id') : null;
+      
+      if (!meetingId) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Meeting ID not found');
+        }
+        return;
+      }
+      
+      hideMeetingActionsDialog();
+      // Navigate to polls page
+      window.location.href = `../polls/?meetingId=${meetingId}`;
     };
     
     // Hide meeting actions dialog
@@ -2650,7 +2847,32 @@
           </svg>
           Visit Meeting
         </a>
+        <button class="meeting-action-item" onclick="uploadAgenda()" id="meeting-actions-upload-agenda">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          Upload Agenda
+        </button>
+        <button class="meeting-action-item" onclick="setupPolls()" id="meeting-actions-setup-polls">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+          Set Up Polls
+        </button>
+        <a href="#" id="meeting-actions-view-agenda" class="meeting-action-item" target="_blank" onclick="hideMeetingActionsDialog()" style="display: none;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          View Agenda
+        </a>
+        <button class="meeting-action-item" onclick="viewPolls()" id="meeting-actions-view-polls" style="display: none;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          View Polls
+        </button>
       </div>
+      <input type="file" id="agenda-file-input" accept=".pdf" style="display: none;" onchange="handleAgendaFileSelect(event)">
       <div class="dialog-actions" style="margin-top: 24px;">
         <button class="dialog-btn dialog-btn-cancel" onclick="hideMeetingActionsDialog()">Close</button>
       </div>
