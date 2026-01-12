@@ -174,6 +174,47 @@ const delete_meeting_handler = async (data, context) => {
     const meeting_id = data.meeting_id;
     const creator_id = data.creator_id;
     
+    // Delete all polls in the polls subcollection first
+    try {
+      const polls_ref = db
+        .collection('users')
+        .doc(creator_id)
+        .collection('meetings')
+        .doc(meeting_id)
+        .collection('polls');
+      
+      const polls_snapshot = await polls_ref.get();
+      
+      if (!polls_snapshot.empty) {
+        // Use batch to delete all polls (Firestore batch limit is 500 operations)
+        let batch = db.batch();
+        let batch_count = 0;
+        const total_polls = polls_snapshot.size;
+        
+        for (const poll_doc of polls_snapshot.docs) {
+          batch.delete(poll_doc.ref);
+          batch_count++;
+          
+          // Commit batch if we reach 500 operations (Firestore limit)
+          if (batch_count >= 500) {
+            await batch.commit();
+            batch = db.batch(); // Create new batch
+            batch_count = 0;
+          }
+        }
+        
+        // Commit remaining deletions
+        if (batch_count > 0) {
+          await batch.commit();
+        }
+        
+        console.log(`Deleted ${total_polls} poll(s) for meeting ${meeting_id}`);
+      }
+    } catch (polls_error) {
+      console.error(`Error deleting polls for meeting ${meeting_id}:`, polls_error);
+      // Continue with meeting deletion even if polls deletion fails
+    }
+    
     // Use transaction to ensure both deletions happen atomically
     await db.runTransaction(async (transaction) => {
       // Read both documents first
