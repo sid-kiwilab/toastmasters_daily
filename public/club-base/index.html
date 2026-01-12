@@ -241,6 +241,7 @@
       flex-wrap: wrap;
     }
     
+    
     .field-description {
       font-size: 13px;
       color: #64748b;
@@ -360,7 +361,7 @@
       background: #ffffff;
       border-radius: 8px;
       padding: 24px;
-      max-width: 400px;
+      max-width: 500px;
       width: 90%;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       transform: scale(0.95);
@@ -369,6 +370,33 @@
     
     .dialog-overlay.active .dialog {
       transform: scale(1);
+    }
+    
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .dialog-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      color: #64748b;
+      transition: color 0.2s ease;
+    }
+    
+    .dialog-close:hover {
+      color: #0f172a;
+    }
+    
+    .dialog-close svg {
+      width: 20px;
+      height: 20px;
     }
     
     .dialog-title {
@@ -418,6 +446,64 @@
     
     .dialog-btn-confirm:hover {
       background: #b91c1c;
+    }
+    
+    .dialog-btn-submit {
+      background: #004165;
+      color: white;
+    }
+    
+    .dialog-btn-submit:hover {
+      background: #002d47;
+    }
+    
+    .dialog-btn-submit:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+    
+    .dialog-form-group {
+      margin-bottom: 20px;
+    }
+    
+    .dialog-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #060607;
+      margin-bottom: 8px;
+    }
+    
+    .dialog-input,
+    .dialog-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: 'GoogleSans', sans-serif;
+      transition: border-color 0.2s ease;
+      box-sizing: border-box;
+    }
+    
+    .dialog-input:focus,
+    .dialog-textarea:focus {
+      outline: none;
+      border-color: #004165;
+    }
+    
+    .dialog-textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+    
+    .btn-secondary {
+      background: #f2f3f5;
+      color: #060607;
+    }
+    
+    .btn-secondary:hover {
+      background: #e3e5e8;
     }
     
     .info-item {
@@ -588,6 +674,15 @@
     }
     
     @media (max-width: 1024px) {
+      .dialog {
+        max-width: 90%;
+        padding: 20px;
+      }
+      
+      .dialog-textarea {
+        min-height: 100px;
+      }
+      
       .footer {
         padding: 40px 24px 20px;
       }
@@ -773,6 +868,48 @@
             </div>
           </div>
           <div class="profile-field">
+            <div class="field-label">Club Name</div>
+            <div class="field-main">
+              <div class="field-value">
+                <span id="club-name-shimmer" class="shimmer shimmer-line"></span>
+                <span id="club-name-value" class="field-content-loading"></span>
+              </div>
+              <div class="field-description">The name of your Toastmasters club</div>
+            </div>
+            <div class="field-action">
+              <span id="club-name-edit-shimmer" class="shimmer" style="width: 80px; height: 36px; display: inline-block;"></span>
+              <button id="club-name-edit-btn" class="btn btn-secondary field-content-loading" onclick="showClubNameDialog()" style="display: none;">Edit</button>
+            </div>
+          </div>
+          <div class="profile-field">
+            <div class="field-label">Club Location</div>
+            <div class="field-main">
+              <div class="field-value">
+                <span id="club-location-shimmer" class="shimmer shimmer-line"></span>
+                <span id="club-location-value" class="field-content-loading"></span>
+              </div>
+              <div class="field-description">The physical location where your club meets</div>
+            </div>
+            <div class="field-action">
+              <span id="club-location-edit-shimmer" class="shimmer" style="width: 80px; height: 36px; display: inline-block;"></span>
+              <button id="club-location-edit-btn" class="btn btn-secondary field-content-loading" onclick="showClubLocationDialog()" style="display: none;">Edit</button>
+            </div>
+          </div>
+          <div class="profile-field">
+            <div class="field-label">Club Description</div>
+            <div class="field-main">
+              <div class="field-value">
+                <span id="club-info-shimmer" class="shimmer shimmer-line"></span>
+                <span id="club-info-value" class="field-content-loading"></span>
+              </div>
+              <div class="field-description">Information about your club</div>
+            </div>
+            <div class="field-action">
+              <span id="club-info-edit-shimmer" class="shimmer" style="width: 80px; height: 36px; display: inline-block;"></span>
+              <button id="club-info-edit-btn" class="btn btn-secondary field-content-loading" onclick="showClubInfoDialog()" style="display: none;">Edit</button>
+            </div>
+          </div>
+          <div class="profile-field">
             <div class="field-label">Sign Out</div>
             <div class="field-main">
               <div class="field-value">Sign out of your account on this device</div>
@@ -796,6 +933,78 @@
         <button class="dialog-btn dialog-btn-cancel" onclick="hideLogoutDialog()">Cancel</button>
         <button class="dialog-btn dialog-btn-confirm" onclick="confirmLogout()">Logout</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Club Name Edit Dialog -->
+  <div class="dialog-overlay" id="club-name-dialog-overlay" onclick="if(event.target === this) hideClubNameDialog()">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Club Name</h3>
+        <button class="dialog-close" onclick="hideClubNameDialog()" id="club-name-dialog-close">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <form id="club-name-form" onsubmit="event.preventDefault(); saveClubName();">
+        <div class="dialog-form-group">
+          <label class="dialog-label" for="club-name-input">Club Name</label>
+          <input type="text" id="club-name-input" class="dialog-input" placeholder="Enter club name..." maxlength="100" required />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="dialog-btn dialog-btn-cancel" onclick="hideClubNameDialog()">Cancel</button>
+          <button type="submit" class="dialog-btn dialog-btn-submit" id="club-name-save-btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Club Location Edit Dialog -->
+  <div class="dialog-overlay" id="club-location-dialog-overlay" onclick="if(event.target === this) hideClubLocationDialog()">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Club Location</h3>
+        <button class="dialog-close" onclick="hideClubLocationDialog()" id="club-location-dialog-close">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <form id="club-location-form" onsubmit="event.preventDefault(); saveClubLocation();">
+        <div class="dialog-form-group">
+          <label class="dialog-label" for="club-location-input">Club Location</label>
+          <input type="text" id="club-location-input" class="dialog-input" placeholder="Enter club location..." maxlength="200" required />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="dialog-btn dialog-btn-cancel" onclick="hideClubLocationDialog()">Cancel</button>
+          <button type="submit" class="dialog-btn dialog-btn-submit" id="club-location-save-btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Club Info Edit Dialog -->
+  <div class="dialog-overlay" id="club-info-dialog-overlay" onclick="if(event.target === this) hideClubInfoDialog()">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Club Description</h3>
+        <button class="dialog-close" onclick="hideClubInfoDialog()" id="club-info-dialog-close">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <form id="club-info-form" onsubmit="event.preventDefault(); saveClubInfo();">
+        <div class="dialog-form-group">
+          <label class="dialog-label" for="club-info-input">Club Description</label>
+          <textarea id="club-info-input" class="dialog-textarea" placeholder="Add information about your club..." maxlength="2000" rows="8"></textarea>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="dialog-btn dialog-btn-cancel" onclick="hideClubInfoDialog()">Cancel</button>
+          <button type="submit" class="dialog-btn dialog-btn-submit" id="club-info-save-btn">Save</button>
+        </div>
+      </form>
     </div>
   </div>
   
@@ -870,6 +1079,16 @@
     const clubAuth = initClubAuth();
     const memberAuth = initMemberAuth();
     
+    let clubDb = null;
+    let clubApp = null;
+    
+    try {
+      clubApp = firebase.app('club');
+      clubDb = firebase.firestore(clubApp);
+    } catch (e) {
+      console.error('Error initializing Firestore:', e);
+    }
+    
     let memberAuthResolved = false;
     let clubAuthResolved = false;
     
@@ -929,10 +1148,109 @@
           }
         }
         
+        // Load club data
+        if (clubDb && clubUser) {
+          loadClubData(clubUser.uid);
+        }
+        
       } else {
         // User is not logged in, redirect to login
         window.location.href = '../club-login/';
       }
+    }
+    
+    // Load club data from Firestore
+    function loadClubData(userId) {
+      if (!clubDb) return;
+      
+      clubDb.collection('users').doc(userId).onSnapshot((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+          
+          // Update club name
+          const clubNameShimmer = document.getElementById('club-name-shimmer');
+          const clubNameValue = document.getElementById('club-name-value');
+          const clubNameEditBtn = document.getElementById('club-name-edit-btn');
+          const clubNameEditShimmer = document.getElementById('club-name-edit-shimmer');
+          
+          if (clubNameShimmer) clubNameShimmer.style.display = 'none';
+          if (clubNameEditShimmer) clubNameEditShimmer.style.display = 'none';
+          
+          if (clubNameValue) {
+            const clubName = data.club_name;
+            if (clubName && clubName.trim()) {
+              clubNameValue.textContent = clubName;
+            } else {
+              clubNameValue.textContent = 'Not set';
+              clubNameValue.style.color = '#64748b';
+            }
+            clubNameValue.classList.remove('field-content-loading');
+            clubNameValue.classList.add('field-content-loaded');
+          }
+          
+          if (clubNameEditBtn) {
+            clubNameEditBtn.classList.remove('field-content-loading');
+            clubNameEditBtn.classList.add('field-content-loaded');
+            clubNameEditBtn.style.display = 'inline-flex';
+          }
+          
+          // Update club location
+          const clubLocationShimmer = document.getElementById('club-location-shimmer');
+          const clubLocationValue = document.getElementById('club-location-value');
+          const clubLocationEditBtn = document.getElementById('club-location-edit-btn');
+          const clubLocationEditShimmer = document.getElementById('club-location-edit-shimmer');
+          
+          if (clubLocationShimmer) clubLocationShimmer.style.display = 'none';
+          if (clubLocationEditShimmer) clubLocationEditShimmer.style.display = 'none';
+          
+          if (clubLocationValue) {
+            const clubLocation = data.club_location;
+            if (clubLocation && clubLocation.trim()) {
+              clubLocationValue.textContent = clubLocation;
+            } else {
+              clubLocationValue.textContent = 'Not set';
+              clubLocationValue.style.color = '#64748b';
+            }
+            clubLocationValue.classList.remove('field-content-loading');
+            clubLocationValue.classList.add('field-content-loaded');
+          }
+          
+          if (clubLocationEditBtn) {
+            clubLocationEditBtn.classList.remove('field-content-loading');
+            clubLocationEditBtn.classList.add('field-content-loaded');
+            clubLocationEditBtn.style.display = 'inline-flex';
+          }
+          
+          // Update club info
+          const clubInfoShimmer = document.getElementById('club-info-shimmer');
+          const clubInfoValue = document.getElementById('club-info-value');
+          const clubInfoEditBtn = document.getElementById('club-info-edit-btn');
+          const clubInfoEditShimmer = document.getElementById('club-info-edit-shimmer');
+          
+          if (clubInfoShimmer) clubInfoShimmer.style.display = 'none';
+          if (clubInfoEditShimmer) clubInfoEditShimmer.style.display = 'none';
+          
+          if (clubInfoValue) {
+            const clubInfo = data.club_info;
+            if (clubInfo && clubInfo.trim()) {
+              clubInfoValue.textContent = clubInfo;
+            } else {
+              clubInfoValue.textContent = 'Not set';
+              clubInfoValue.style.color = '#64748b';
+            }
+            clubInfoValue.classList.remove('field-content-loading');
+            clubInfoValue.classList.add('field-content-loaded');
+          }
+          
+          if (clubInfoEditBtn) {
+            clubInfoEditBtn.classList.remove('field-content-loading');
+            clubInfoEditBtn.classList.add('field-content-loaded');
+            clubInfoEditBtn.style.display = 'inline-flex';
+          }
+        }
+      }, (error) => {
+        console.error('Error loading club data:', error);
+      });
     }
     
     // Check member auth state
@@ -1035,6 +1353,207 @@
         setTimeout(() => {
           window.location.href = '/';
         }, 1000);
+      }
+    }
+    
+    // Club Name Dialog Functions
+    function showClubNameDialog() {
+      if (!clubDb || !clubAuth || !clubAuth.currentUser) return;
+      
+      clubDb.collection('users').doc(clubAuth.currentUser.uid).get().then((doc) => {
+        const clubNameInput = document.getElementById('club-name-input');
+        if (clubNameInput) {
+          clubNameInput.value = doc.exists && doc.data().club_name ? doc.data().club_name : '';
+        }
+        
+        const overlay = document.getElementById('club-name-dialog-overlay');
+        if (overlay) {
+          overlay.classList.add('active');
+          document.body.style.overflow = 'hidden';
+          setTimeout(() => {
+            if (clubNameInput) clubNameInput.focus();
+          }, 100);
+        }
+      });
+    }
+    
+    function hideClubNameDialog() {
+      const overlay = document.getElementById('club-name-dialog-overlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+    
+    async function saveClubName() {
+      if (!clubDb || !clubAuth || !clubAuth.currentUser) return;
+      
+      const clubNameInput = document.getElementById('club-name-input');
+      const saveBtn = document.getElementById('club-name-save-btn');
+      const closeBtn = document.getElementById('club-name-dialog-close');
+      
+      if (!clubNameInput || !saveBtn) return;
+      
+      const newValue = clubNameInput.value.trim();
+      
+      // Disable buttons
+      saveBtn.disabled = true;
+      if (closeBtn) closeBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      
+      try {
+        await clubDb.collection('users').doc(clubAuth.currentUser.uid).set({
+          club_name: newValue || ''
+        }, { merge: true });
+        
+        hideClubNameDialog();
+        
+        if (typeof notifications !== 'undefined') {
+          notifications.success(newValue ? 'Club name saved successfully' : 'Club name cleared');
+        }
+      } catch (error) {
+        console.error('Error saving club name:', error);
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Error saving club name. Please try again.');
+        }
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+        if (closeBtn) closeBtn.disabled = false;
+      }
+    }
+    
+    // Club Location Dialog Functions
+    function showClubLocationDialog() {
+      if (!clubDb || !clubAuth || !clubAuth.currentUser) return;
+      
+      clubDb.collection('users').doc(clubAuth.currentUser.uid).get().then((doc) => {
+        const clubLocationInput = document.getElementById('club-location-input');
+        if (clubLocationInput) {
+          clubLocationInput.value = doc.exists && doc.data().club_location ? doc.data().club_location : '';
+        }
+        
+        const overlay = document.getElementById('club-location-dialog-overlay');
+        if (overlay) {
+          overlay.classList.add('active');
+          document.body.style.overflow = 'hidden';
+          setTimeout(() => {
+            if (clubLocationInput) clubLocationInput.focus();
+          }, 100);
+        }
+      });
+    }
+    
+    function hideClubLocationDialog() {
+      const overlay = document.getElementById('club-location-dialog-overlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+    
+    async function saveClubLocation() {
+      if (!clubDb || !clubAuth || !clubAuth.currentUser) return;
+      
+      const clubLocationInput = document.getElementById('club-location-input');
+      const saveBtn = document.getElementById('club-location-save-btn');
+      const closeBtn = document.getElementById('club-location-dialog-close');
+      
+      if (!clubLocationInput || !saveBtn) return;
+      
+      const newValue = clubLocationInput.value.trim();
+      
+      // Disable buttons
+      saveBtn.disabled = true;
+      if (closeBtn) closeBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      
+      try {
+        await clubDb.collection('users').doc(clubAuth.currentUser.uid).set({
+          club_location: newValue || ''
+        }, { merge: true });
+        
+        hideClubLocationDialog();
+        
+        if (typeof notifications !== 'undefined') {
+          notifications.success(newValue ? 'Club location saved successfully' : 'Club location cleared');
+        }
+      } catch (error) {
+        console.error('Error saving club location:', error);
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Error saving club location. Please try again.');
+        }
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+        if (closeBtn) closeBtn.disabled = false;
+      }
+    }
+    
+    // Club Info Dialog Functions
+    function showClubInfoDialog() {
+      if (!clubDb || !clubAuth || !clubAuth.currentUser) return;
+      
+      clubDb.collection('users').doc(clubAuth.currentUser.uid).get().then((doc) => {
+        const clubInfoInput = document.getElementById('club-info-input');
+        if (clubInfoInput) {
+          clubInfoInput.value = doc.exists && doc.data().club_info ? doc.data().club_info : '';
+        }
+        
+        const overlay = document.getElementById('club-info-dialog-overlay');
+        if (overlay) {
+          overlay.classList.add('active');
+          document.body.style.overflow = 'hidden';
+          setTimeout(() => {
+            if (clubInfoInput) clubInfoInput.focus();
+          }, 100);
+        }
+      });
+    }
+    
+    function hideClubInfoDialog() {
+      const overlay = document.getElementById('club-info-dialog-overlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+    
+    async function saveClubInfo() {
+      if (!clubDb || !clubAuth || !clubAuth.currentUser) return;
+      
+      const clubInfoInput = document.getElementById('club-info-input');
+      const saveBtn = document.getElementById('club-info-save-btn');
+      const closeBtn = document.getElementById('club-info-dialog-close');
+      
+      if (!clubInfoInput || !saveBtn) return;
+      
+      const newValue = clubInfoInput.value.trim();
+      
+      // Disable buttons
+      saveBtn.disabled = true;
+      if (closeBtn) closeBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      
+      try {
+        await clubDb.collection('users').doc(clubAuth.currentUser.uid).set({
+          club_info: newValue || ''
+        }, { merge: true });
+        
+        hideClubInfoDialog();
+        
+        if (typeof notifications !== 'undefined') {
+          notifications.success(newValue ? 'Club description saved successfully' : 'Club description cleared');
+        }
+      } catch (error) {
+        console.error('Error saving club description:', error);
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Error saving club description. Please try again.');
+        }
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+        if (closeBtn) closeBtn.disabled = false;
       }
     }
   </script>
