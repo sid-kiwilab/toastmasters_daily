@@ -506,6 +506,27 @@
       background: #e3e5e8;
     }
     
+    #club-code-value {
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: #004165;
+    }
+    
+    .club-code-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    
+    @media (max-width: 1024px) {
+      .club-code-actions {
+        gap: 8px;
+      }
+    }
+    
     .info-item {
       margin-bottom: 12px;
     }
@@ -774,8 +795,8 @@
       }
       
       .btn {
-        width: 100%;
-        justify-content: center;
+        width: auto;
+        justify-content: flex-start;
       }
       
       .main-content {
@@ -910,6 +931,29 @@
             </div>
           </div>
           <div class="profile-field">
+            <div class="field-label">Club Code</div>
+            <div class="field-main">
+              <div class="field-value">
+                <span id="club-code-shimmer" class="shimmer shimmer-line"></span>
+                <span id="club-code-value" class="field-content-loading"></span>
+              </div>
+              <div class="field-description">Share this code with members to allow them to join your club</div>
+            </div>
+            <div class="field-action">
+              <span id="club-code-button-shimmer" class="shimmer" style="width: 150px; height: 36px; display: inline-block;"></span>
+              <button id="club-code-generate-btn" class="btn btn-primary field-content-loading" onclick="generateClubCode()" style="display: none;">Generate Club Code</button>
+              <div id="club-code-actions" class="club-code-actions field-content-loading" style="display: none;">
+                <button id="club-code-download-btn" class="btn btn-secondary" onclick="downloadQRCode()" title="Download QR Code">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download</span>
+                </button>
+                <button id="club-code-regenerate-btn" class="btn btn-logout" onclick="showRegenerateCodeDialog()">Regenerate</button>
+              </div>
+            </div>
+          </div>
+          <div class="profile-field">
             <div class="field-label">Sign Out</div>
             <div class="field-main">
               <div class="field-value">Sign out of your account on this device</div>
@@ -1007,6 +1051,55 @@
       </form>
     </div>
   </div>
+
+  <!-- Regenerate Club Code Warning Dialog -->
+  <div class="dialog-overlay" id="regenerate-code-warning-dialog-overlay" onclick="if(event.target === this) hideRegenerateCodeWarningDialog()">
+    <div class="dialog" style="max-width: 500px;">
+      <div class="dialog-header">
+        <h3 class="dialog-title">⚠️ Regenerate Club Code</h3>
+        <button class="dialog-close" onclick="hideRegenerateCodeWarningDialog()" id="regenerate-warning-dialog-close">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="dialog-message" style="line-height: 1.6; margin-bottom: 20px;">
+        <p style="margin-bottom: 12px;"><strong>WARNING:</strong> Generating a new club code will immediately invalidate your current code!</p>
+        <p style="margin-bottom: 12px;">The old code will stop working instantly, and anyone trying to use it will be unable to access your club.</p>
+        <p style="margin-bottom: 12px;">You MUST update ALL physical QR codes that have been printed, displayed, or shared. This includes:</p>
+        <ul style="margin-left: 20px; margin-bottom: 12px;">
+          <li>Printed posters and flyers</li>
+          <li>Digital displays</li>
+          <li>Shared links and bookmarks</li>
+          <li>Any other materials with the old code</li>
+        </ul>
+        <p><strong>Are you absolutely sure you want to proceed?</strong></p>
+      </div>
+      <div class="dialog-actions">
+        <button class="dialog-btn dialog-btn-cancel" onclick="hideRegenerateCodeWarningDialog()">Cancel</button>
+        <button class="dialog-btn dialog-btn-confirm" onclick="showFinalConfirmationDialog()">Regenerate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Final Confirmation Dialog -->
+  <div class="dialog-overlay" id="final-confirmation-dialog-overlay" onclick="if(event.target === this) hideFinalConfirmationDialog()">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Final Confirmation</h3>
+        <button class="dialog-close" onclick="hideFinalConfirmationDialog()" id="final-confirmation-dialog-close">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <p class="dialog-message">Are you absolutely sure you want to regenerate your club code? This action cannot be undone.</p>
+      <div class="dialog-actions">
+        <button class="dialog-btn dialog-btn-cancel" onclick="hideFinalConfirmationDialog()">Cancel</button>
+        <button class="dialog-btn dialog-btn-confirm" onclick="regenerateClubCode()" id="final-confirm-regenerate-btn">Yes, Regenerate</button>
+      </div>
+    </div>
+  </div>
   
   <footer class="footer">
     <div class="footer-container">
@@ -1047,6 +1140,10 @@
   <script src="../js/notifications.js"></script>
   <script src="../js/auth-utils.js"></script>
   
+  <!-- QR Code and PDF Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
   <script>
     // Set current year
     document.getElementById('current-year').textContent = new Date().getFullYear();
@@ -1080,13 +1177,15 @@
     const memberAuth = initMemberAuth();
     
     let clubDb = null;
+    let clubFunctions = null;
     let clubApp = null;
     
     try {
       clubApp = firebase.app('club');
       clubDb = firebase.firestore(clubApp);
+      clubFunctions = firebase.functions(clubApp);
     } catch (e) {
-      console.error('Error initializing Firestore:', e);
+      console.error('Error initializing Firestore/Functions:', e);
     }
     
     let memberAuthResolved = false;
@@ -1151,12 +1250,80 @@
         // Load club data
         if (clubDb && clubUser) {
           loadClubData(clubUser.uid);
+          loadClubCode(clubUser.uid);
         }
         
       } else {
         // User is not logged in, redirect to login
         window.location.href = '../club-login/';
       }
+    }
+    
+    // Load club code from Firestore
+    let clubCodeUnsubscribe = null;
+    function loadClubCode(userId) {
+      if (!clubDb) return;
+      
+      const clubCodeShimmer = document.getElementById('club-code-shimmer');
+      const clubCodeValue = document.getElementById('club-code-value');
+      const clubCodeGenerateBtn = document.getElementById('club-code-generate-btn');
+      const clubCodeRegenerateBtn = document.getElementById('club-code-regenerate-btn');
+      const clubCodeButtonShimmer = document.getElementById('club-code-button-shimmer');
+      
+      // Set up real-time listener for club_code changes
+      clubCodeUnsubscribe = clubDb.collection('users').doc(userId).onSnapshot((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+          const clubCodeValueNum = data.club_code;
+          
+          // Store for download function
+          clubCodeForDownload = clubCodeValueNum ? clubCodeValueNum.toString() : null;
+          updateClubDataForDownload(data);
+          
+          if (clubCodeShimmer) clubCodeShimmer.style.display = 'none';
+          if (clubCodeButtonShimmer) clubCodeButtonShimmer.style.display = 'none';
+          
+          if (clubCodeValue) {
+            if (clubCodeValueNum != null) {
+              clubCodeValue.textContent = clubCodeValueNum.toString();
+              clubCodeValue.style.color = '#004165';
+            } else {
+              clubCodeValue.textContent = 'Not set';
+              clubCodeValue.style.color = '#64748b';
+            }
+            clubCodeValue.classList.remove('field-content-loading');
+            clubCodeValue.classList.add('field-content-loaded');
+          }
+          
+          // Show Generate button if no code, actions (download + regenerate) if code exists
+          const clubCodeActions = document.getElementById('club-code-actions');
+          if (clubCodeValueNum != null) {
+            if (clubCodeGenerateBtn) clubCodeGenerateBtn.style.display = 'none';
+            if (clubCodeActions) {
+              clubCodeActions.classList.remove('field-content-loading');
+              clubCodeActions.classList.add('field-content-loaded');
+              clubCodeActions.style.display = 'flex';
+            }
+          } else {
+            if (clubCodeActions) clubCodeActions.style.display = 'none';
+            if (clubCodeGenerateBtn) {
+              clubCodeGenerateBtn.classList.remove('field-content-loading');
+              clubCodeGenerateBtn.classList.add('field-content-loaded');
+              clubCodeGenerateBtn.style.display = 'inline-flex';
+            }
+          }
+        }
+      }, (error) => {
+        console.error('Error loading club code:', error);
+        if (clubCodeShimmer) clubCodeShimmer.style.display = 'none';
+        if (clubCodeButtonShimmer) clubCodeButtonShimmer.style.display = 'none';
+        if (clubCodeValue) {
+          clubCodeValue.textContent = 'Error loading';
+          clubCodeValue.style.color = '#dc2626';
+          clubCodeValue.classList.remove('field-content-loading');
+          clubCodeValue.classList.add('field-content-loaded');
+        }
+      });
     }
     
     // Load club data from Firestore
@@ -1166,6 +1333,9 @@
       clubDb.collection('users').doc(userId).onSnapshot((doc) => {
         if (doc.exists) {
           const data = doc.data();
+          
+          // Store club name for download function
+          updateClubDataForDownload(data);
           
           // Update club name
           const clubNameShimmer = document.getElementById('club-name-shimmer');
@@ -1553,6 +1723,392 @@
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save';
+        if (closeBtn) closeBtn.disabled = false;
+      }
+    }
+    
+    // Club Code Generation Functions
+    async function generateClubCode() {
+      if (!clubDb || !clubAuth || !clubAuth.currentUser) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Firestore not initialized');
+        }
+        return;
+      }
+      
+      const generateBtn = document.getElementById('club-code-generate-btn');
+      
+      if (generateBtn) {
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Generating...';
+      }
+      
+      const userId = clubAuth.currentUser.uid;
+      
+      try {
+        // Generate unique 8-digit club code before transaction
+        let newClubCode;
+        let attempts = 0;
+        const maxAttempts = 20;
+        
+        do {
+          // Generate random 8-digit number (10000000 to 99999999)
+          const codeValue = Math.floor(10000000 + Math.random() * 90000000);
+          newClubCode = codeValue.toString();
+          
+          // Check if code exists as document ID in club_codes collection
+          const existingCodeSnap = await clubDb.collection('club_codes').doc(newClubCode).get();
+          
+          // Also check if any user already has this club_code value (as number)
+          const existingUserWithCode = await clubDb.collection('users')
+            .where('club_code', '==', codeValue)
+            .limit(1)
+            .get();
+          
+          if (!existingCodeSnap.exists && existingUserWithCode.empty) {
+            break; // Code is available
+          }
+          
+          attempts++;
+          if (attempts >= maxAttempts) {
+            throw new Error(`Failed to generate unique club code after ${maxAttempts} attempts`);
+          }
+        } while (attempts < maxAttempts);
+        
+        // Now run transaction - ALL READS FIRST, THEN ALL WRITES
+        await clubDb.runTransaction(async (transaction) => {
+          const userDocRef = clubDb.collection('users').doc(userId);
+          
+          // Read new club_code document to verify it doesn't exist
+          const newClubCodeRef = clubDb.collection('club_codes').doc(newClubCode);
+          const newClubCodeSnap = await transaction.get(newClubCodeRef);
+          
+          if (newClubCodeSnap.exists) {
+            throw new Error('Club code collision detected during transaction');
+          }
+          
+          // NOW DO ALL WRITES (after all reads)
+          // Create new club_codes document with 8-digit code
+          transaction.set(newClubCodeRef, { uid: userId });
+          
+          // Update user document with new 8-digit club_code as number
+          transaction.set(userDocRef, { club_code: parseInt(newClubCode, 10) }, { merge: true });
+        });
+        
+        if (typeof notifications !== 'undefined') {
+          notifications.success('Club code generated successfully');
+        }
+        // The listener will automatically update the club code display
+      } catch (error) {
+        console.error('Error generating club code:', error);
+        if (typeof notifications !== 'undefined') {
+          notifications.error(error.message || 'Error generating club code. Please try again.');
+        }
+      } finally {
+        if (generateBtn) {
+          generateBtn.disabled = false;
+          generateBtn.textContent = 'Generate Club Code';
+        }
+      }
+    }
+    
+    // Club Code Download Functions
+    let clubNameForDownload = null;
+    let clubCodeForDownload = null;
+    
+    // Store club name when loading club data
+    function updateClubDataForDownload(data) {
+      clubNameForDownload = data.club_name || null;
+    }
+    
+    async function downloadQRCode() {
+      if (!clubCodeForDownload) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('No club code available');
+        }
+        return;
+      }
+      
+      const downloadBtn = document.getElementById('club-code-download-btn');
+      if (downloadBtn) {
+        downloadBtn.disabled = true;
+        downloadBtn.style.opacity = '0.5';
+      }
+      
+      try {
+        // Get base URL
+        const baseUrl = window.location.origin;
+        const qrCodeData = `${baseUrl}/clubs/${clubCodeForDownload}`;
+        
+        // Generate QR code as data URL using QRCode.js
+        // Create a temporary div and canvas for QR code generation
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.width = '600px';
+        tempDiv.style.height = '600px';
+        document.body.appendChild(tempDiv);
+        
+        // Generate QR code
+        const qr = new QRCode(tempDiv, {
+          text: qrCodeData,
+          width: 600,
+          height: 600,
+          colorDark: '#000000',
+          colorLight: '#FFFFFF',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        // Wait for QR code to render
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Get the canvas element
+        const canvas = tempDiv.querySelector('canvas');
+        if (!canvas) {
+          document.body.removeChild(tempDiv);
+          throw new Error('Failed to generate QR code');
+        }
+        
+        // Convert canvas to data URL
+        const qrDataUrl = canvas.toDataURL('image/png');
+        
+        // Clean up
+        document.body.removeChild(tempDiv);
+        
+        // Convert data URL to image
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = qrDataUrl;
+        });
+        
+        // Create PDF using jsPDF
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        
+        // Compact spacing - minimal top margin
+        const topMargin = 35;
+        let yPos = topMargin;
+        
+        // Toastmasters Header - minimalist, bigger font
+        pdf.setFontSize(22);
+        pdf.setTextColor(60, 60, 60);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('TOASTMASTERS', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 18;
+        
+        // Club Name (if available) - clean and simple, bigger font
+        if (clubNameForDownload && clubNameForDownload.trim()) {
+          pdf.setFontSize(34);
+          pdf.setTextColor(20, 20, 20);
+          pdf.setFont('helvetica', 'bold');
+          const clubNameLines = pdf.splitTextToSize(clubNameForDownload, pageWidth - 80);
+          pdf.text(clubNameLines, pageWidth / 2, yPos, { align: 'center' });
+          yPos += clubNameLines.length * 12 + 12;
+        }
+        
+        // QR Code - clean, no borders, larger
+        const qrSize = 140;
+        const qrX = (pageWidth - qrSize) / 2;
+        const qrY = yPos;
+        
+        // Add QR code image
+        pdf.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+        yPos += qrSize + 20;
+        
+        // Instructions - minimalist text, bigger font
+        pdf.setFontSize(18);
+        pdf.setTextColor(40, 40, 40);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Scan to join our meeting', pageWidth / 2, yPos, { align: 'center' });
+        
+        pdf.setFontSize(15);
+        pdf.setTextColor(120, 120, 120);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Guests welcome', pageWidth / 2, yPos + 7, { align: 'center' });
+        yPos += 15;
+        
+        // Club Code - subtle, bigger font
+        pdf.setFontSize(14);
+        pdf.setTextColor(140, 140, 140);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Club Code: ${clubCodeForDownload}`, pageWidth / 2, yPos, { align: 'center' });
+        
+        // Generate filename
+        let fileName = 'club-code.pdf';
+        if (clubNameForDownload && clubNameForDownload.trim()) {
+          const sanitizedName = clubNameForDownload.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+          fileName = `club-code-${sanitizedName}.pdf`;
+        } else {
+          fileName = `club-code-${clubCodeForDownload}.pdf`;
+        }
+        
+        // Download PDF
+        pdf.save(fileName);
+        
+        if (typeof notifications !== 'undefined') {
+          notifications.success('QR code downloaded successfully');
+        }
+      } catch (error) {
+        console.error('Error downloading QR code:', error);
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Error downloading QR code. Please try again.');
+        }
+      } finally {
+        if (downloadBtn) {
+          downloadBtn.disabled = false;
+          downloadBtn.style.opacity = '1';
+        }
+      }
+    }
+    
+    // Club Code Regeneration Functions
+    function showRegenerateCodeDialog() {
+      const overlay = document.getElementById('regenerate-code-warning-dialog-overlay');
+      if (overlay) {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    function hideRegenerateCodeWarningDialog() {
+      const overlay = document.getElementById('regenerate-code-warning-dialog-overlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+    
+    function showFinalConfirmationDialog() {
+      hideRegenerateCodeWarningDialog();
+      const overlay = document.getElementById('final-confirmation-dialog-overlay');
+      if (overlay) {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    function hideFinalConfirmationDialog() {
+      const overlay = document.getElementById('final-confirmation-dialog-overlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+    
+    async function regenerateClubCode() {
+      if (!clubDb || !clubAuth || !clubAuth.currentUser) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Firestore not initialized');
+        }
+        return;
+      }
+      
+      const confirmBtn = document.getElementById('final-confirm-regenerate-btn');
+      const closeBtn = document.getElementById('final-confirmation-dialog-close');
+      
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Regenerating...';
+      }
+      if (closeBtn) closeBtn.disabled = true;
+      
+      const userId = clubAuth.currentUser.uid;
+      
+      try {
+        // Generate unique 8-digit club code before transaction
+        let newClubCode;
+        let attempts = 0;
+        const maxAttempts = 20;
+        
+        do {
+          // Generate random 8-digit number (10000000 to 99999999)
+          const codeValue = Math.floor(10000000 + Math.random() * 90000000);
+          newClubCode = codeValue.toString();
+          
+          // Check if code exists as document ID in club_codes collection
+          const existingCodeSnap = await clubDb.collection('club_codes').doc(newClubCode).get();
+          
+          // Also check if any user already has this club_code value (as number)
+          const existingUserWithCode = await clubDb.collection('users')
+            .where('club_code', '==', codeValue)
+            .limit(1)
+            .get();
+          
+          if (!existingCodeSnap.exists && existingUserWithCode.empty) {
+            break; // Code is available
+          }
+          
+          attempts++;
+          if (attempts >= maxAttempts) {
+            throw new Error(`Failed to generate unique club code after ${maxAttempts} attempts`);
+          }
+        } while (attempts < maxAttempts);
+        
+        // Now run transaction - ALL READS FIRST, THEN ALL WRITES
+        await clubDb.runTransaction(async (transaction) => {
+          const userDocRef = clubDb.collection('users').doc(userId);
+          const userDocSnap = await transaction.get(userDocRef);
+          
+          let oldClubCode = null;
+          if (userDocSnap.exists) {
+            const oldCodeValue = userDocSnap.data().club_code;
+            if (oldCodeValue != null) {
+              oldClubCode = typeof oldCodeValue === 'number' ? oldCodeValue.toString() : oldCodeValue;
+            }
+          }
+          
+          // Read old club_code document if it exists
+          let oldClubCodeSnap = null;
+          if (oldClubCode && oldClubCode.length > 0) {
+            const oldClubCodeRef = clubDb.collection('club_codes').doc(oldClubCode);
+            oldClubCodeSnap = await transaction.get(oldClubCodeRef);
+          }
+          
+          // Read new club_code document to verify it doesn't exist
+          const newClubCodeRef = clubDb.collection('club_codes').doc(newClubCode);
+          const newClubCodeSnap = await transaction.get(newClubCodeRef);
+          
+          if (newClubCodeSnap.exists) {
+            throw new Error('Club code collision detected during transaction');
+          }
+          
+          // NOW DO ALL WRITES (after all reads)
+          // Delete old club_codes document if it exists
+          if (oldClubCodeSnap && oldClubCodeSnap.exists) {
+            transaction.delete(clubDb.collection('club_codes').doc(oldClubCode));
+          }
+          
+          // Create new club_codes document with 8-digit code
+          transaction.set(newClubCodeRef, { uid: userId });
+          
+          // Update user document with new 8-digit club_code as number
+          transaction.set(userDocRef, { club_code: parseInt(newClubCode, 10) }, { merge: true });
+        });
+        
+        hideFinalConfirmationDialog();
+        if (typeof notifications !== 'undefined') {
+          notifications.success('Club code regenerated successfully');
+        }
+        // The listener will automatically update the club code display
+      } catch (error) {
+        console.error('Error regenerating club code:', error);
+        if (typeof notifications !== 'undefined') {
+          notifications.error(error.message || 'Error regenerating club code. Please try again.');
+        }
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Yes, Regenerate';
+        }
         if (closeBtn) closeBtn.disabled = false;
       }
     }
