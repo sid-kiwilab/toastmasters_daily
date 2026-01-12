@@ -25,6 +25,15 @@ class RewriteHandler(http.server.SimpleHTTPRequestHandler):
                 self.path = '/clubs/index.html'
                 print(f"Rewrote {path} to /clubs/index.html")
         
+        # Handle /meetings/{meeting_id} routes
+        if path.startswith('/meetings/') and path != '/meetings/' and not path.endswith('.html'):
+            # Extract meeting ID
+            parts = path.strip('/').split('/')
+            if len(parts) >= 2 and parts[0] == 'meetings':
+                # Rewrite to /meetings/index.html
+                self.path = '/meetings/index.html'
+                print(f"Rewrote {path} to /meetings/index.html")
+        
         # Call the parent class to handle the request
         return super().do_GET()
     
@@ -40,6 +49,7 @@ def main():
         print(f"Server starting on http://localhost:{PORT}")
         print(f"Serving files from: {os.getcwd()}")
         print(f"Clubs routes will be rewritten to /clubs/index.html")
+        print(f"Meetings routes will be rewritten to /meetings/index.html")
         print(f"\nPress Ctrl+C to stop the server\n")
         try:
             httpd.serve_forever()

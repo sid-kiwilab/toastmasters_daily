@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meeting - Toastmasters Daily</title>
+  <link rel="icon" type="image/png" href="../assets/favicon.png"/>
+  
+  <link rel="preload" href="../assets/GoogleSans.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  
+  <style>
+    @font-face {
+      font-family: 'GoogleSans';
+      src: url('../assets/GoogleSans.woff2') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'GoogleSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #ffffff;
+      color: #1a1f3a;
+    }
+    
+    .header {
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    
+    .logo img {
+      height: 32px;
+      width: auto;
+    }
+    
+    .logo-text {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1a1f3a;
+    }
+    
+    /* Hero Section */
+    .hero {
+      min-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 100px 32px 80px;
+      text-align: center;
+      position: relative;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .hero-content {
+      max-width: 900px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .meeting-icon-large {
+      width: 100px;
+      height: 100px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #004165, #003049);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 32px;
+    }
+    
+    .meeting-icon-large svg {
+      width: 50px;
+      height: 50px;
+      color: #FFFFFF;
+    }
+    
+    .meeting-title {
+      font-size: 64px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -2px;
+      line-height: 0.95;
+      margin-bottom: 24px;
+    }
+    
+    .meeting-datetime-hero {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 8px;
+      font-size: 18px;
+      color: #64748b;
+      font-weight: 400;
+      margin-bottom: 0;
+      max-width: 680px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.7;
+    }
+    
+    .meeting-datetime-hero svg {
+      width: 20px;
+      height: 20px;
+      color: #94a3b8;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    
+    .meeting-datetime-hero span {
+      text-align: center;
+    }
+    
+    /* Main Content Sections */
+    .main-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 100px 32px;
+    }
+    
+    .section-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 32px;
+      letter-spacing: -1px;
+    }
+    
+    /* Club Info Section */
+    .club-info-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 48px;
+    }
+    
+    .club-info-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+    
+    .club-name-link {
+      font-size: 20px;
+      font-weight: 600;
+      color: #004165;
+      text-decoration: none;
+      margin-bottom: 8px;
+      display: block;
+    }
+    
+    .club-name-link:hover {
+      text-decoration: underline;
+    }
+    
+    .club-location {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 16px;
+      color: #64748b;
+      margin-top: 8px;
+    }
+    
+    .club-location svg {
+      width: 18px;
+      height: 18px;
+      color: #94a3b8;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    /* Description Section */
+    .description-section {
+      margin-top: 48px;
+    }
+    
+    .description-content {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 48px;
+      font-size: 17px;
+      line-height: 1.7;
+      color: #64748b;
+      white-space: pre-wrap;
+    }
+    
+    /* Agenda Section */
+    .agenda-section {
+      margin-top: 48px;
+    }
+    
+    .agenda-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      background: #004165;
+      color: #FFFFFF;
+      text-decoration: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      transition: background 0.2s ease;
+    }
+    
+    .agenda-link:hover {
+      background: #003049;
+    }
+    
+    .agenda-link svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 70vh;
+      padding: 100px 32px;
+    }
+    
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #f0f0f0;
+      border-top-color: #004165;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .error-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 70vh;
+      text-align: center;
+      padding: 100px 32px;
+    }
+    
+    .error-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+    
+    .error-message {
+      font-size: 17px;
+      color: #64748b;
+      margin-bottom: 32px;
+      font-weight: 400;
+    }
+    
+    .back-button {
+      padding: 14px 28px;
+      background: #004165;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.2s ease;
+    }
+    
+    .back-button:hover {
+      background: #003049;
+    }
+    
+    @media (max-width: 768px) {
+      .hero {
+        padding: 80px 24px 60px;
+        min-height: 50vh;
+      }
+      
+      .meeting-icon-large {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 24px;
+      }
+      
+      .meeting-title {
+        font-size: 48px;
+        letter-spacing: -1.5px;
+      }
+      
+      .meeting-datetime-hero {
+        font-size: 16px;
+      }
+      
+      .main-content {
+        padding: 80px 24px;
+      }
+      
+      .section-title {
+        font-size: 28px;
+        letter-spacing: -0.8px;
+      }
+      
+      .club-info-card {
+        padding: 24px;
+      }
+      
+      .description-content {
+        padding: 32px;
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="/" class="logo">
+      <img src="../assets/logo.png" alt="Toastmasters Daily">
+      <span class="logo-text">Toastmasters Daily</span>
+    </a>
+  </header>
+  
+  <main>
+    <div id="loading-state" class="loading-container">
+      <div class="loading-spinner"></div>
+    </div>
+    
+    <div id="error-state" class="error-container" style="display: none;">
+      <div class="error-title">Oops! Nothing lives here...</div>
+      <div class="error-message" id="error-message">Meeting not found</div>
+      <a href="/" class="back-button">Back to Home</a>
+    </div>
+    
+    <div id="meeting-content" style="display: none;">
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="hero-content">
+          <div class="meeting-icon-large">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h1 class="meeting-title" id="meeting-title"></h1>
+          <div class="meeting-datetime-hero" id="meeting-datetime-hero" style="display: none;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span id="meeting-datetime-text"></span>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Club Info Section -->
+        <div id="club-info-section" style="display: none;">
+          <div class="club-info-card">
+            <div class="club-info-title">Hosted by</div>
+            <a href="#" id="club-name-link" class="club-name-link"></a>
+            <div class="club-location" id="club-location" style="display: none;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span id="club-location-text"></span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Description Section -->
+        <div id="description-section" class="description-section" style="display: none;">
+          <h2 class="section-title">About this Meeting</h2>
+          <div id="description-content" class="description-content"></div>
+        </div>
+        
+        <!-- Agenda Section -->
+        <div id="agenda-section" class="agenda-section" style="display: none;">
+          <h2 class="section-title">Agenda</h2>
+          <a href="#" id="agenda-link" class="agenda-link" target="_blank">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Download Agenda
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/auth-utils.js"></script>
+  
+  <script>
+    // Extract meeting ID from URL pathname
+    function getMeetingIdFromUrl() {
+      const pathname = window.location.pathname;
+      // Extract meeting ID from /meetings/{meeting_id}
+      const match = pathname.match(/\/meetings\/([^\/]+)/);
+      return match ? match[1] : null;
+    }
+    
+    // Initialize Firebase
+    let clubDb = null;
+    
+    function showError(message) {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('error-state').style.display = 'flex';
+      document.getElementById('error-message').textContent = message;
+    }
+    
+    function showMeetingContent() {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('meeting-content').style.display = 'block';
+    }
+    
+    // Format date helper
+    function formatDate(date) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const d = new Date(date);
+      return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
+    }
+    
+    // Format time helper
+    function formatTime(date) {
+      const d = new Date(date);
+      let hour = d.getHours();
+      const minute = String(d.getMinutes()).padStart(2, '0');
+      const period = hour < 12 ? 'AM' : 'PM';
+      hour = hour % 12 || 12;
+      return `${hour}:${minute} ${period}`;
+    }
+    
+    // Format full datetime
+    function formatDateTime(date) {
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+      const dateStr = formatDate(date);
+      const timeStr = formatTime(date);
+      return `${dayName}, ${dateStr} at ${timeStr}`;
+    }
+    
+    async function loadMeetingData() {
+      const meetingId = getMeetingIdFromUrl();
+      
+      if (!meetingId) {
+        showError('Invalid meeting ID');
+        return;
+      }
+      
+      if (!clubDb) {
+        showError('Database not initialized');
+        return;
+      }
+      
+      try {
+        // Query active_meetings collection to get creator_id
+        const activeMeetingDoc = await clubDb.collection('active_meetings').doc(meetingId).get();
+        
+        if (!activeMeetingDoc.exists) {
+          showError('Meeting not found');
+          return;
+        }
+        
+        const creatorId = activeMeetingDoc.data()?.creator_id;
+        if (!creatorId) {
+          showError('Invalid meeting data');
+          return;
+        }
+        
+        // Query users/{creatorId}/meetings/{meetingId} to get meeting details
+        const meetingDoc = await clubDb
+          .collection('users')
+          .doc(creatorId)
+          .collection('meetings')
+          .doc(meetingId)
+          .get();
+        
+        if (!meetingDoc.exists) {
+          showError('Meeting details not found');
+          return;
+        }
+        
+        const meetingData = meetingDoc.data();
+        
+        // Query users collection to get club info
+        const userDoc = await clubDb.collection('users').doc(creatorId).get();
+        const userData = userDoc.exists ? userDoc.data() : {};
+        
+        // Display meeting title
+        document.getElementById('meeting-title').textContent = meetingData?.title || 'Untitled Meeting';
+        
+        // Display meeting datetime
+        if (meetingData?.meeting_datetime) {
+          const meetingDate = meetingData.meeting_datetime.toDate();
+          document.getElementById('meeting-datetime-hero').style.display = 'flex';
+          document.getElementById('meeting-datetime-text').textContent = formatDateTime(meetingDate);
+        }
+        
+        // Display club info
+        if (userData?.club_name) {
+          document.getElementById('club-info-section').style.display = 'block';
+          const clubNameLink = document.getElementById('club-name-link');
+          clubNameLink.textContent = userData.club_name;
+          
+          // Get club code if available
+          if (userData?.club_code) {
+            clubNameLink.href = `/clubs/${userData.club_code}`;
+          }
+          
+          if (userData?.club_location) {
+            document.getElementById('club-location').style.display = 'flex';
+            document.getElementById('club-location-text').textContent = userData.club_location;
+          }
+        }
+        
+        // Display description
+        if (meetingData?.description) {
+          document.getElementById('description-section').style.display = 'block';
+          document.getElementById('description-content').textContent = meetingData.description;
+        }
+        
+        // Display agenda link
+        const agendaUrl = meetingData?.agenda_url || meetingData?.agendaUrl;
+        if (agendaUrl) {
+          document.getElementById('agenda-section').style.display = 'block';
+          document.getElementById('agenda-link').href = agendaUrl;
+        }
+        
+        showMeetingContent();
+      } catch (error) {
+        console.error('Error loading meeting data:', error);
+        showError('Error loading meeting: ' + error.message);
+      }
+    }
+    
+    // Escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Initialize
+    function init() {
+      try {
+        initClubAuth();
+        const clubApp = firebase.app('club');
+        clubDb = firebase.firestore(clubApp);
+        loadMeetingData();
+      } catch (error) {
+        console.error('Error initializing:', error);
+        showError('Error initializing: ' + error.message);
+      }
+    }
+    
+    // Wait for scripts to load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      setTimeout(init, 100);
+    }
+  </script>
+</body>
+</html>
+

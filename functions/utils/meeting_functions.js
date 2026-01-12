@@ -72,6 +72,33 @@ const create_meeting_handler = async (data, context) => {
       }
     }
     
+    // Check 3 meetings per day limit (single range query to avoid composite index)
+    if (meeting_datetime) {
+      const meetingDate = meeting_datetime.toDate();
+      const dateStart = new Date(meetingDate);
+      dateStart.setHours(0, 0, 0, 0);
+      const dateEnd = new Date(meetingDate);
+      dateEnd.setHours(23, 59, 59, 999);
+      
+      const meetingsQuery = await db
+        .collection('users')
+        .doc(data.creator_id)
+        .collection('meetings')
+        .where('meeting_datetime', '>=', admin.firestore.Timestamp.fromDate(dateStart))
+        .limit(3)
+        .get();
+      
+      let sameDateCount = 0;
+      meetingsQuery.forEach(doc => {
+        const dt = doc.data().meeting_datetime?.toDate();
+        if (dt && dt >= dateStart && dt <= dateEnd) sameDateCount++;
+      });
+      
+      if (sameDateCount >= 3) {
+        return { success: false, error: 'You can only create a maximum of 3 meetings per day.' };
+      }
+    }
+    
     // Create meeting document with minimal required fields
     const meeting_doc = {
       title: data.title,

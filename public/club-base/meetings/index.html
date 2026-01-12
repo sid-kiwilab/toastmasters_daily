@@ -532,13 +532,83 @@
     
     .meeting-detail-item-header {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+      flex-direction: column;
       gap: 12px;
     }
     
     .meeting-detail-item-content {
       flex: 1;
+    }
+    
+    .meeting-detail-item-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .meeting-detail-actions-btn {
+      width: 100%;
+      padding: 10px 14px;
+      background: transparent;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #004165;
+      opacity: 0.9;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'GoogleSans', sans-serif;
+    }
+    
+    .meeting-detail-actions-btn:hover {
+      opacity: 1;
+      background: #f0f9ff;
+      border-color: #004165;
+      color: #003049;
+    }
+    
+    .meeting-detail-actions-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .meeting-detail-delete-btn-full {
+      width: 100%;
+      padding: 10px 14px;
+      background: transparent;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #ef4444;
+      opacity: 0.85;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'GoogleSans', sans-serif;
+    }
+    
+    .meeting-detail-delete-btn-full:hover {
+      opacity: 1;
+      background: #fef2f2;
+      border-color: #ef4444;
+      color: #dc2626;
+    }
+    
+    .meeting-detail-delete-btn-full svg {
+      width: 18px;
+      height: 18px;
     }
     
     .meeting-detail-title {
@@ -601,6 +671,42 @@
     .meeting-detail-delete-btn svg {
       width: 16px;
       height: 16px;
+    }
+    
+    /* Meeting Actions Dialog */
+    .meeting-action-item {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #060607;
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .meeting-action-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .meeting-action-item:hover {
+      background: #f8fafc;
+      border-color: #004165;
+    }
+    
+    .meeting-action-item svg {
+      width: 20px;
+      height: 20px;
+      color: #64748b;
+    }
+    
+    .meeting-action-item:hover svg {
+      color: #004165;
     }
     
     .create-meeting-button-container {
@@ -1627,6 +1733,13 @@
           day: 'numeric' 
         });
         
+        // Escape HTML helper
+        function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+        
         let meetingsHtml = '';
         if (selectedMeetings.length > 0) {
           meetingsHtml = selectedMeetings.map(meeting => {
@@ -1652,13 +1765,26 @@
                 console.warn('Error formatting meeting time:', e);
               }
             }
-            const deleteButton = canCreateMeetings ? `
-              <button class="meeting-detail-delete-btn" onclick="deleteMeeting('${meeting.id}')" title="Delete meeting">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            ` : '';
+            
+            const actionsSection = `
+              <div class="meeting-detail-item-actions">
+                <button class="meeting-detail-actions-btn" onclick="showMeetingActionsDialog('${meeting.id}', '${escapeHtml(meeting.title || 'Untitled Meeting')}')">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+                  <span>Actions</span>
+                </button>
+                ${canCreateMeetings ? `
+                  <button class="meeting-detail-delete-btn-full" onclick="deleteMeeting('${meeting.id}')">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span>Delete</span>
+                  </button>
+                ` : ''}
+              </div>
+            `;
+            
             return `
               <div class="meeting-detail-item">
                 <div class="meeting-detail-item-header">
@@ -1676,8 +1802,8 @@
                       </div>
                     ` : '<div class="meeting-detail-time">No time specified</div>'}
                   </div>
-                  ${deleteButton}
                 </div>
+                ${actionsSection}
               </div>
             `;
           }).join('');
@@ -2316,6 +2442,40 @@
       showDeleteMeetingDialog(meetingId);
     };
     
+    // Escape HTML helper
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Show meeting actions dialog
+    window.showMeetingActionsDialog = function(meetingId, meetingTitle) {
+      const overlay = document.getElementById('meeting-actions-dialog-overlay');
+      const titleElement = document.getElementById('meeting-actions-dialog-title');
+      
+      if (overlay && titleElement) {
+        titleElement.textContent = meetingTitle || 'Untitled Meeting';
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Update the visit meeting link
+        const visitLink = document.getElementById('meeting-actions-visit-link');
+        if (visitLink) {
+          visitLink.href = `/meetings/${meetingId}`;
+        }
+      }
+    };
+    
+    // Hide meeting actions dialog
+    window.hideMeetingActionsDialog = function() {
+      const overlay = document.getElementById('meeting-actions-dialog-overlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    };
+    
     // Submit create meeting form
     window.submitCreateMeeting = async function() {
       const clubUser = clubAuth ? clubAuth.currentUser : null;
@@ -2374,6 +2534,16 @@
       const [year, month, day] = dateStr.split('-').map(Number);
       const [hours, minutes] = timeStr.split(':').map(Number);
       const meetingDateTime = new Date(year, month - 1, day, hours, minutes);
+      
+      // Check 3 meetings per day limit
+      const dateKey = formatDateKey(meetingDateTime);
+      const selectedDateMeetings = meetingsMap.get(dateKey) || [];
+      if (selectedDateMeetings.length >= 3) {
+        if (typeof notifications !== 'undefined') {
+          notifications.error('You can only create a maximum of 3 meetings per day.');
+        }
+        return;
+      }
       
       // Disable button
       if (createBtn) {
@@ -2463,6 +2633,26 @@
       <div class="dialog-actions">
         <button class="dialog-btn dialog-btn-cancel" id="delete-meeting-cancel-btn" onclick="hideDeleteMeetingDialog()">Cancel</button>
         <button class="dialog-btn dialog-btn-confirm" id="delete-meeting-confirm-btn" onclick="confirmDeleteMeeting()">Delete</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Meeting Actions Dialog -->
+  <div class="dialog-overlay" id="meeting-actions-dialog-overlay" onclick="if(event.target === this) hideMeetingActionsDialog()">
+    <div class="dialog">
+      <h3 class="dialog-title">Meeting Actions</h3>
+      <p class="dialog-message" style="margin-bottom: 16px; color: #64748b; font-size: 14px;" id="meeting-actions-dialog-title"></p>
+      <div style="display: flex; flex-direction: column; gap: 0;">
+        <a href="#" id="meeting-actions-visit-link" class="meeting-action-item" target="_blank" onclick="hideMeetingActionsDialog()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          Visit Meeting
+        </a>
+      </div>
+      <div class="dialog-actions" style="margin-top: 24px;">
+        <button class="dialog-btn dialog-btn-cancel" onclick="hideMeetingActionsDialog()">Close</button>
       </div>
     </div>
   </div>

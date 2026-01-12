@@ -59,21 +59,30 @@
       color: #1a1f3a;
     }
     
-    .main-content {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 40px 24px;
+    /* Hero Section - Matching Home Page */
+    .hero {
+      min-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 100px 32px 80px;
+      text-align: center;
+      position: relative;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
     }
     
-    .club-header {
-      text-align: center;
-      margin-bottom: 48px;
+    .hero-content {
+      max-width: 900px;
+      position: relative;
+      z-index: 1;
     }
     
     .club-logo {
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 24px;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 32px;
     }
     
     .club-logo img {
@@ -83,20 +92,281 @@
     }
     
     .club-name {
-      font-size: 32px;
-      font-weight: 700;
-      color: #212121;
-      margin-bottom: 12px;
+      font-size: 64px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -2px;
+      line-height: 0.95;
+      margin-bottom: 24px;
     }
     
     .club-location {
       display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 8px;
+      font-size: 18px;
+      color: #64748b;
+      font-weight: 400;
+      margin-bottom: 0;
+      max-width: 680px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.7;
+    }
+    
+    .club-location svg {
+      width: 20px;
+      height: 20px;
+      color: #94a3b8;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    
+    .club-location span {
+      text-align: center;
+    }
+    
+    /* Main Content Sections */
+    .main-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 100px 32px;
+    }
+    
+    .section-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 32px;
+      letter-spacing: -1px;
+    }
+    
+    /* Featured Today's Meeting */
+    .todays-meeting-card {
+      background: linear-gradient(135deg, #004165 0%, #003049 100%);
+      border-radius: 12px;
+      padding: 24px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 32px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .todays-meeting-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 65, 101, 0.3);
+    }
+    
+    .todays-meeting-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 120px;
+      height: 120px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      transform: translate(30%, -30%);
+    }
+    
+    .todays-meeting-date {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+    
+    .todays-meeting-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+    
+    .todays-meeting-time {
+      font-size: 15px;
+      opacity: 0.9;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .todays-meeting-time svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    /* Other Meetings Section */
+    .other-meetings-section {
+      margin-top: 48px;
+    }
+    
+    .other-meetings-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+    }
+    
+    /* Meetings List */
+    .meetings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .meeting-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+      position: relative;
+      cursor: default;
+      opacity: 0.8;
+    }
+    
+    .meeting-content-wrapper {
+      padding: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    
+    .meeting-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: #f8fafc;
+      display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .meeting-icon svg {
+      width: 24px;
+      height: 24px;
+      color: #64748b;
+    }
+    
+    .meeting-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .meeting-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+    
+    .meeting-datetime {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .datetime-item {
+      display: flex;
+      align-items: center;
       gap: 6px;
-      font-size: 16px;
-      color: #757575;
-      margin-bottom: 16px;
+      padding: 6px 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #475569;
+    }
+    
+    .datetime-item svg {
+      width: 16px;
+      height: 16px;
+      color: #64748b;
+    }
+    
+    /* About Section */
+    .about-section {
+      margin-top: 80px;
+    }
+    
+    .about-content {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 48px;
+      font-size: 17px;
+      line-height: 1.7;
+      color: #64748b;
+      white-space: pre-wrap;
+    }
+    
+    .no-meetings {
+      text-align: center;
+      padding: 80px 24px;
+      background: #fafafa;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+    }
+    
+    .no-meetings-text {
+      color: #64748b;
+      font-size: 17px;
+      font-weight: 400;
+    }
+    
+    @media (max-width: 768px) {
+      .hero {
+        padding: 80px 24px 60px;
+        min-height: 50vh;
+      }
+      
+      .club-logo {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 24px;
+      }
+      
+      .club-name {
+        font-size: 48px;
+        letter-spacing: -1.5px;
+      }
+      
+      .club-location {
+        font-size: 16px;
+      }
+      
+      .main-content {
+        padding: 80px 24px;
+      }
+      
+      .section-title {
+        font-size: 28px;
+        letter-spacing: -0.8px;
+      }
+      
+      .meeting-content-wrapper {
+        padding: 24px;
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .meeting-title {
+        font-size: 20px;
+      }
+      
+      .about-content {
+        padding: 32px;
+        font-size: 16px;
+      }
     }
     
     .loading-container {
@@ -104,7 +374,8 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 60vh;
+      min-height: 70vh;
+      padding: 100px 32px;
     }
     
     .loading-spinner {
@@ -125,35 +396,38 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 60vh;
+      min-height: 70vh;
       text-align: center;
-      padding: 40px 24px;
+      padding: 100px 32px;
     }
     
     .error-title {
-      font-size: 24px;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 8px;
+      font-size: 36px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 16px;
+      letter-spacing: -1px;
     }
     
     .error-message {
-      font-size: 16px;
-      color: #6b7280;
-      margin-bottom: 24px;
+      font-size: 17px;
+      color: #64748b;
+      margin-bottom: 32px;
+      font-weight: 400;
     }
     
     .back-button {
-      padding: 12px 24px;
+      padding: 14px 28px;
       background: #004165;
       color: #FFFFFF;
       border: none;
-      border-radius: 8px;
-      font-size: 15px;
+      border-radius: 10px;
+      font-size: 16px;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
       display: inline-block;
+      transition: background 0.2s ease;
     }
     
     .back-button:hover {
@@ -169,7 +443,7 @@
     </a>
   </header>
   
-  <main class="main-content">
+  <main>
     <div id="loading-state" class="loading-container">
       <div class="loading-spinner"></div>
     </div>
@@ -181,13 +455,46 @@
     </div>
     
     <div id="club-content" style="display: none;">
-      <div class="club-header">
-        <div class="club-logo">
-          <img src="../assets/logo.png" alt="Toastmasters Daily">
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="hero-content">
+          <div class="club-logo">
+            <img src="../assets/logo.png" alt="Toastmasters Daily">
+          </div>
+          <h1 class="club-name" id="club-name"></h1>
+          <div class="club-location" id="club-location" style="display: none;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span id="club-location-text"></span>
+          </div>
         </div>
-        <h1 class="club-name" id="club-name"></h1>
-        <div class="club-location" id="club-location" style="display: none;">
-          <span id="club-location-text"></span>
+      </section>
+      
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Today's Meeting Section -->
+        <div id="todays-meeting-section" style="display: none;">
+          <h2 class="section-title">Today's Meeting</h2>
+          <div id="todays-meeting-card"></div>
+        </div>
+        
+        <!-- Other Meetings Section -->
+        <div id="other-meetings-section" class="other-meetings-section" style="display: none;">
+          <h3 class="other-meetings-title">Upcoming Meetings</h3>
+          <div class="meetings-list" id="other-meetings-list"></div>
+        </div>
+        
+        <!-- No Meetings -->
+        <div id="no-meetings" class="no-meetings" style="display: none;">
+          <div class="no-meetings-text">No upcoming meetings scheduled</div>
+        </div>
+        
+        <!-- About Section -->
+        <div id="about-section" class="about-section" style="display: none;">
+          <h2 class="section-title">About</h2>
+          <div id="about-content" class="about-content"></div>
         </div>
       </div>
     </div>
@@ -265,11 +572,276 @@
           document.getElementById('club-location-text').textContent = userData.club_location;
         }
         
+        if (userData?.club_info) {
+          document.getElementById('about-section').style.display = 'block';
+          document.getElementById('about-content').textContent = userData.club_info;
+        }
+        
         showClubContent();
+        
+        // Load meetings
+        await loadMeetings(uid);
       } catch (error) {
         console.error('Error loading club data:', error);
         showError('Error loading club: ' + error.message);
       }
+    }
+    
+    // Format date helper
+    function formatDate(date) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const d = new Date(date);
+      return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
+    }
+    
+    // Format time helper
+    function formatTime(date) {
+      const d = new Date(date);
+      let hour = d.getHours();
+      const minute = String(d.getMinutes()).padStart(2, '0');
+      const period = hour < 12 ? 'AM' : 'PM';
+      hour = hour % 12 || 12;
+      return `${hour}:${minute} ${period}`;
+    }
+    
+    // Load meetings
+    async function loadMeetings(userId) {
+      if (!clubDb) return;
+      
+      try {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayStartUTC = new Date(todayStart.toISOString());
+        
+        // Query meetings from today onwards, limit to 3
+        let meetingsSnapshot;
+        try {
+          meetingsSnapshot = await clubDb
+            .collection('users')
+            .doc(userId)
+            .collection('meetings')
+            .where('meeting_datetime', '>=', firebase.firestore.Timestamp.fromDate(todayStartUTC))
+            .orderBy('meeting_datetime', 'asc')
+            .limit(3)
+            .get();
+        } catch (indexError) {
+          // If index doesn't exist, try without orderBy
+          try {
+            meetingsSnapshot = await clubDb
+              .collection('users')
+              .doc(userId)
+              .collection('meetings')
+              .where('meeting_datetime', '>=', firebase.firestore.Timestamp.fromDate(todayStartUTC))
+              .limit(10)
+              .get();
+          } catch (queryError) {
+            // If even that fails, get all and filter client-side
+            meetingsSnapshot = await clubDb
+              .collection('users')
+              .doc(userId)
+              .collection('meetings')
+              .limit(10)
+              .get();
+          }
+        }
+        
+        const allMeetings = [];
+        meetingsSnapshot.forEach(doc => {
+          const data = doc.data();
+          allMeetings.push({
+            id: doc.id,
+            ...data
+          });
+        });
+        
+        // Filter to only future meetings and sort
+        const futureMeetings = allMeetings
+          .filter(meeting => {
+            const meetingDate = meeting.meeting_datetime?.toDate();
+            if (!meetingDate) return false;
+            return meetingDate >= todayStart;
+          })
+          .sort((a, b) => {
+            const dateA = a.meeting_datetime?.toDate() || new Date(0);
+            const dateB = b.meeting_datetime?.toDate() || new Date(0);
+            return dateA - dateB;
+          });
+        
+        // Separate today's meeting from others
+        const todayEnd = new Date(todayStart);
+        todayEnd.setHours(23, 59, 59, 999);
+        
+        const todaysMeeting = futureMeetings.find(meeting => {
+          const meetingDate = meeting.meeting_datetime?.toDate();
+          if (!meetingDate) return false;
+          return meetingDate >= todayStart && meetingDate <= todayEnd;
+        });
+        
+        const otherMeetings = futureMeetings.filter(meeting => {
+          if (todaysMeeting && meeting.id === todaysMeeting.id) return false;
+          return true;
+        }).slice(0, 2); // Limit to 2 other meetings
+        
+        // Render meetings
+        const todaysMeetingSection = document.getElementById('todays-meeting-section');
+        const todaysMeetingCard = document.getElementById('todays-meeting-card');
+        const todaysMeetingTitle = todaysMeetingSection.querySelector('.section-title');
+        const otherMeetingsSection = document.getElementById('other-meetings-section');
+        const otherMeetingsList = document.getElementById('other-meetings-list');
+        const noMeetings = document.getElementById('no-meetings');
+        
+        if (todaysMeeting || otherMeetings.length > 0) {
+          noMeetings.style.display = 'none';
+          
+          // Render today's meeting
+          if (todaysMeeting) {
+            todaysMeetingSection.style.display = 'block';
+            if (todaysMeetingTitle) {
+              todaysMeetingTitle.textContent = "Today's Meeting";
+            }
+            const meetingDate = todaysMeeting.meeting_datetime?.toDate();
+            if (meetingDate) {
+              const dateStr = formatDate(meetingDate);
+              const timeStr = formatTime(meetingDate);
+              const dayName = meetingDate.toLocaleDateString('en-US', { weekday: 'long' });
+              
+              todaysMeetingCard.innerHTML = `
+                <div class="todays-meeting-card" onclick="window.location.href='/meetings/${todaysMeeting.id}'">
+                  <div class="todays-meeting-date">${dayName}, ${dateStr}</div>
+                  <div class="todays-meeting-title">${escapeHtml(todaysMeeting.title || 'Untitled Meeting')}</div>
+                  ${timeStr ? `
+                    <div class="todays-meeting-time">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      ${timeStr}
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            }
+            
+            // Render other meetings below today's meeting
+            if (otherMeetings.length > 0) {
+              otherMeetingsSection.style.display = 'block';
+              otherMeetingsList.innerHTML = otherMeetings.map(meeting => {
+              const meetingDate = meeting.meeting_datetime?.toDate();
+              if (!meetingDate) return '';
+              
+              const dateStr = formatDate(meetingDate);
+              const timeStr = formatTime(meetingDate);
+              
+              return `
+                <div class="meeting-card">
+                  <div class="meeting-content-wrapper">
+                    <div class="meeting-icon">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div class="meeting-content">
+                      <div class="meeting-title">${escapeHtml(meeting.title || 'Untitled Meeting')}</div>
+                      <div class="meeting-datetime">
+                        <div class="datetime-item">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          ${dateStr}
+                        </div>
+                        ${timeStr ? `
+                          <div class="datetime-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            ${timeStr}
+                          </div>
+                        ` : ''}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+              }).join('');
+            } else {
+              otherMeetingsSection.style.display = 'none';
+            }
+          } else {
+            // If no today's meeting but there are upcoming meetings, show them in the main section
+            if (otherMeetings.length > 0) {
+              todaysMeetingSection.style.display = 'block';
+              if (todaysMeetingTitle) {
+                todaysMeetingTitle.textContent = "Upcoming Meetings";
+              }
+              todaysMeetingCard.innerHTML = '';
+              otherMeetingsSection.style.display = 'none';
+              
+              // Show upcoming meetings in the main section
+              const upcomingMeetingsList = document.createElement('div');
+              upcomingMeetingsList.className = 'meetings-list';
+              upcomingMeetingsList.innerHTML = otherMeetings.map(meeting => {
+                const meetingDate = meeting.meeting_datetime?.toDate();
+                if (!meetingDate) return '';
+                
+                const dateStr = formatDate(meetingDate);
+                const timeStr = formatTime(meetingDate);
+                
+                return `
+                  <div class="meeting-card">
+                    <div class="meeting-content-wrapper">
+                      <div class="meeting-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div class="meeting-content">
+                        <div class="meeting-title">${escapeHtml(meeting.title || 'Untitled Meeting')}</div>
+                        <div class="meeting-datetime">
+                          <div class="datetime-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            ${dateStr}
+                          </div>
+                          ${timeStr ? `
+                            <div class="datetime-item">
+                              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              ${timeStr}
+                            </div>
+                          ` : ''}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('');
+              
+              // Clear existing content and add the list
+              todaysMeetingCard.innerHTML = '';
+              todaysMeetingCard.appendChild(upcomingMeetingsList);
+            } else {
+              todaysMeetingSection.style.display = 'none';
+              otherMeetingsSection.style.display = 'none';
+            }
+          }
+        } else {
+          todaysMeetingSection.style.display = 'none';
+          otherMeetingsSection.style.display = 'none';
+          noMeetings.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error loading meetings:', error);
+        // Don't show error for meetings, just hide the section
+        document.getElementById('upcoming-meetings-section').style.display = 'none';
+      }
+    }
+    
+    // Escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
     
     // Initialize

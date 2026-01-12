@@ -29,6 +29,10 @@
         "destination": "/clubs/index.html"
       },
       {
+        "source": "/meetings/**",
+        "destination": "/meetings/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
