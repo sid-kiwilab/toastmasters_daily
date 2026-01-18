@@ -1,0 +1,70 @@
+<!-- Guest Entry Dialog -->
+<div class="guest-entry-overlay" id="guest-entry-overlay" style="display: none;">
+  <button class="guest-entry-close-btn" onclick="GuestEntry.close()" title="Close">×</button>
+  
+  <div class="guest-entry-wrapper">
+    <div class="guest-entry-content">
+      <!-- Already Submitted View -->
+      <div id="guest-entry-already-submitted" style="display: none;">
+        <h1 class="guest-entry-title">Thank You!</h1>
+        <p class="guest-entry-subtitle">You have already submitted your information for today.</p>
+        <div class="guest-entry-form-actions">
+          <button type="button" class="guest-entry-btn guest-entry-btn-submit" onclick="GuestEntry.close()">Close</button>
+        </div>
+      </div>
+      
+      <!-- Is This You View -->
+      <div id="guest-entry-is-this-you" style="display: none;">
+        <h1 class="guest-entry-title">Is this you?</h1>
+        <p class="guest-entry-subtitle">We found your previous information:</p>
+        <div id="guest-entry-previous-info" class="guest-entry-previous-info"></div>
+        <div class="guest-entry-form-actions">
+          <button type="button" class="guest-entry-btn guest-entry-btn-cancel" onclick="handleGuestNotMe()">No, that's not me</button>
+          <button type="button" class="guest-entry-btn guest-entry-btn-submit" onclick="handleGuestYesMe()">Yes, that's me</button>
+        </div>
+      </div>
+      
+      <!-- Form View -->
+      <div id="guest-entry-form-view">
+        <h1 class="guest-entry-title">New to the Club?</h1>
+        <p class="guest-entry-subtitle">Please enter your information</p>
+        
+        <div id="guest-entry-error" class="guest-entry-error" style="display: none;"></div>
+        
+        <form id="guest-entry-form" class="guest-entry-form">
+          <div class="guest-entry-form-group">
+            <label class="guest-entry-form-label" for="guest-entry-name">Full Name *</label>
+            <input type="text" id="guest-entry-name" class="guest-entry-form-input" required maxlength="100" placeholder="Enter your name">
+          </div>
+          
+          <div class="guest-entry-form-group">
+            <label class="guest-entry-form-label" for="guest-entry-email">Email *</label>
+            <input type="email" id="guest-entry-email" class="guest-entry-form-input" required maxlength="255" placeholder="Enter your email">
+          </div>
+          
+          <div class="guest-entry-form-group">
+            <label class="guest-entry-form-label" for="guest-entry-hear">Where did you hear about us? *</label>
+            <select id="guest-entry-hear" class="guest-entry-form-select" required>
+              <option value="">Select an option</option>
+              <option value="Flyers">Flyers</option>
+              <option value="Website">Website</option>
+              <option value="Word of Mouth">Word of Mouth</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          
+          <div class="guest-entry-form-group">
+            <label class="guest-entry-form-label" for="guest-entry-phone">Phone (Optional)</label>
+            <input type="tel" id="guest-entry-phone" class="guest-entry-form-input" maxlength="20" placeholder="Enter your phone">
+          </div>
+          
+          <div class="guest-entry-form-actions">
+            <button type="button" class="guest-entry-btn guest-entry-btn-cancel" onclick="GuestEntry.close()">Cancel</button>
+            <button type="submit" class="guest-entry-btn guest-entry-btn-submit" id="guest-entry-submit-btn">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
