@@ -258,6 +258,203 @@
       cursor: not-allowed;
     }
     
+    /* Guest Entry Dialog */
+    .guest-entry-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      z-index: 10000;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .guest-entry-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+    
+    .guest-entry-close-btn {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      background: none;
+      border: none;
+      font-size: 28px;
+      color: #6B7280;
+      cursor: pointer;
+      line-height: 1;
+      padding: 8px;
+      z-index: 10001;
+    }
+    
+    .guest-entry-close-btn:hover {
+      color: #212121;
+    }
+    
+    .guest-entry-content {
+      max-width: 500px;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    
+    .guest-entry-title {
+      font-size: 36px;
+      font-weight: 900;
+      color: #212121;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+      line-height: 1.1;
+      text-align: center;
+    }
+    
+    .guest-entry-subtitle {
+      font-size: 16px;
+      color: #6B7280;
+      margin-bottom: 40px;
+      font-weight: 400;
+      text-align: center;
+    }
+    
+    .guest-entry-form {
+      width: 100%;
+    }
+    
+    .guest-entry-form-group {
+      margin-bottom: 20px;
+    }
+    
+    .guest-entry-form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #212121;
+      margin-bottom: 8px;
+    }
+    
+    .guest-entry-form-input,
+    .guest-entry-form-select {
+      width: 100%;
+      padding: 16px 20px;
+      border: none;
+      border-radius: 12px;
+      background: #F2F1F0;
+      font-size: 16px;
+      font-family: 'GoogleSans', sans-serif;
+      color: #212121;
+      transition: background 0.2s ease;
+    }
+    
+    .guest-entry-form-input:focus,
+    .guest-entry-form-select:focus {
+      outline: none;
+      background: #E5E7EB;
+    }
+    
+    .guest-entry-form-input::placeholder {
+      color: #9CA3AF;
+    }
+    
+    .guest-entry-form-select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 20px center;
+      padding-right: 50px;
+    }
+    
+    .guest-entry-form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+    }
+    
+    .guest-entry-btn {
+      flex: 1;
+      padding: 16px 24px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'GoogleSans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+    
+    .guest-entry-btn-cancel {
+      background: #F2F1F0;
+      color: #212121;
+    }
+    
+    .guest-entry-btn-cancel:hover {
+      background: #E5E7EB;
+    }
+    
+    .guest-entry-btn-submit {
+      background: #004165;
+      color: #FFFFFF;
+    }
+    
+    .guest-entry-btn-submit:hover {
+      background: #003049;
+    }
+    
+    .guest-entry-error {
+      background: #FEE2E2;
+      color: #DC2626;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    
+    .guest-entry-previous-info {
+      background: #F2F1F0;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .guest-entry-previous-info-item {
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    
+    .guest-entry-previous-info-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .guest-entry-previous-info-label {
+      font-weight: 600;
+      color: #4B5563;
+      margin-right: 8px;
+    }
+    
+    .guest-entry-previous-info-value {
+      color: #212121;
+    }
+    
+    @media (max-width: 600px) {
+      .guest-entry-title {
+        font-size: 28px;
+      }
+      
+      .guest-entry-form-actions {
+        flex-direction: column;
+      }
+      
+      .guest-entry-btn {
+        width: 100%;
+      }
+    }
+    
     /* PDF Viewer Modal */
     .pdf-viewer-overlay {
       position: fixed;
@@ -480,6 +677,24 @@
           </div>
         </div>
         
+        <!-- Guest Entry Section -->
+        <div class="exit-meeting-section">
+          <div class="action-card" onclick="showGuestEntryDialog()">
+            <div class="action-card-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div class="action-card-content">
+              <div class="action-card-title">New to the Club?</div>
+              <div class="action-card-description">Add your information</div>
+            </div>
+            <svg class="action-card-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+        
         <!-- Exit Meeting Section -->
         <div class="exit-meeting-section">
           <div class="action-card" onclick="showExitMeetingDialog()">
@@ -500,6 +715,76 @@
       </div>
     </div>
   </main>
+  
+  <!-- Guest Entry Dialog -->
+  <div class="guest-entry-overlay" id="guest-entry-overlay" style="display: none;">
+    <button class="guest-entry-close-btn" onclick="closeGuestEntryDialog()" title="Close">×</button>
+    
+    <div class="guest-entry-wrapper">
+      <div class="guest-entry-content">
+        <!-- Already Submitted View -->
+        <div id="guest-entry-already-submitted" style="display: none;">
+          <h1 class="guest-entry-title">Thank You!</h1>
+          <p class="guest-entry-subtitle">You have already submitted your information for today.</p>
+          <div class="guest-entry-form-actions">
+            <button type="button" class="guest-entry-btn guest-entry-btn-submit" onclick="closeGuestEntryDialog()">Close</button>
+          </div>
+        </div>
+        
+        <!-- Is This You View -->
+        <div id="guest-entry-is-this-you" style="display: none;">
+          <h1 class="guest-entry-title">Is this you?</h1>
+          <p class="guest-entry-subtitle">We found your previous information:</p>
+          <div id="guest-entry-previous-info" class="guest-entry-previous-info"></div>
+          <div class="guest-entry-form-actions">
+            <button type="button" class="guest-entry-btn guest-entry-btn-cancel" onclick="handleGuestNotMe()">No, that's not me</button>
+            <button type="button" class="guest-entry-btn guest-entry-btn-submit" onclick="handleGuestYesMe()">Yes, that's me</button>
+          </div>
+        </div>
+        
+        <!-- Form View -->
+        <div id="guest-entry-form-view">
+          <h1 class="guest-entry-title">New to the Club?</h1>
+          <p class="guest-entry-subtitle">Please enter your information</p>
+          
+          <div id="guest-entry-error" class="guest-entry-error" style="display: none;"></div>
+          
+          <form id="guest-entry-form" class="guest-entry-form">
+            <div class="guest-entry-form-group">
+              <label class="guest-entry-form-label" for="guest-entry-name">Full Name *</label>
+              <input type="text" id="guest-entry-name" class="guest-entry-form-input" required maxlength="100" placeholder="Enter your name">
+            </div>
+            
+            <div class="guest-entry-form-group">
+              <label class="guest-entry-form-label" for="guest-entry-email">Email *</label>
+              <input type="email" id="guest-entry-email" class="guest-entry-form-input" required maxlength="255" placeholder="Enter your email">
+            </div>
+            
+            <div class="guest-entry-form-group">
+              <label class="guest-entry-form-label" for="guest-entry-hear">Where did you hear about us? *</label>
+              <select id="guest-entry-hear" class="guest-entry-form-select" required>
+                <option value="">Select an option</option>
+                <option value="Flyers">Flyers</option>
+                <option value="Website">Website</option>
+                <option value="Word of Mouth">Word of Mouth</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
+            <div class="guest-entry-form-group">
+              <label class="guest-entry-form-label" for="guest-entry-phone">Phone (Optional)</label>
+              <input type="tel" id="guest-entry-phone" class="guest-entry-form-input" maxlength="20" placeholder="Enter your phone">
+            </div>
+            
+            <div class="guest-entry-form-actions">
+              <button type="button" class="guest-entry-btn guest-entry-btn-cancel" onclick="closeGuestEntryDialog()">Cancel</button>
+              <button type="submit" class="guest-entry-btn guest-entry-btn-submit" id="guest-entry-submit-btn">Submit</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
   
   <!-- PDF Viewer Modal -->
   <div class="pdf-viewer-overlay" id="pdf-viewer-overlay">
@@ -524,6 +809,7 @@
   </div>
   
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="../js/firebase-config.js"></script>
   <script src="../js/auth-utils.js"></script>
@@ -637,6 +923,329 @@
       }, 300);
     }
     
+    // Guest Entry Dialog functions
+    let guestDeviceId = null;
+    let guestHasSubmittedToday = false;
+    let guestPreviousData = null;
+    
+    // Get or create device ID
+    function getGuestDeviceId() {
+      const key = 'web_device_id';
+      let deviceId = localStorage.getItem(key);
+      if (!deviceId) {
+        deviceId = sessionStorage.getItem(key);
+        if (deviceId) {
+          localStorage.setItem(key, deviceId);
+        }
+      }
+      if (!deviceId) {
+        // Generate simple device ID
+        const fingerprint = {
+          userAgent: navigator.userAgent,
+          language: navigator.language,
+          platform: navigator.platform,
+          screen: `${screen.width}x${screen.height}`,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        };
+        const fingerprintStr = JSON.stringify(fingerprint);
+        // Simple hash
+        let hash = 0;
+        for (let i = 0; i < fingerprintStr.length; i++) {
+          const char = fingerprintStr.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash;
+        }
+        deviceId = 'web_' + Math.abs(hash).toString(16).substring(0, 16);
+        localStorage.setItem(key, deviceId);
+        sessionStorage.setItem(key, deviceId);
+      }
+      return deviceId;
+    }
+    
+    // Get today's date string (YYYY-MM-DD)
+    function getTodayDateString() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    
+    // Load guest data
+    async function loadGuestData() {
+      // Always get device ID first
+      guestDeviceId = getGuestDeviceId();
+      
+      if (!window.creatorId || !clubDb) {
+        return;
+      }
+      
+      try {
+        const todayDateString = getTodayDateString();
+        
+        const guestDoc = await clubDb
+          .collection('users')
+          .doc(window.creatorId)
+          .collection('guests')
+          .doc(guestDeviceId)
+          .get();
+        
+        if (guestDoc.exists) {
+          const data = guestDoc.data();
+          const lastEntryDate = data.last_entry_date;
+          guestHasSubmittedToday = lastEntryDate === todayDateString;
+          
+          if (!guestHasSubmittedToday && data.attendance_count > 0) {
+            guestPreviousData = {
+              name: data.name || '',
+              email: data.email || '',
+              phone: data.phone || '',
+              hear_about_us: data.hear_about_us || ''
+            };
+          }
+        }
+      } catch (error) {
+        console.error('Error loading guest data:', error);
+        guestHasSubmittedToday = false;
+        guestPreviousData = null;
+      }
+    }
+    
+    // Show appropriate view based on guest state
+    function showGuestEntryView() {
+      const alreadySubmittedView = document.getElementById('guest-entry-already-submitted');
+      const isThisYouView = document.getElementById('guest-entry-is-this-you');
+      const formView = document.getElementById('guest-entry-form-view');
+      const errorDiv = document.getElementById('guest-entry-error');
+      
+      // Hide all views
+      alreadySubmittedView.style.display = 'none';
+      isThisYouView.style.display = 'none';
+      formView.style.display = 'none';
+      errorDiv.style.display = 'none';
+      
+      if (guestHasSubmittedToday) {
+        alreadySubmittedView.style.display = 'block';
+      } else if (guestPreviousData) {
+        // Show previous info
+        const previousInfoDiv = document.getElementById('guest-entry-previous-info');
+        previousInfoDiv.innerHTML = `
+          <div class="guest-entry-previous-info-item">
+            <span class="guest-entry-previous-info-label">Name:</span>
+            <span class="guest-entry-previous-info-value">${guestPreviousData.name || 'N/A'}</span>
+          </div>
+          <div class="guest-entry-previous-info-item">
+            <span class="guest-entry-previous-info-label">Email:</span>
+            <span class="guest-entry-previous-info-value">${guestPreviousData.email || 'N/A'}</span>
+          </div>
+          ${guestPreviousData.phone ? `
+          <div class="guest-entry-previous-info-item">
+            <span class="guest-entry-previous-info-label">Phone:</span>
+            <span class="guest-entry-previous-info-value">${guestPreviousData.phone}</span>
+          </div>
+          ` : ''}
+        `;
+        isThisYouView.style.display = 'block';
+      } else {
+        formView.style.display = 'block';
+      }
+    }
+    
+    // Handle "Yes, that's me"
+    async function handleGuestYesMe() {
+      if (!window.creatorId || !clubDb || !guestDeviceId) {
+        showGuestError('Error: Missing required information');
+        return;
+      }
+      
+      try {
+        const submitBtn = document.querySelector('#guest-entry-is-this-you .guest-entry-btn-submit');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        
+        const todayDateString = getTodayDateString();
+        const guestDocRef = clubDb.collection('users').doc(window.creatorId).collection('guests').doc(guestDeviceId);
+        
+        const batch = clubDb.batch();
+        
+        const mainData = {
+          name: guestPreviousData.name || '',
+          email: guestPreviousData.email || '',
+          hear_about_us: guestPreviousData.hear_about_us || '',
+          last_entry_date: todayDateString,
+          last_updated: firebase.firestore.FieldValue.serverTimestamp(),
+          attendance_count: firebase.firestore.FieldValue.increment(1)
+        };
+        if (guestPreviousData.phone) {
+          mainData.phone = guestPreviousData.phone;
+        }
+        
+        batch.set(guestDocRef, mainData, { merge: true });
+        batch.set(guestDocRef.collection('attendances').doc(todayDateString), {
+          entry_date: todayDateString,
+          created_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        await batch.commit();
+        
+        // Refresh data
+        await loadGuestData();
+        showGuestEntryView();
+        
+        // Show success and close after 1 second
+        setTimeout(() => {
+          closeGuestEntryDialog();
+        }, 1000);
+      } catch (error) {
+        console.error('Error submitting guest info:', error);
+        showGuestError('Error submitting information. Please try again.');
+        const submitBtn = document.querySelector('#guest-entry-is-this-you .guest-entry-btn-submit');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Yes, that\'s me';
+      }
+    }
+    
+    // Handle "No, that's not me"
+    function handleGuestNotMe() {
+      guestPreviousData = null;
+      showGuestEntryView();
+    }
+    
+    // Show error message
+    function showGuestError(message) {
+      const errorDiv = document.getElementById('guest-entry-error');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+    }
+    
+    // Submit guest form
+    async function submitGuestForm(event) {
+      event.preventDefault();
+      
+      // Ensure device ID is set
+      if (!guestDeviceId) {
+        guestDeviceId = getGuestDeviceId();
+      }
+      
+      if (!window.creatorId) {
+        showGuestError('Error: Club information not available. Please refresh the page.');
+        return;
+      }
+      
+      if (!clubDb) {
+        showGuestError('Error: Database not initialized. Please refresh the page.');
+        return;
+      }
+      
+      if (!guestDeviceId) {
+        showGuestError('Error: Could not identify your device. Please refresh the page.');
+        return;
+      }
+      
+      if (guestHasSubmittedToday) {
+        showGuestError('You have already submitted your information for today.');
+        return;
+      }
+      
+      const name = document.getElementById('guest-entry-name').value.trim();
+      const email = document.getElementById('guest-entry-email').value.trim();
+      const hear = document.getElementById('guest-entry-hear').value;
+      const phone = document.getElementById('guest-entry-phone').value.trim();
+      
+      if (!name || !email || !hear) {
+        showGuestError('Please fill in all required fields.');
+        return;
+      }
+      
+      try {
+        const submitBtn = document.getElementById('guest-entry-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        
+        const todayDateString = getTodayDateString();
+        const guestDocRef = clubDb.collection('users').doc(window.creatorId).collection('guests').doc(guestDeviceId);
+        
+        const batch = clubDb.batch();
+        
+        const mainData = {
+          name: name,
+          email: email,
+          hear_about_us: hear,
+          last_entry_date: todayDateString,
+          last_updated: firebase.firestore.FieldValue.serverTimestamp(),
+          attendance_count: firebase.firestore.FieldValue.increment(1)
+        };
+        if (phone) {
+          mainData.phone = phone;
+        }
+        
+        batch.set(guestDocRef, mainData, { merge: true });
+        batch.set(guestDocRef.collection('attendances').doc(todayDateString), {
+          entry_date: todayDateString,
+          created_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        await batch.commit();
+        
+        // Refresh data
+        await loadGuestData();
+        showGuestEntryView();
+        
+        // Show success and close after 1 second
+        setTimeout(() => {
+          closeGuestEntryDialog();
+        }, 1000);
+      } catch (error) {
+        console.error('Error submitting guest form:', error);
+        showGuestError('Error submitting information. Please try again.');
+        const submitBtn = document.getElementById('guest-entry-submit-btn');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit';
+      }
+    }
+    
+    async function showGuestEntryDialog() {
+      const overlay = document.getElementById('guest-entry-overlay');
+      if (overlay) {
+        // Ensure device ID is set
+        if (!guestDeviceId) {
+          guestDeviceId = getGuestDeviceId();
+        }
+        
+        // Reset form
+        document.getElementById('guest-entry-form').reset();
+        document.getElementById('guest-entry-error').style.display = 'none';
+        const submitBtn = document.getElementById('guest-entry-submit-btn');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit';
+        }
+        
+        // Load guest data and show appropriate view
+        await loadGuestData();
+        showGuestEntryView();
+        
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    function closeGuestEntryDialog() {
+      const overlay = document.getElementById('guest-entry-overlay');
+      if (overlay) {
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+    
+    // Attach form submit handler
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('guest-entry-form');
+      if (form) {
+        form.addEventListener('submit', submitGuestForm);
+      }
+    });
+    
     // Exit Meeting Dialog functions
     function showExitMeetingDialog() {
       const overlay = document.getElementById('exit-meeting-dialog-overlay');
@@ -699,6 +1308,9 @@
           showError('Invalid meeting data');
           return;
         }
+        
+        // Set creatorId globally for guest entry
+        window.creatorId = creatorId;
         
         // Query users/{creatorId}/meetings/{meetingId} to get meeting details
         const meetingDoc = await clubDb
