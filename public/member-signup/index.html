@@ -12,7 +12,7 @@
       src: url('../assets/GoogleSans.woff2') format('woff2');
       font-weight: 100 900;
       font-style: normal;
-      font-display: swap;
+      font-display: block;
     }
     
     * {
@@ -30,6 +30,12 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
+      opacity: 0;
+      transition: opacity 0.5s ease-out;
+    }
+    
+    body.loaded {
+      opacity: 1;
     }
     
     .signup-container {
@@ -434,6 +440,13 @@
         }
       });
     }
+    
+    // Wait for fonts to be ready before showing page content
+    document.addEventListener('DOMContentLoaded', () => {
+      document.fonts.ready.then(() => {
+        document.body.classList.add('loaded');
+      });
+    });
   </script>
 </body>
 </html>
