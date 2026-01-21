@@ -171,7 +171,7 @@
     }
     
     .exit-meeting-section {
-      margin-top: 40px;
+      margin-top: 0;
     }
     
     /* Exit Meeting Dialog */
@@ -286,7 +286,7 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.95);
       border: none;
       width: 44px;
       height: 44px;
@@ -296,8 +296,9 @@
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
-      z-index: 10001;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      z-index: 10002;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      -webkit-tap-highlight-color: transparent;
     }
     
     .pdf-close-btn:hover {
@@ -305,31 +306,87 @@
       transform: scale(1.1);
     }
     
+    .pdf-close-btn:active {
+      transform: scale(0.95);
+    }
+    
     .pdf-close-btn svg {
       width: 24px;
       height: 24px;
       color: #212121;
+      pointer-events: none;
     }
     
-    .pdf-viewer-object {
+    .pdf-viewer-container {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      border: none;
-      background: #000000;
-    }
-    
-    /* Hide PDF viewer UI elements */
-    .pdf-viewer-overlay ::-webkit-scrollbar {
+      overflow-y: auto;
+      background: #525252;
+      z-index: 10001;
       display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      gap: 20px;
     }
     
-    .pdf-viewer-overlay * {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+    .pdf-page-canvas {
+      max-width: 100%;
+      height: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      background: #ffffff;
+      display: block;
     }
+    
+    .pdf-loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10002;
+      text-align: center;
+      color: #ffffff;
+    }
+    
+    .pdf-loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: pdf-spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+      display: inline-block;
+    }
+    
+    .pdf-loading-text {
+      font-size: 16px;
+      font-weight: 500;
+    }
+    
+    @keyframes pdf-spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) {
+      .pdf-close-btn {
+        top: 12px;
+        right: 12px;
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      }
+      
+      .pdf-close-btn svg {
+        width: 28px;
+        height: 28px;
+      }
+    }
+    
     
     /* Polls Viewer */
     .polls-viewer-overlay {
@@ -840,7 +897,11 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </button>
-    <object id="pdf-viewer-object" class="pdf-viewer-object" type="application/pdf" data=""></object>
+    <div id="pdf-viewer-container" class="pdf-viewer-container"></div>
+    <div id="pdf-loading" class="pdf-loading" style="display: none;">
+      <div class="pdf-loading-spinner"></div>
+      <div class="pdf-loading-text">Loading PDF...</div>
+    </div>
   </div>
   
   <!-- Polls Viewer Modal -->
@@ -865,6 +926,13 @@
       </div>
     </div>
   </div>
+  
+  <!-- PDF.js library for reliable PDF rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    // Configure PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
   
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -944,43 +1012,121 @@
       return messages[Math.floor(Math.random() * messages.length)];
     }
     
-    // PDF Viewer functions
-    function openPdfViewer(pdfUrl) {
-      const overlay = document.getElementById('pdf-viewer-overlay');
-      const pdfObject = document.getElementById('pdf-viewer-object');
-      const header = document.querySelector('.header');
-      const meetingContent = document.getElementById('meeting-content');
+    // PDF Viewer using PDF.js for reliable cross-platform rendering
+    let currentPdfDoc = null;
+    
+    // Cache DOM elements
+    const pdfElements = {
+      overlay: null,
+      container: null,
+      loading: null,
+      header: null,
+      meetingContent: null
+    };
+    
+    function getPdfElements() {
+      if (!pdfElements.overlay) {
+        pdfElements.overlay = document.getElementById('pdf-viewer-overlay');
+        pdfElements.container = document.getElementById('pdf-viewer-container');
+        pdfElements.loading = document.getElementById('pdf-loading');
+        pdfElements.header = document.querySelector('.header');
+        pdfElements.meetingContent = document.getElementById('meeting-content');
+      }
+      return pdfElements;
+    }
+    
+    function resetLoadingState() {
+      const { loading } = getPdfElements();
+      loading.innerHTML = '<div class="pdf-loading-spinner"></div><div class="pdf-loading-text">Loading PDF...</div>';
+    }
+    
+    async function openPdfViewer(pdfUrl) {
+      const { overlay, container, loading, header, meetingContent } = getPdfElements();
       
-      // Hide header and main content
+      // Hide page content
       if (header) header.style.display = 'none';
       if (meetingContent) meetingContent.style.display = 'none';
       
-      // Set PDF URL - add parameters to hide all PDF viewer UI
-      pdfObject.data = pdfUrl + '#toolbar=0&navpanes=0&scrollbar=1&view=FitH';
-      
+      // Show viewer
       overlay.classList.add('active');
+      container.style.display = 'none';
+      loading.style.display = 'block';
+      resetLoadingState();
       document.body.style.overflow = 'hidden';
       document.body.style.background = '#000000';
+      
+      try {
+        // Load PDF
+        currentPdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+        
+        // Render all pages
+        await renderAllPages();
+        
+        // Show PDF, hide loading
+        loading.style.display = 'none';
+        container.style.display = 'flex';
+      } catch (error) {
+        console.error('Error loading PDF:', error);
+        loading.innerHTML = '<div class="pdf-loading-text" style="color: #ff4444;">Error loading PDF. Please try again.</div>';
+      }
+    }
+    
+    async function renderAllPages() {
+      if (!currentPdfDoc) return;
+      
+      const { container } = getPdfElements();
+      const numPages = currentPdfDoc.numPages;
+      const scale = 1.5;
+      
+      // Clear container
+      container.innerHTML = '';
+      
+      // Render each page
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        try {
+          const page = await currentPdfDoc.getPage(pageNum);
+          const viewport = page.getViewport({ scale });
+          
+          // Create canvas for this page
+          const canvas = document.createElement('canvas');
+          canvas.className = 'pdf-page-canvas';
+          const ctx = canvas.getContext('2d');
+          
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          
+          // Render page
+          await page.render({
+            canvasContext: ctx,
+            viewport: viewport
+          }).promise;
+          
+          // Add canvas to container
+          container.appendChild(canvas);
+        } catch (error) {
+          console.error(`Error rendering page ${pageNum}:`, error);
+        }
+      }
     }
     
     function closePdfViewer() {
-      const overlay = document.getElementById('pdf-viewer-overlay');
-      const pdfObject = document.getElementById('pdf-viewer-object');
-      const header = document.querySelector('.header');
-      const meetingContent = document.getElementById('meeting-content');
+      const { overlay, container, loading, header, meetingContent } = getPdfElements();
       
+      // Hide viewer
       overlay.classList.remove('active');
       document.body.style.overflow = '';
       document.body.style.background = '#ffffff';
       
-      // Show header and main content again
+      // Show page content
       if (header) header.style.display = 'flex';
       if (meetingContent) meetingContent.style.display = 'block';
       
-      // Clear PDF data to stop loading
-      setTimeout(() => {
-        pdfObject.data = '';
-      }, 300);
+      // Clean up
+      currentPdfDoc = null;
+      container.innerHTML = '';
+      container.style.display = 'none';
+      loading.style.display = 'none';
+      resetLoadingState();
     }
     
     // Wrapper functions for guest entry (using modular component)
