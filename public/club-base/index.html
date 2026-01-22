@@ -951,7 +951,7 @@
                 <span id="club-code-shimmer" class="shimmer shimmer-line"></span>
                 <span id="club-code-value" class="field-content-loading"></span>
               </div>
-              <div class="field-description">Share this code with members to allow them to join your club</div>
+              <div class="field-description">This is your club QR code. Download it and place it around your club for people to scan and sign in with. The QR code contains your club code that members can use to join your meetings.</div>
             </div>
             <div class="field-action">
               <span id="club-code-button-shimmer" class="shimmer" style="width: 150px; height: 36px; display: inline-block;"></span>
@@ -1899,41 +1899,73 @@
         tempDiv.style.left = '-9999px';
         tempDiv.style.width = '600px';
         tempDiv.style.height = '600px';
+        tempDiv.style.visibility = 'hidden';
         document.body.appendChild(tempDiv);
         
-        // Generate QR code
-        const qr = new QRCode(tempDiv, {
-          text: qrCodeData,
-          width: 600,
-          height: 600,
-          colorDark: '#000000',
-          colorLight: '#FFFFFF',
-          correctLevel: QRCode.CorrectLevel.H
-        });
+        let qrDataUrl = null;
+        try {
+          // Generate QR code
+          const qr = new QRCode(tempDiv, {
+            text: qrCodeData,
+            width: 600,
+            height: 600,
+            colorDark: '#000000',
+            colorLight: '#FFFFFF',
+            correctLevel: QRCode.CorrectLevel.H
+          });
+          
+          // Wait for QR code to render (with timeout)
+          await Promise.race([
+            new Promise(resolve => setTimeout(resolve, 1000)),
+            new Promise((resolve) => {
+              const checkCanvas = setInterval(() => {
+                const canvas = tempDiv.querySelector('canvas');
+                if (canvas) {
+                  clearInterval(checkCanvas);
+                  resolve();
+                }
+              }, 50);
+              setTimeout(() => {
+                clearInterval(checkCanvas);
+                resolve();
+              }, 2000);
+            })
+          ]);
+          
+          // Get the canvas element
+          const canvas = tempDiv.querySelector('canvas');
+          if (!canvas) {
+            throw new Error('QR code canvas not found after generation');
+          }
+          
+          // Convert canvas to data URL
+          qrDataUrl = canvas.toDataURL('image/png');
+          if (!qrDataUrl || qrDataUrl === 'data:,') {
+            throw new Error('Failed to convert QR code to image');
+          }
+        } finally {
+          // Always clean up temp div
+          if (tempDiv && tempDiv.parentNode) {
+            document.body.removeChild(tempDiv);
+          }
+        }
         
-        // Wait for QR code to render
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Get the canvas element
-        const canvas = tempDiv.querySelector('canvas');
-        if (!canvas) {
-          document.body.removeChild(tempDiv);
+        if (!qrDataUrl) {
           throw new Error('Failed to generate QR code');
         }
         
-        // Convert canvas to data URL
-        const qrDataUrl = canvas.toDataURL('image/png');
-        
-        // Clean up
-        document.body.removeChild(tempDiv);
-        
-        // Convert data URL to image
+        // Convert data URL to image (verify it loads)
         const img = new Image();
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-          img.src = qrDataUrl;
-        });
+        await Promise.race([
+          new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = () => reject(new Error('Failed to load QR code image'));
+            img.src = qrDataUrl;
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Image loading timeout')), 5000)
+          )
+        ]);
         
         // Create PDF using jsPDF
         const { jsPDF } = window.jspdf;
@@ -1944,27 +1976,19 @@
         });
         
         const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
         
         // Compact spacing - minimal top margin
-        const topMargin = 35;
+        const topMargin = 40;
         let yPos = topMargin;
         
-        // Toastmasters Header - minimalist, bigger font
-        pdf.setFontSize(22);
-        pdf.setTextColor(60, 60, 60);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('TOASTMASTERS', pageWidth / 2, yPos, { align: 'center' });
-        yPos += 18;
-        
-        // Club Name (if available) - clean and simple, bigger font
+        // Club Name (if available) - clean and simple, smaller font
         if (clubNameForDownload && clubNameForDownload.trim()) {
-          pdf.setFontSize(34);
+          pdf.setFontSize(24);
           pdf.setTextColor(20, 20, 20);
           pdf.setFont('helvetica', 'bold');
           const clubNameLines = pdf.splitTextToSize(clubNameForDownload, pageWidth - 80);
           pdf.text(clubNameLines, pageWidth / 2, yPos, { align: 'center' });
-          yPos += clubNameLines.length * 12 + 12;
+          yPos += clubNameLines.length * 10 + 8;
         }
         
         // QR Code - clean, no borders, larger
@@ -1976,23 +2000,37 @@
         pdf.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
         yPos += qrSize + 20;
         
-        // Instructions - minimalist text, bigger font
-        pdf.setFontSize(18);
-        pdf.setTextColor(40, 40, 40);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('Scan to join our meeting', pageWidth / 2, yPos, { align: 'center' });
+        // Manual entry instructions - prominent
+        pdf.setFontSize(16);
+        pdf.setTextColor(60, 60, 60);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Can\'t scan? Enter code manually:', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 10;
         
-        pdf.setFontSize(15);
-        pdf.setTextColor(120, 120, 120);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('Guests welcome', pageWidth / 2, yPos + 7, { align: 'center' });
-        yPos += 15;
-        
-        // Club Code - subtle, bigger font
+        // Website URL - prominent
         pdf.setFontSize(14);
-        pdf.setTextColor(140, 140, 140);
+        pdf.setTextColor(0, 65, 101);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('toastmastersdaily.com', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 12;
+        
+        // Club Code - very prominent, large font
+        pdf.setFontSize(28);
+        pdf.setTextColor(0, 65, 101);
+        pdf.setFont('helvetica', 'bold');
+        // Format code with space after 4 digits (e.g., "1234 5678")
+        let formattedCode = clubCodeForDownload;
+        if (clubCodeForDownload && clubCodeForDownload.length >= 4) {
+          formattedCode = clubCodeForDownload.substring(0, 4) + ' ' + clubCodeForDownload.substring(4);
+        }
+        pdf.text(formattedCode, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 10;
+        
+        // Additional instruction
+        pdf.setFontSize(12);
+        pdf.setTextColor(100, 100, 100);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`Club Code: ${clubCodeForDownload}`, pageWidth / 2, yPos, { align: 'center' });
+        pdf.text('Enter this code on the website to join', pageWidth / 2, yPos, { align: 'center' });
         
         // Generate filename
         let fileName = 'club-code.pdf';

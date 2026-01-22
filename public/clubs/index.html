@@ -72,6 +72,118 @@
       background: #ffffff;
     }
     
+    .hero-todays-meeting {
+      max-width: 1200px;
+      margin: 0 auto 40px;
+    }
+    
+    .hero-todays-meeting-section-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+    }
+    
+    .hero-todays-meeting-card {
+      background: linear-gradient(135deg, #004165 0%, #003049 100%);
+      border-radius: 20px;
+      padding: 28px 32px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 8px 24px rgba(0, 65, 101, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    
+    .hero-todays-meeting-card:hover,
+    .hero-todays-meeting-card:focus {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0, 65, 101, 0.25);
+      outline: none;
+    }
+    
+    .hero-todays-meeting-card:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.5);
+      outline-offset: 2px;
+    }
+    
+    .hero-todays-meeting-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 120px;
+      height: 120px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      transform: translate(30%, -30%);
+    }
+    
+    .hero-todays-meeting-content {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .hero-todays-meeting-date {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+    
+    .hero-todays-meeting-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    
+    .hero-todays-meeting-time {
+      font-size: 15px;
+      opacity: 0.9;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .hero-todays-meeting-time svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .hero-todays-meeting-join {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      transition: background 0.3s ease;
+      white-space: nowrap;
+    }
+    
+    .hero-todays-meeting-card:hover .hero-todays-meeting-join {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .hero-todays-meeting-join svg {
+      width: 20px;
+      height: 20px;
+    }
+    
     .hero-container {
       max-width: 1200px;
       margin: 0 auto;
@@ -222,7 +334,7 @@
     
     /* Other Meetings Section */
     .other-meetings-section {
-      margin-top: 48px;
+      margin-top: 24px;
     }
     
     .other-meetings-title {
@@ -402,6 +514,31 @@
     @media (max-width: 768px) {
       .hero {
         padding: 32px 24px 0;
+      }
+      
+      .hero-todays-meeting {
+        margin-bottom: 32px;
+      }
+      
+      .hero-todays-meeting-section-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      
+      .hero-todays-meeting-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 24px;
+        gap: 16px;
+      }
+      
+      .hero-todays-meeting-title {
+        font-size: 20px;
+      }
+      
+      .hero-todays-meeting-join {
+        width: 100%;
+        justify-content: center;
       }
       
       .hero-container {
@@ -749,6 +886,9 @@
     <div id="club-content" style="display: none;">
       <!-- Hero Section -->
       <section class="hero">
+        <!-- Today's Meeting in Hero -->
+        <div id="hero-todays-meeting" class="hero-todays-meeting" style="display: none;"></div>
+        
         <div class="hero-container">
           <div class="hero-content">
             <h1 class="club-name" id="club-name"></h1>
@@ -1078,6 +1218,7 @@
         }).slice(0, 2); // Limit to 2 other meetings
         
         // Render meetings
+        const heroTodaysMeeting = document.getElementById('hero-todays-meeting');
         const todaysMeetingSection = document.getElementById('todays-meeting-section');
         const todaysMeetingCard = document.getElementById('todays-meeting-card');
         const todaysMeetingTitle = todaysMeetingSection.querySelector('.section-title');
@@ -1088,32 +1229,64 @@
         if (todaysMeeting || otherMeetings.length > 0) {
           noMeetings.style.display = 'none';
           
-          // Render today's meeting
+          // Render today's meeting in hero section
           if (todaysMeeting) {
-            todaysMeetingSection.style.display = 'block';
-            if (todaysMeetingTitle) {
-              todaysMeetingTitle.textContent = "Today's Meeting";
-            }
             const meetingDate = todaysMeeting.meeting_datetime?.toDate();
             if (meetingDate) {
               const dateStr = formatDate(meetingDate);
               const timeStr = formatTime(meetingDate);
               const dayName = meetingDate.toLocaleDateString('en-US', { weekday: 'long' });
               
-              todaysMeetingCard.innerHTML = `
-                <div class="todays-meeting-card" onclick="window.location.href='/meetings/${todaysMeeting.id}'">
-                  <div class="todays-meeting-date">${dayName}, ${dateStr}</div>
-                  <div class="todays-meeting-title">${escapeHtml(todaysMeeting.title || 'Untitled Meeting')}</div>
-                  ${timeStr ? `
-                    <div class="todays-meeting-time">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      ${timeStr}
+              // Render in hero section
+              if (heroTodaysMeeting) {
+                heroTodaysMeeting.style.display = 'block';
+                // Firestore document IDs are URL-safe, so we can use them directly in URLs
+                const meetingId = todaysMeeting.id;
+                const meetingTitle = escapeHtml(todaysMeeting.title || 'Untitled Meeting');
+                heroTodaysMeeting.innerHTML = `
+                  <h3 class="hero-todays-meeting-section-title">Today's Meeting</h3>
+                  <div class="hero-todays-meeting-card" data-meeting-id="${escapeHtml(meetingId)}" role="button" tabindex="0" aria-label="Join today's meeting: ${meetingTitle}">
+                    <div class="hero-todays-meeting-content">
+                      <div class="hero-todays-meeting-date">${dayName}, ${dateStr}</div>
+                      <div class="hero-todays-meeting-title">${meetingTitle}</div>
+                      ${timeStr ? `
+                        <div class="hero-todays-meeting-time">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          ${timeStr}
+                        </div>
+                      ` : ''}
                     </div>
-                  ` : ''}
-                </div>
-              `;
+                    <div class="hero-todays-meeting-join">
+                      <span>Join Meeting</span>
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </div>
+                  </div>
+                `;
+                
+                // Add event listener for click and keyboard navigation
+                const card = heroTodaysMeeting.querySelector('.hero-todays-meeting-card');
+                if (card) {
+                  const handleMeetingClick = () => {
+                    window.location.href = `/meetings/${meetingId}`;
+                  };
+                  card.addEventListener('click', handleMeetingClick);
+                  card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleMeetingClick();
+                    }
+                  });
+                }
+              }
+              
+              // Hide main content section's today's meeting since it's shown in hero
+              if (todaysMeetingSection) {
+                todaysMeetingSection.style.display = 'none';
+              }
             }
             
             // Render other meetings below today's meeting
@@ -1161,6 +1334,11 @@
               otherMeetingsSection.style.display = 'none';
             }
           } else {
+            // Hide hero today's meeting section if no meeting today
+            if (heroTodaysMeeting) {
+              heroTodaysMeeting.style.display = 'none';
+            }
+            
             // If no today's meeting but there are upcoming meetings, show them in the main section
             if (otherMeetings.length > 0) {
               todaysMeetingSection.style.display = 'block';
@@ -1216,14 +1394,16 @@
               todaysMeetingCard.innerHTML = '';
               todaysMeetingCard.appendChild(upcomingMeetingsList);
             } else {
-              todaysMeetingSection.style.display = 'none';
-              otherMeetingsSection.style.display = 'none';
+              if (heroTodaysMeeting) heroTodaysMeeting.style.display = 'none';
+              if (todaysMeetingSection) todaysMeetingSection.style.display = 'none';
+              if (otherMeetingsSection) otherMeetingsSection.style.display = 'none';
             }
           }
         } else {
-          todaysMeetingSection.style.display = 'none';
-          otherMeetingsSection.style.display = 'none';
-          noMeetings.style.display = 'block';
+          if (heroTodaysMeeting) heroTodaysMeeting.style.display = 'none';
+          if (todaysMeetingSection) todaysMeetingSection.style.display = 'none';
+          if (otherMeetingsSection) otherMeetingsSection.style.display = 'none';
+          if (noMeetings) noMeetings.style.display = 'block';
         }
       } catch (error) {
         console.error('Error loading meetings:', error);

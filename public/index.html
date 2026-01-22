@@ -41,13 +41,45 @@
       }
       
       .header {
-        padding: 24px 32px;
+        padding: 32px;
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
         position: relative;
         z-index: 100;
         background: #ffffff;
+      }
+      
+      .header-create-section {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+      }
+      
+      .header-create-text {
+        font-size: 18px;
+        font-weight: 500;
+        color: #1a1f3a;
+        margin: 0;
+      }
+      
+      .header-create-btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'GoogleSans', sans-serif;
+        background: #004165;
+        color: #FFFFFF;
+      }
+      
+      .header-create-btn:hover {
+        background: #003049;
       }
       
       .logo {
@@ -143,115 +175,6 @@
         background: #003049;
       }
       
-      /* Hamburger menu */
-      .hamburger {
-        display: none;
-        flex-direction: column;
-        gap: 5px;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        padding: 8px;
-        z-index: 101;
-      }
-      
-      .hamburger span {
-        width: 24px;
-        height: 2px;
-        background: #1a1f3a;
-        transition: all 0.3s ease;
-        border-radius: 2px;
-        display: block;
-      }
-      
-      .hamburger.active span:nth-child(1) {
-        transform: translateY(7px) rotate(45deg);
-      }
-      
-      .hamburger.active span:nth-child(2) {
-        opacity: 0;
-      }
-      
-      .hamburger.active span:nth-child(3) {
-        transform: translateY(-7px) rotate(-45deg);
-      }
-      
-      .mobile-menu {
-        display: none;
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 280px;
-        height: 100vh;
-        background: #ffffff;
-        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
-        z-index: 99;
-        padding: 80px 24px 24px;
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-      }
-      
-      .mobile-menu.active {
-        transform: translateX(0);
-      }
-      
-      .mobile-menu-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 98;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        pointer-events: none;
-      }
-      
-      .mobile-menu-overlay.active {
-        opacity: 1;
-        pointer-events: all;
-      }
-      
-      .mobile-menu-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-      
-      .mobile-menu-btn {
-        width: 100%;
-        padding: 14px 20px;
-        border-radius: 8px;
-        font-size: 15px;
-        font-weight: 500;
-        text-decoration: none;
-        text-align: center;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-family: 'GoogleSans', sans-serif;
-        background: transparent;
-        color: #1a1f3a;
-        border: 1px solid #e5e7eb;
-        margin: 0;
-      }
-      
-      .mobile-menu-btn:hover {
-        background: rgba(0, 0, 0, 0.05);
-      }
-      
-      .mobile-menu-btn-primary {
-        background: #004165;
-        color: #FFFFFF;
-        font-weight: 600;
-        border: none;
-      }
-      
-      .mobile-menu-btn-primary:hover {
-        background: #003049;
-      }
       
       .hero {
         min-height: 85vh;
@@ -259,57 +182,107 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        padding: 140px 48px 100px;
+        padding: 80px 48px 100px;
         text-align: center;
         position: relative;
         background: #ffffff;
-        border-bottom: 1px solid #e5e7eb;
       }
       
       .hero-content {
-        max-width: 900px;
+        max-width: 500px;
         position: relative;
         z-index: 1;
       }
       
-      .headline {
-        font-size: 80px;
-        font-weight: 900;
+      .hero-title {
+        font-size: 36px;
+        font-weight: 700;
         color: #0f172a;
-        letter-spacing: -3px;
-        line-height: 0.95;
-        margin-bottom: 0;
+        margin-bottom: 12px;
+        text-align: center;
+        letter-spacing: -0.5px;
       }
       
-      .tagline-intro {
-        font-size: 80px;
-        font-weight: 900;
-        color: #0f172a;
-        letter-spacing: -3px;
-        line-height: 0.95;
-        margin-bottom: 8px;
-        display: block;
-      }
-      
-      .tagline-main {
-        font-size: 80px;
-        font-weight: 900;
-        color: #004165;
-        letter-spacing: -3px;
-        line-height: 0.95;
-        margin-bottom: 0;
-        display: block;
-      }
-      
-      .subtitle {
-        font-size: 22px;
+      .hero-subtitle {
+        font-size: 18px;
         font-weight: 400;
         color: #64748b;
-        max-width: 680px;
-        line-height: 1.7;
-        margin: 48px auto 0;
-        letter-spacing: -0.3px;
-        font-weight: 350;
+        margin-bottom: 32px;
+        text-align: center;
+      }
+      
+      .hero-code-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      
+      .hero-code-input {
+        width: 100%;
+        max-width: 320px;
+        padding: 18px 24px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 500;
+        color: #060607;
+        transition: border-color 0.2s ease;
+        font-family: 'GoogleSans', sans-serif;
+        text-align: center;
+        letter-spacing: 8px;
+        background: #ffffff;
+      }
+      
+      .hero-code-input::placeholder {
+        letter-spacing: 8px;
+        color: #9CA3AF;
+      }
+      
+      .hero-code-input:focus {
+        outline: none;
+        border-color: #004165;
+      }
+      
+      .hero-code-input.error {
+        border-color: #dc2626;
+      }
+      
+      .hero-join-btn {
+        width: 100%;
+        max-width: 320px;
+        padding: 18px 24px;
+        background: #004165;
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 600;
+        font-family: 'GoogleSans', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .hero-join-btn:hover {
+        background: #003049;
+      }
+      
+      .hero-join-btn:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
+      
+      .hero-error {
+        color: #dc2626;
+        font-size: 14px;
+        text-align: center;
+        min-height: 20px;
+        display: none;
+      }
+      
+      .hero-error.show {
+        display: block;
       }
       
       /* Featured Section - Modern & Sleek */
@@ -416,9 +389,9 @@
       
       .actions-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
         gap: 24px;
-        max-width: 700px;
+        max-width: 400px;
         margin: 0 auto;
       }
       
@@ -826,27 +799,26 @@
       }
       
       @media (max-width: 768px) {
-        .headline {
-          font-size: 48px;
-          letter-spacing: -2px;
+        .hero-title {
+          font-size: 28px;
         }
         
-        .tagline-intro {
-          font-size: 48px;
-          letter-spacing: -2px;
+        .hero-subtitle {
+          font-size: 16px;
         }
         
-        .tagline-main {
-          font-size: 48px;
-          letter-spacing: -2px;
+        .hero-code-input {
+          font-size: 16px;
+          padding: 16px 20px;
         }
         
-        .subtitle {
-          font-size: 18px;
+        .hero-join-btn {
+          font-size: 16px;
+          padding: 16px 20px;
         }
         
         .hero {
-          padding: 100px 24px 80px;
+          padding: 60px 24px 80px;
         }
         
         
@@ -872,69 +844,42 @@
         }
         
         .header {
-          padding: 20px 24px;
+          padding: 24px;
         }
         
-        .header-actions {
-          display: none;
+        .header-create-text {
+          font-size: 16px;
         }
         
-        .hamburger {
-          display: flex;
-        }
-        
-        .mobile-menu {
-          display: block;
-        }
-        
-        .mobile-menu-overlay {
-          display: block;
+        .header-create-btn {
+          font-size: 14px;
+          padding: 10px 20px;
         }
       }
     </style>
   </head>
   <body>
     <div class="header">
-      <a href="/" class="logo">
-        <img src="assets/logo.png" alt="Toastmasters Daily logo">
-        <span class="logo-text">Toastmasters Daily</span>
-      </a>
-      <div class="header-actions">
-        <!-- <a href="member-login/" id="member-login-btn" class="header-btn auth-loading">Member Login</a> -->
-        <a href="club-login/" id="club-login-btn" class="header-btn header-btn-primary auth-loading">Club Login</a>
-        <a href="member-base/" id="member-base-btn" class="header-btn auth-loading" style="display: none;">Member Base</a>
-        <a href="club-base/" id="club-base-btn" class="header-btn header-btn-primary auth-loading" style="display: none;">Club Base</a>
-        <div id="auth-buttons-shimmer" class="shimmer shimmer-btn-primary"></div>
-      </div>
-      <button class="hamburger" id="hamburger" aria-label="Menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-    
-    <div class="mobile-menu-overlay" id="mobile-overlay"></div>
-    <div class="mobile-menu" id="mobile-menu">
-      <div class="mobile-menu-actions">
-        <div id="auth-buttons-shimmer-mobile" class="shimmer shimmer-btn-primary" style="width: 100%; height: 48px;"></div>
-        <!-- <a href="member-login/" id="member-login-btn-mobile" class="mobile-menu-btn auth-loading">Member Login</a> -->
-        <a href="club-login/" id="club-login-btn-mobile" class="mobile-menu-btn mobile-menu-btn-primary auth-loading">Club Login</a>
-        <a href="member-base/" id="member-base-btn-mobile" class="mobile-menu-btn auth-loading" style="display: none;">Member Base</a>
-        <a href="club-base/" id="club-base-btn-mobile" class="mobile-menu-btn mobile-menu-btn-primary auth-loading" style="display: none;">Club Base</a>
+      <div class="header-create-section">
+        <p class="header-create-text">Create a meeting?</p>
+        <a href="club-login/" class="header-create-btn">Login</a>
       </div>
     </div>
 
     <div class="hero">
       <div class="hero-content">
-        <h1 class="headline">
-          <span class="tagline-intro">Build your voice,</span>
-          <span class="tagline-main">one day at a time</span>
-        </h1>
-        <p class="subtitle">Transform your speaking skills with AI-powered feedback, meeting management, and daily challenges.</p>
+        <h1 class="hero-title">Enter the code to join</h1>
+        <p class="hero-subtitle">Best speeches await you!</p>
+        <div class="hero-code-form">
+          <input type="text" id="hero-club-code-input" class="hero-code-input" placeholder="1234 5678" maxlength="9" inputmode="numeric" aria-label="Enter club code">
+          <button class="hero-join-btn" id="hero-join-btn" aria-label="Join meeting">Join</button>
+        </div>
+        <div class="hero-error" id="hero-club-code-error"></div>
       </div>
     </div>
 
     <!-- Featured Section -->
+    <!--
     <section class="featured-section">
       <div class="featured-container">
         <div class="featured-content">
@@ -947,25 +892,16 @@
         </div>
       </div>
     </section>
+    -->
 
     <!-- Actions Section -->
     <section class="actions-section">
       <div class="actions-container">
         <div class="actions-header">
-          <h2 class="actions-title">What would you like to do?</h2>
-          <p class="actions-subtitle">Choose an action to get started</p>
+          <h2 class="actions-title">Would you like to create a meeting?</h2>
         </div>
         <div class="actions-grid">
-          <a href="#" class="action-card" onclick="event.preventDefault(); showJoinMeetingDialog();">
-            <div class="action-image-wrapper">
-              <img src="assets/join_meeting_classic.webp" alt="Join Meeting" class="action-image" loading="eager" fetchpriority="high">
-            </div>
-            <div class="action-content">
-              <h3 class="action-title">Join Meeting</h3>
-              <p class="action-description">Enter club code to join an active meeting</p>
-            </div>
-          </a>
-          <a href="club-base/" class="action-card">
+          <a href="club-base/meetings/" class="action-card">
             <div class="action-image-wrapper">
               <img src="assets/create_meeting_classic.webp" alt="Create Meeting" class="action-image" loading="eager" fetchpriority="high">
             </div>
@@ -1302,27 +1238,6 @@
         });
       }
       
-      // Mobile menu elements
-      const hamburger = document.getElementById('hamburger');
-      const mobileMenu = document.getElementById('mobile-menu');
-      const mobileOverlay = document.getElementById('mobile-overlay');
-      
-      // Mobile menu toggle
-      
-      hamburger.addEventListener('click', () => {
-        hamburger.classList.toggle('active');
-        mobileMenu.classList.toggle('active');
-        mobileOverlay.classList.toggle('active');
-        document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
-      });
-      
-      mobileOverlay.addEventListener('click', () => {
-        hamburger.classList.remove('active');
-        mobileMenu.classList.remove('active');
-        mobileOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-      });
-      
       // Join Meeting Dialog Functions
       function showJoinMeetingDialog() {
         const overlay = document.getElementById('join-meeting-dialog-overlay');
@@ -1460,12 +1375,119 @@
         }
       }
       
-      // Wait for fonts to be ready before showing page content
+      // Hero form code input formatting
       document.addEventListener('DOMContentLoaded', () => {
+        const heroInput = document.getElementById('hero-club-code-input');
+        const heroJoinBtn = document.getElementById('hero-join-btn');
+        
+        if (heroInput) {
+          // Format code with space after 4 digits
+          heroInput.addEventListener('input', function(e) {
+            let value = this.value.replace(/[^0-9]/g, '');
+            
+            // Limit to 8 digits
+            if (value.length > 8) {
+              value = value.substring(0, 8);
+            }
+            
+            // Add space after 4 digits
+            if (value.length > 4) {
+              value = value.substring(0, 4) + ' ' + value.substring(4);
+            }
+            
+            this.value = value;
+          });
+          
+          // Allow Enter key to submit
+          heroInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              joinMeetingFromHero();
+            }
+          });
+        }
+        
+        // Add click event listener to join button
+        if (heroJoinBtn) {
+          heroJoinBtn.addEventListener('click', joinMeetingFromHero);
+        }
+        
         document.fonts.ready.then(() => {
           document.body.classList.add('loaded');
         });
       });
+      
+      // Join meeting from hero form
+      async function joinMeetingFromHero() {
+        const input = document.getElementById('hero-club-code-input');
+        const error = document.getElementById('hero-club-code-error');
+        const joinBtn = document.getElementById('hero-join-btn');
+        
+        if (!input || !error || !joinBtn) {
+          console.error('Required elements not found for join meeting form');
+          return;
+        }
+        
+        // Get digits only (remove space)
+        const clubCode = input.value.replace(/[^0-9]/g, '');
+        
+        // Clear previous error
+        error.textContent = '';
+        error.classList.remove('show');
+        input.classList.remove('error');
+        
+        // Validate format
+        if (!clubCode) {
+          error.textContent = 'Please enter a club code';
+          error.classList.add('show');
+          input.classList.add('error');
+          input.focus();
+          return;
+        }
+        
+        if (clubCode.length !== 8) {
+          error.textContent = 'Club code must be 8 digits';
+          error.classList.add('show');
+          input.classList.add('error');
+          input.focus();
+          return;
+        }
+        
+        // Disable button
+        joinBtn.disabled = true;
+        joinBtn.textContent = 'Joining...';
+        
+        try {
+          if (!clubDb) {
+            throw new Error('Database not initialized');
+          }
+          
+          // Check if club code exists
+          const clubCodeDoc = await clubDb.collection('club_codes').doc(clubCode).get();
+          
+          if (!clubCodeDoc.exists) {
+            error.textContent = 'Club code not found. Please check and try again.';
+            error.classList.add('show');
+            input.classList.add('error');
+            input.focus();
+            joinBtn.disabled = false;
+            joinBtn.textContent = 'Join';
+            return;
+          }
+          
+          // Valid club code - redirect to club page
+          // Club code is validated to be 8 digits, so it's safe for URL
+          window.location.href = `/clubs/${encodeURIComponent(clubCode)}`;
+          
+        } catch (err) {
+          console.error('Error joining meeting:', err);
+          error.textContent = 'An error occurred. Please try again.';
+          error.classList.add('show');
+          input.classList.add('error');
+          joinBtn.disabled = false;
+          joinBtn.textContent = 'Join';
+        }
+      }
     </script>
   </body>
 </html>
