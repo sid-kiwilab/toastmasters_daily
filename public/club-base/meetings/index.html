@@ -214,11 +214,28 @@
       gap: 32px;
     }
     
+    /* Reduced viewport: show selected date above the calendar */
+    @media (max-width: 1024px) {
+      .calendar-wrapper {
+        flex-direction: column;
+      }
+      #selected-date-container {
+        order: -1;
+      }
+      .calendar-container {
+        order: 0;
+      }
+    }
+    
     @media (min-width: 1025px) {
       .calendar-wrapper {
         flex-direction: row;
         align-items: flex-start;
         gap: 40px;
+      }
+      #selected-date-container,
+      .calendar-container {
+        order: unset;
       }
     }
     
