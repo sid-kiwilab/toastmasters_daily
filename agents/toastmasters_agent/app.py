@@ -2,30 +2,16 @@ import os
 import json
 import logging
 
-# Load env.yaml from next to this file (works with YAML key: value or .env-style KEY=VALUE)
+# Load env.yaml from next to this file (YAML map: KEY: "value" — same as kiwilab_functions)
 _env_path = os.path.join(os.path.dirname(__file__), "env.yaml")
 if os.path.isfile(_env_path):
+    import yaml
     with open(_env_path) as f:
-        content = f.read()
-    # Try YAML dict first
-    try:
-        import yaml
-        data = yaml.safe_load(content)
-        if isinstance(data, dict):
-            for k, v in data.items():
-                if v is not None and str(v).strip():
-                    os.environ.setdefault(k, str(v).strip())
-        else:
-            raise ValueError("not a dict")
-    except Exception:
-        # Fallback: .env-style KEY=VALUE lines
-        for line in content.splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, _, v = line.partition("=")
-                k, v = k.strip(), v.strip().strip('"').strip("'")
-                if k and v:
-                    os.environ.setdefault(k, v)
+        data = yaml.safe_load(f)
+    if isinstance(data, dict):
+        for k, v in data.items():
+            if v is not None and str(v).strip():
+                os.environ.setdefault(k, str(v).strip())
 
 logging.basicConfig(
     level=logging.INFO,

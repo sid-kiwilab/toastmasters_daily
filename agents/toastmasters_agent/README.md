@@ -4,11 +4,14 @@ LangGraph chat agent with streaming for **toastmasters-daily**.
 
 ## Setup
 
-- Copy `env.yaml.example` → `env.yaml`, set `OPENAI_API_KEY`. `env.yaml` is gitignored.
+- **env.yaml** must be YAML map format (same as kiwilab_functions), e.g.:
+  ```yaml
+  OPENAI_API_KEY: "sk-proj-your-key-here"
+  ```
+  Copy `env.yaml.example` → `env.yaml`, set your key. `env.yaml` is gitignored.
 - **Deploy:** gcloud uses it via `--env-vars-file=env.yaml`.
-- **Local Docker:** mount it so the app can read it: `-v "%CD%\env.yaml:/app/env.yaml"`.  
-  **Windows:** the volume mount often fails; pass the key with `-e` instead:  
-  `docker run -p 8080:8080 -e OPENAI_API_KEY=your-key-here toastmasters-agent`
+- **Local Docker:** mount with `-v "%CD%\env.yaml:/app/env.yaml"`.  
+  **Windows:** if the mount fails, use `-e OPENAI_API_KEY=your-key-here` instead.
 
 ## Local (Docker)
 
@@ -31,6 +34,7 @@ uvicorn app:app --host 0.0.0.0 --port 8080
 From `agents/toastmasters_agent`:
 
 ```cmd
+gcloud config set project toastmasters-daily
 gcloud run deploy toastmasters-agent --source . --project toastmasters-daily --region us-central1 --env-vars-file=env.yaml --allow-unauthenticated
 ```
 
