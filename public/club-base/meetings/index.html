@@ -215,6 +215,55 @@
       border-bottom: 1px solid #e5e7eb;
     }
     
+    .date-and-meetings-inner {
+      position: relative;
+    }
+    
+    .date-and-meetings-inner.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    
+    .date-and-meetings-inner.disabled::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 10px;
+      z-index: 1;
+    }
+    
+    .date-and-meetings-inner .disabled-overlay-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ffffff;
+      padding: 16px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 2;
+      text-align: center;
+      max-width: 280px;
+      pointer-events: none;
+    }
+    
+    .date-and-meetings-inner .disabled-overlay-message-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #060607;
+      margin-bottom: 8px;
+    }
+    
+    .date-and-meetings-inner .disabled-overlay-message-text {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+    
     .selected-date-bold {
       font-size: 22px;
       font-weight: 700;
@@ -2458,10 +2507,20 @@
         const createBtn = canCreateMeetings
           ? `<button type="button" class="date-and-meetings-create" onclick="showCreateMeetingDialog()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Create Meeting</button>`
           : `<button type="button" class="date-and-meetings-create" disabled>Create Meeting</button>`;
+        const disabledClass = canCreateMeetings ? '' : 'disabled';
+        const disabledMessage = canCreateMeetings ? '' : `
+          <div class="disabled-overlay-message">
+            <div class="disabled-overlay-message-title">Subscription Required</div>
+            <div class="disabled-overlay-message-text">You need an active subscription or trial to create or manage meetings. Please subscribe to continue.</div>
+          </div>
+        `;
         el.innerHTML = `
-          <div class="selected-date-bold">Selected date · ${dateStr}</div>
-          <div class="meeting-tiles">${meetingsHtml}</div>
-          ${createBtn}
+          <div class="date-and-meetings-inner ${disabledClass}">
+            <div class="selected-date-bold">Selected date · ${dateStr}</div>
+            <div class="meeting-tiles">${meetingsHtml}</div>
+            ${createBtn}
+            ${disabledMessage}
+          </div>
         `;
       }
       

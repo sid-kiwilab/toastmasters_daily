@@ -2,6 +2,13 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper: user has active subscription or trial
+    function hasActiveSubscription(userId) {
+      let user = get(/databases/$(database)/documents/users/$(userId)).data;
+      return user.subscription == 'active' || 
+        (user.trial_end_date != null && user.trial_end_date > request.time);
+    }
+    
     // Allow read access to all documents
     match /{document=**} {
       allow read: if true;
@@ -25,16 +32,18 @@ service cloud.firestore {
     // Allow read access to user meetings
     match /users/{userId}/meetings/{meetingId} {
       allow read: if true;
-      // Allow creator to update and delete their own meetings
-      allow update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      // Allow creator to update/delete only with active subscription or trial
+      allow update: if request.auth != null && request.auth.uid == userId && hasActiveSubscription(userId);
+      allow delete: if request.auth != null && request.auth.uid == userId && hasActiveSubscription(userId);
     }
     
     // Allow read/write access to polls subcollection
     match /users/{userId}/meetings/{meetingId}/polls/{pollId} {
       allow read: if true;
-      // Allow creator to manage polls (create, update, delete)
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Allow creator to manage polls only with active subscription or trial
+      allow create: if request.auth != null && request.auth.uid == userId && hasActiveSubscription(userId);
+      allow update: if request.auth != null && request.auth.uid == userId && hasActiveSubscription(userId);
+      allow delete: if request.auth != null && request.auth.uid == userId && hasActiveSubscription(userId);
       // Voting goes through Cloud Function (submit_vote) which has admin access
     }
     

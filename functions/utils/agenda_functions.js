@@ -47,6 +47,22 @@ const upload_agenda_handler = async (data, context) => {
       return { success: false, error: 'Meeting creator not found' };
     }
     
+    // Verify subscription is active OR trial is active
+    const userDoc = await db.collection('users').doc(creator_id).get();
+    if (!userDoc.exists) {
+      return { success: false, error: 'User profile not found' };
+    }
+    const userData = userDoc.data();
+    const isSubscriptionActive = userData?.subscription === 'active';
+    let isTrialActive = false;
+    if (userData?.trial_end_date) {
+      const trialEnd = userData.trial_end_date.toDate();
+      isTrialActive = trialEnd > new Date();
+    }
+    if (!isSubscriptionActive && !isTrialActive) {
+      return { success: false, error: 'Uploading agendas requires an active subscription or trial' };
+    }
+    
     // Create unique file path with timestamp: agendas/{user_id}/{meetingId}_{timestamp}.pdf
     const timestamp = Date.now();
     const filePath = `agendas/${creator_id}/${data.meetingId}_${timestamp}.pdf`;

@@ -174,6 +174,22 @@ const delete_meeting_handler = async (data, context) => {
     const meeting_id = data.meeting_id;
     const creator_id = data.creator_id;
     
+    // Verify subscription is active OR trial is active
+    const userDoc = await db.collection('users').doc(creator_id).get();
+    if (!userDoc.exists) {
+      return { success: false, error: 'User profile not found' };
+    }
+    const userData = userDoc.data();
+    const isSubscriptionActive = userData?.subscription === 'active';
+    let isTrialActive = false;
+    if (userData?.trial_end_date) {
+      const trialEnd = userData.trial_end_date.toDate();
+      isTrialActive = trialEnd > new Date();
+    }
+    if (!isSubscriptionActive && !isTrialActive) {
+      return { success: false, error: 'Deleting meetings requires an active subscription or trial' };
+    }
+    
     // Delete all polls in the polls subcollection first
     try {
       const polls_ref = db
