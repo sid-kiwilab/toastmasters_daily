@@ -32,7 +32,7 @@ from langgraph.graph.message import add_messages
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://toastmastersdaily.com"],
+    allow_origins=["http://localhost:3000", "https://toastmastersdaily.com", "https://www.toastmastersdaily.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

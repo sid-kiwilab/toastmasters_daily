@@ -1007,6 +1007,17 @@
         border-radius: 12px 12px 12px 4px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
       }
+
+      .chat-msg.bot p { margin: 0 0 0.5em 0; }
+      .chat-msg.bot p:last-child { margin-bottom: 0; }
+      .chat-msg.bot ul, .chat-msg.bot ol { margin: 0.25em 0 0.5em 1em; padding-left: 1em; }
+      .chat-msg.bot li { margin-bottom: 0.2em; }
+      .chat-msg.bot strong { font-weight: 600; }
+      .chat-msg.bot a { color: #004165; text-decoration: none; }
+      .chat-msg.bot a:hover { text-decoration: underline; }
+      .chat-msg.bot code { font-size: 0.9em; background: #f1f5f9; padding: 0.15em 0.4em; border-radius: 4px; }
+      .chat-msg.bot pre { margin: 0.5em 0; overflow-x: auto; }
+      .chat-msg.bot pre code { padding: 8px; display: block; background: #f1f5f9; border-radius: 6px; }
       
       .chat-msg.user {
         background: #0f172a;
@@ -1302,6 +1313,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/notifications.js"></script>
     <script src="js/auth-utils.js"></script>
@@ -1763,7 +1775,7 @@
         // Chat API base: localhost → local agent; production → set when you have the URL
         function getChatApiBase() {
           if (window.location.hostname === 'localhost') return 'http://localhost:8080';
-          if (window.location.hostname === 'toastmastersdaily.com') return ''; // TODO: set prod URL when ready
+          if (window.location.hostname === 'toastmastersdaily.com' || window.location.hostname === 'www.toastmastersdaily.com' || window.location.hostname.endsWith('.toastmastersdaily.com')) return 'https://toastmasters-agent-864717492615.us-central1.run.app';
           return '';
         }
         
@@ -1775,6 +1787,9 @@
             if (wrap) wrap.classList.add('panel-open');
             if (chatBubbleBtn) chatBubbleBtn.setAttribute('aria-expanded', 'true');
             if (chatInput) chatInput.focus();
+            requestAnimationFrame(function() {
+              if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
           }
         }
         
@@ -1794,7 +1809,18 @@
             if (chatPanel) chatPanel.classList.toggle('expanded');
             chatPanelExpand.setAttribute('aria-label', chatPanel && chatPanel.classList.contains('expanded') ? 'Collapse chat' : 'Expand chat');
             chatPanelExpand.title = chatPanel && chatPanel.classList.contains('expanded') ? 'Collapse' : 'Expand';
+            requestAnimationFrame(function() {
+              if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
           });
+        }
+
+        function renderMarkdown(text) {
+          if (!text) return '';
+          if (typeof marked !== 'undefined') {
+            try { return (marked.parse || marked)(text); } catch (e) { return text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
+          }
+          return text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
         }
         
         function appendUserMessage(text) {
@@ -1814,7 +1840,8 @@
           const row = document.createElement('div');
           row.className = 'chat-msg-row';
           row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">T</span><div class="chat-msg bot"></div>';
-          row.querySelector('.chat-msg').textContent = text;
+          const msgEl = row.querySelector('.chat-msg');
+          msgEl.innerHTML = renderMarkdown(text || '');
           chatMessages.appendChild(row);
           chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -1879,9 +1906,13 @@
             const msgEl = row.querySelector('.chat-msg');
             chatMessages.appendChild(row);
             let buffer = '';
+            let streamText = '';
             function read() {
               return reader.read().then(function(result) {
-                if (result.done) { done(); return; }
+                if (result.done) {
+                  done();
+                  return;
+                }
                 buffer += decoder.decode(result.value, { stream: true });
                 const lines = buffer.split('\n');
                 buffer = lines.pop() || '';
@@ -1891,8 +1922,14 @@
                     if (data === '[DONE]') return;
                     try {
                       const obj = JSON.parse(data);
-                      if (obj.content) msgEl.textContent = (msgEl.textContent || '') + obj.content;
-                      if (obj.error) msgEl.textContent = (msgEl.textContent || '') + obj.error;
+                      if (obj.content) {
+                        streamText += obj.content;
+                        msgEl.innerHTML = renderMarkdown(streamText);
+                      }
+                      if (obj.error) {
+                        streamText += obj.error;
+                        msgEl.innerHTML = renderMarkdown(streamText);
+                      }
                     } catch (e) {}
                   }
                 });

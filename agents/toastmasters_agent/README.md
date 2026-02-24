@@ -38,6 +38,19 @@ gcloud config set project toastmasters-daily
 gcloud run deploy toastmasters-agent --source . --project toastmasters-daily --region us-central1 --env-vars-file=env.yaml --allow-unauthenticated
 ```
 
+**Concurrency and cold start**
+- The Firebase pinger (every 5 min) keeps one instance warm, so the first request after a ping usually hits a warm instance and gets fast time-to-first-token (TTFT).
+- **Higher concurrency** (e.g. `--concurrency 20`) lets that warm instance serve more concurrent chats, so more users get fast TTFT without spinning new instances. Default is 80; for this streaming app 10–20 is a good balance (avoids memory pressure per instance).
+- **Guarantee no cold start:** use `--min-instances 1` so one instance is always up (higher cost). Then concurrency controls how many requests that instance handles before scaling out.
+
+Example with optional flags:
+
+```cmd
+gcloud run deploy toastmasters-agent --source . --project toastmasters-daily --region us-central1 --env-vars-file=env.yaml --allow-unauthenticated --concurrency 20 --min-instances 0
+```
+
+(`--min-instances 0` is default; omit or set to 1 to keep one instance always warm.)
+
 ## API
 
 | Path   | Method | Description |
