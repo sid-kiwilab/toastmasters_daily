@@ -862,6 +862,20 @@
       .chat-panel.open {
         display: flex;
       }
+
+      .chat-panel.expanded {
+        width: 420px;
+        height: 75vh;
+        max-height: 700px;
+      }
+
+      @media (min-width: 600px) {
+        .chat-panel.expanded {
+          width: 480px;
+          height: 80vh;
+          max-height: 800px;
+        }
+      }
       
       @keyframes chatPanelIn {
         from {
@@ -910,6 +924,33 @@
       .chat-panel-close:hover {
         color: #1a1f3a;
         background: #f1f5f9;
+      }
+
+      .chat-panel-expand {
+        background: none;
+        border: none;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        color: #94a3b8;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s ease, background 0.15s ease;
+        margin-right: 4px;
+      }
+
+      .chat-panel-expand:hover {
+        color: #1a1f3a;
+        background: #f1f5f9;
+      }
+
+      .chat-panel-header-actions {
+        display: flex;
+        align-items: center;
       }
       
       .chat-messages {
@@ -1200,18 +1241,21 @@
     <div class="chat-agent-wrap">
       <div class="chat-panel" id="chat-panel" aria-hidden="true">
         <div class="chat-panel-header">
-          <span class="chat-panel-title">Assistant</span>
-          <button type="button" class="chat-panel-close" id="chat-panel-close" aria-label="Close chat">×</button>
+          <span class="chat-panel-title">Toasty</span>
+          <div class="chat-panel-header-actions">
+            <button type="button" class="chat-panel-expand" id="chat-panel-expand" aria-label="Expand chat" title="Expand">⛶</button>
+            <button type="button" class="chat-panel-close" id="chat-panel-close" aria-label="Close chat">×</button>
+          </div>
         </div>
         <div class="chat-messages" id="chat-messages">
           <div class="chat-msg-row">
-            <span class="chat-msg-avatar" aria-hidden="true">A</span>
-            <div class="chat-welcome">Hey — need help with a meeting or your club? Ask here.</div>
+            <span class="chat-msg-avatar" aria-hidden="true">T</span>
+            <div class="chat-welcome">Hey! I'm Toasty. Need help with a meeting or your club? Just ask!</div>
           </div>
         </div>
         <div class="chat-input-wrap">
           <div class="chat-input-row">
-            <input type="text" class="chat-input" id="chat-input" placeholder="Message..." aria-label="Chat message">
+            <input type="text" class="chat-input" id="chat-input" placeholder="Message Toasty..." aria-label="Chat message">
             <button type="button" class="chat-send-btn" id="chat-send-btn" aria-label="Send">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
             </button>
@@ -1736,12 +1780,21 @@
         
         function closeChat() {
           if (chatPanel) {
-            chatPanel.classList.remove('open');
+            chatPanel.classList.remove('open', 'expanded');
             chatPanel.setAttribute('aria-hidden', 'true');
             const wrap = chatBubbleBtn && chatBubbleBtn.closest('.chat-agent-wrap');
             if (wrap) wrap.classList.remove('panel-open');
             if (chatBubbleBtn) chatBubbleBtn.setAttribute('aria-expanded', 'false');
           }
+        }
+
+        const chatPanelExpand = document.getElementById('chat-panel-expand');
+        if (chatPanelExpand) {
+          chatPanelExpand.addEventListener('click', function() {
+            if (chatPanel) chatPanel.classList.toggle('expanded');
+            chatPanelExpand.setAttribute('aria-label', chatPanel && chatPanel.classList.contains('expanded') ? 'Collapse chat' : 'Expand chat');
+            chatPanelExpand.title = chatPanel && chatPanel.classList.contains('expanded') ? 'Collapse' : 'Expand';
+          });
         }
         
         function appendUserMessage(text) {
@@ -1760,7 +1813,7 @@
           if (!chatMessages) return;
           const row = document.createElement('div');
           row.className = 'chat-msg-row';
-          row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">A</span><div class="chat-msg bot"></div>';
+          row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">T</span><div class="chat-msg bot"></div>';
           row.querySelector('.chat-msg').textContent = text;
           chatMessages.appendChild(row);
           chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -1791,7 +1844,7 @@
 
           const base = getChatApiBase();
           if (!base) {
-            appendAgentMessage('Chat is not configured for this site yet. Use localhost to try the assistant.');
+            appendAgentMessage('Chat is not configured for this site yet. Use localhost to try Toasty.');
             return;
           }
 
@@ -1822,7 +1875,7 @@
             const decoder = new TextDecoder();
             const row = document.createElement('div');
             row.className = 'chat-msg-row';
-            row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">A</span><div class="chat-msg bot"></div>';
+            row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">T</span><div class="chat-msg bot"></div>';
             const msgEl = row.querySelector('.chat-msg');
             chatMessages.appendChild(row);
             let buffer = '';
@@ -1849,7 +1902,7 @@
             }
             return read();
           }).catch(function(err) {
-            appendAgentMessage('Could not reach the assistant. Please try again.');
+            appendAgentMessage('Could not reach Toasty. Please try again.');
             done();
           });
         }
