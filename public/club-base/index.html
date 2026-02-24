@@ -201,6 +201,21 @@
       border-bottom: 1px solid #e5e7eb;
     }
     
+    .section-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0 24px 0;
+      margin: 5px 0 32px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .section-header-row .section-title {
+      margin: 0;
+      padding: 0;
+      border-bottom: none;
+    }
+    
     .section-content {
       padding: 0;
       display: flex;
@@ -454,6 +469,15 @@
       background: #b91c1c;
     }
     
+    .dialog-btn-confirm-danger {
+      background: #dc2626;
+      color: white;
+    }
+    
+    .dialog-btn-confirm-danger:hover {
+      background: #b91c1c;
+    }
+    
     .dialog-btn-submit {
       background: #004165;
       color: white;
@@ -566,6 +590,11 @@
       height: 20px;
       width: 200px;
       margin-bottom: 12px;
+    }
+    
+    .shimmer-line-small {
+      height: 16px;
+      width: 150px;
     }
     
     @keyframes shimmer {
@@ -840,14 +869,6 @@
           </div>
           <span>Profile</span>
         </a>
-        <a href="./subscription/" class="nav-item">
-          <div class="nav-item-icon">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          </div>
-          <span>Subscription</span>
-        </a>
         <a href="./meetings/" class="nav-item">
           <div class="nav-item-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -879,7 +900,10 @@
     <div class="main-content">
       <!-- Profile Section -->
       <div class="section-card">
-        <h2 class="section-title">My Account</h2>
+        <div class="section-header-row">
+          <h2 class="section-title">My Account</h2>
+          <button id="logout-btn" class="btn btn-logout">Logout</button>
+        </div>
         <div class="section-content">
           <div class="profile-field">
             <div class="field-label">Email Address</div>
@@ -983,13 +1007,39 @@
             </div>
           </div>
           <div class="profile-field">
-            <div class="field-label">Sign Out</div>
+            <div class="field-label">Trial Period</div>
             <div class="field-main">
-              <div class="field-value">Sign out of your account on this device</div>
-              <div class="field-description">You'll need to sign in again to access your account</div>
+              <div class="field-value" id="trial-date-value">
+                <span id="trial-date-shimmer" class="shimmer shimmer-line"></span>
+                <span id="trial-date-text" class="field-content-loading"></span>
+              </div>
+              <div class="field-description">Your free trial allows access to all features</div>
+            </div>
+            <div class="field-action"></div>
+          </div>
+          <div class="profile-field">
+            <div class="field-label">Manage</div>
+            <div class="field-main">
+              <div class="field-value" id="subscription-status-value">
+                <span id="subscription-status-shimmer" class="shimmer shimmer-line"></span>
+                <span id="subscription-status-text" class="field-content-loading"></span>
+              </div>
+              <div class="field-description" id="subscription-description">
+                <span id="subscription-description-shimmer" class="shimmer shimmer-line-small"></span>
+                <span id="subscription-description-text" class="field-content-loading"></span>
+              </div>
             </div>
             <div class="field-action">
-              <button id="logout-btn" class="btn btn-logout">Logout</button>
+              <span id="button-shimmer" class="shimmer" style="width: 120px; height: 36px; display: inline-block;"></span>
+              <button id="subscribe-button" class="btn btn-primary" onclick="showStartSubscriptionDialog()" style="display: none;">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                <span id="subscribe-button-text">Start Subscription</span>
+              </button>
+              <button id="stop-subscription-button" class="btn btn-logout" onclick="showStopSubscriptionDialog()" style="display: none;">
+                <span id="stop-subscription-button-text">Stop Subscription</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1005,6 +1055,44 @@
       <div class="dialog-actions">
         <button class="dialog-btn dialog-btn-cancel" onclick="hideLogoutDialog()">Cancel</button>
         <button class="dialog-btn dialog-btn-confirm" onclick="confirmLogout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stop Subscription Confirmation Dialog -->
+  <div class="dialog-overlay" id="stop-subscription-dialog-overlay" onclick="if(event.target === this) hideStopSubscriptionDialog()">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Stop Subscription</h3>
+        <button class="dialog-close" onclick="hideStopSubscriptionDialog()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <p class="dialog-message">Are you sure you want to stop your subscription? Your subscription will remain active until the end of the current billing period.</p>
+      <div class="dialog-actions">
+        <button class="dialog-btn dialog-btn-cancel" onclick="hideStopSubscriptionDialog()">Cancel</button>
+        <button class="dialog-btn dialog-btn-confirm-danger" onclick="confirmStopSubscription()">Stop Subscription</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start Subscription Confirmation Dialog -->
+  <div class="dialog-overlay" id="start-subscription-dialog-overlay" onclick="if(event.target === this) hideStartSubscriptionDialog()">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Start Subscription</h3>
+        <button class="dialog-close" onclick="hideStartSubscriptionDialog()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <p class="dialog-message" id="start-subscription-dialog-message">Are you sure you want to start your subscription? You will be redirected to complete the payment.</p>
+      <div class="dialog-actions">
+        <button class="dialog-btn dialog-btn-cancel" onclick="hideStartSubscriptionDialog()">Cancel</button>
+        <button class="dialog-btn dialog-btn-submit" onclick="confirmStartSubscription()">Start Subscription</button>
       </div>
     </div>
   </div>
@@ -1280,6 +1368,7 @@
         if (clubDb && clubUser) {
           loadClubData(clubUser.uid);
           loadClubCode(clubUser.uid);
+          loadSubscriptionData(clubUser.uid);
         }
         
       } else {
@@ -1363,6 +1452,180 @@
           clubCodeValue.classList.add('field-content-loaded');
         }
       });
+    }
+    
+    // Subscription state
+    let subscriptionUnsubscribe = null;
+    let isCreatingCheckoutSession = false;
+    let isCancellingSubscription = false;
+    
+    // Load and watch subscription data
+    function loadSubscriptionData(userId) {
+      if (!clubDb || !userId) return;
+      if (subscriptionUnsubscribe) {
+        subscriptionUnsubscribe();
+        subscriptionUnsubscribe = null;
+      }
+      const trialDateText = document.getElementById('trial-date-text');
+      const trialDateShimmer = document.getElementById('trial-date-shimmer');
+      const subscriptionStatusText = document.getElementById('subscription-status-text');
+      const subscriptionStatusShimmer = document.getElementById('subscription-status-shimmer');
+      const subscriptionDescriptionText = document.getElementById('subscription-description-text');
+      const subscriptionDescriptionShimmer = document.getElementById('subscription-description-shimmer');
+      const buttonShimmer = document.getElementById('button-shimmer');
+      const subscribeButton = document.getElementById('subscribe-button');
+      const stopSubscriptionButton = document.getElementById('stop-subscription-button');
+      subscriptionUnsubscribe = clubDb.collection('users').doc(userId).onSnapshot((doc) => {
+        if (trialDateShimmer) trialDateShimmer.style.display = 'none';
+        if (subscriptionStatusShimmer) subscriptionStatusShimmer.style.display = 'none';
+        if (subscriptionDescriptionShimmer) subscriptionDescriptionShimmer.style.display = 'none';
+        if (buttonShimmer) buttonShimmer.style.display = 'none';
+        if (trialDateText) { trialDateText.classList.remove('field-content-loading'); trialDateText.classList.add('field-content-loaded'); }
+        if (subscriptionStatusText) { subscriptionStatusText.classList.remove('field-content-loading'); subscriptionStatusText.classList.add('field-content-loaded'); }
+        if (subscriptionDescriptionText) { subscriptionDescriptionText.classList.remove('field-content-loading'); subscriptionDescriptionText.classList.add('field-content-loaded'); }
+        if (doc.exists) {
+          const userData = doc.data();
+          const trialEndDate = userData.trial_end_date;
+          const subscriptionStatus = userData.subscription;
+          const cancelAtPeriodEnd = userData.subscription_cancel_at_period_end;
+          const currentPeriodEnd = userData.subscription_current_period_end;
+          if (trialEndDate && trialDateText) {
+            const trialDate = trialEndDate.toDate();
+            const now = new Date();
+            const formattedDate = trialDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const daysRemaining = Math.ceil((trialDate - now) / (1000 * 60 * 60 * 24));
+            trialDateText.textContent = daysRemaining > 0 ? `Ends on ${formattedDate} (${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} remaining)` : `Ended on ${formattedDate}`;
+          } else if (trialDateText) trialDateText.textContent = 'No trial started';
+          const now = new Date();
+          const isActive = subscriptionStatus === 'active' || (trialEndDate && trialEndDate.toDate() > now);
+          if (isActive && subscriptionStatus === 'active') {
+            if (subscriptionStatusText) {
+              if (cancelAtPeriodEnd && currentPeriodEnd) {
+                const periodEnd = currentPeriodEnd.toDate();
+                const formattedEnd = periodEnd.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                subscriptionStatusText.innerHTML = `<span class="field-badge active">Active</span> <span style="color: #64748b;">Ends ${formattedEnd}</span>`;
+              } else subscriptionStatusText.innerHTML = `<span class="field-badge active">Active</span>`;
+            }
+            if (subscriptionDescriptionText) subscriptionDescriptionText.textContent = cancelAtPeriodEnd && currentPeriodEnd ? 'Your subscription will remain active until the end of the current billing period' : 'Your subscription is active';
+            if (cancelAtPeriodEnd) { if (subscribeButton) subscribeButton.style.display = 'inline-flex'; if (stopSubscriptionButton) stopSubscriptionButton.style.display = 'none'; }
+            else { if (subscribeButton) subscribeButton.style.display = 'none'; if (stopSubscriptionButton) stopSubscriptionButton.style.display = 'inline-flex'; }
+          } else {
+            if (subscribeButton) subscribeButton.style.display = 'inline-flex';
+            if (stopSubscriptionButton) stopSubscriptionButton.style.display = 'none';
+            if (subscriptionStatusText) subscriptionStatusText.innerHTML = `<span class="field-badge not-verified">Inactive</span>`;
+            if (subscriptionDescriptionText) subscriptionDescriptionText.textContent = 'Start your subscription to continue using all features';
+          }
+        } else {
+          if (trialDateText) trialDateText.textContent = 'No trial data found';
+          if (subscribeButton) subscribeButton.style.display = 'inline-flex';
+          if (stopSubscriptionButton) stopSubscriptionButton.style.display = 'none';
+          if (subscriptionStatusText) subscriptionStatusText.innerHTML = `<span class="field-badge not-verified">Inactive</span>`;
+          if (subscriptionDescriptionText) subscriptionDescriptionText.textContent = 'Start your subscription to continue using all features';
+        }
+      }, (error) => console.error('Error loading subscription data:', error));
+    }
+    
+    function showStopSubscriptionDialog() { const o = document.getElementById('stop-subscription-dialog-overlay'); if (o) o.classList.add('active'); }
+    function hideStopSubscriptionDialog() { const o = document.getElementById('stop-subscription-dialog-overlay'); if (o) o.classList.remove('active'); }
+    function showStartSubscriptionDialog() {
+      const overlay = document.getElementById('start-subscription-dialog-overlay');
+      const message = document.getElementById('start-subscription-dialog-message');
+      const clubUser = clubAuth ? clubAuth.currentUser : null;
+      if (clubUser && clubDb) {
+        clubDb.collection('users').doc(clubUser.uid).get().then((doc) => {
+          if (doc.exists) {
+            const userData = doc.data();
+            const subscriptionStatus = userData.subscription;
+            const cancelAtPeriodEnd = userData.subscription_cancel_at_period_end;
+            if (subscriptionStatus === 'active' && cancelAtPeriodEnd && message) message.textContent = 'Are you sure you want to start your subscription? Your subscription will continue after the current billing period.';
+            else if (message) message.textContent = 'Are you sure you want to start your subscription? You will be redirected to complete the payment.';
+          }
+        }).catch(() => { if (message) message.textContent = 'Are you sure you want to start your subscription? You will be redirected to complete the payment.'; });
+      }
+      if (overlay) overlay.classList.add('active');
+    }
+    function hideStartSubscriptionDialog() { const o = document.getElementById('start-subscription-dialog-overlay'); if (o) o.classList.remove('active'); }
+    
+    async function handleSubscribe() {
+      const clubUser = clubAuth ? clubAuth.currentUser : null;
+      if (!clubUser) { if (typeof notifications !== 'undefined') notifications.error('Please log in to subscribe'); return; }
+      if (!clubUser.emailVerified) { if (typeof notifications !== 'undefined') notifications.error('Please verify your email address before subscribing. Check your inbox for a verification email.'); return; }
+      if (!clubFunctions) { if (typeof notifications !== 'undefined') notifications.error('Subscription is not available. Please try again later.'); return; }
+      if (isCreatingCheckoutSession) return;
+      const subscribeButton = document.getElementById('subscribe-button');
+      const subscribeButtonText = document.getElementById('subscribe-button-text');
+      isCreatingCheckoutSession = true;
+      if (subscribeButton) subscribeButton.disabled = true;
+      if (subscribeButtonText) subscribeButtonText.textContent = 'Processing...';
+      try {
+        const createCheckoutSession = clubFunctions.httpsCallable('create_checkout_session');
+        const result = await createCheckoutSession({ price_id: 'price_1SVPGsCFYmZ3GbaT4UO5fRvQ', user_id: clubUser.uid, email: clubUser.email, base_url: window.location.origin });
+        if (result.data.url) window.location.href = result.data.url;
+        else throw new Error('No checkout URL returned');
+      } catch (error) {
+        console.error('Error creating checkout session:', error);
+        isCreatingCheckoutSession = false;
+        if (subscribeButton) { subscribeButton.disabled = false; if (subscribeButtonText) subscribeButtonText.textContent = 'Start Subscription'; }
+        if (typeof notifications !== 'undefined') notifications.error('Failed to start checkout. Please try again.');
+      }
+    }
+    
+    async function confirmStopSubscription() {
+      hideStopSubscriptionDialog();
+      if (isCancellingSubscription) return;
+      if (!clubFunctions) { if (typeof notifications !== 'undefined') notifications.error('Subscription is not available.'); return; }
+      const stopButton = document.getElementById('stop-subscription-button');
+      const stopButtonText = document.getElementById('stop-subscription-button-text');
+      isCancellingSubscription = true;
+      if (stopButton) stopButton.disabled = true;
+      if (stopButtonText) stopButtonText.textContent = 'Processing...';
+      try {
+        await clubFunctions.httpsCallable('cancel_subscription')();
+        if (typeof notifications !== 'undefined') notifications.success('Subscription will stop at the end of the current billing period.');
+      } catch (error) {
+        console.error('Error stopping subscription:', error);
+        if (typeof notifications !== 'undefined') notifications.error('Failed to stop subscription. Please try again.');
+      } finally {
+        isCancellingSubscription = false;
+        if (stopButton) { stopButton.disabled = false; if (stopButtonText) stopButtonText.textContent = 'Stop Subscription'; }
+      }
+    }
+    
+    async function confirmStartSubscription() {
+      hideStartSubscriptionDialog();
+      const clubUser = clubAuth ? clubAuth.currentUser : null;
+      if (!clubUser) { if (typeof notifications !== 'undefined') notifications.error('Please log in to start subscription'); return; }
+      try {
+        const userDoc = await clubDb.collection('users').doc(clubUser.uid).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          const subscriptionStatus = userData.subscription;
+          const cancelAtPeriodEnd = userData.subscription_cancel_at_period_end;
+          if (subscriptionStatus === 'active' && cancelAtPeriodEnd) { await handleResumeSubscription(); return; }
+        }
+      } catch (error) { console.error('Error checking subscription status:', error); }
+      await handleSubscribe();
+    }
+    
+    async function handleResumeSubscription() {
+      if (isCancellingSubscription) return;
+      if (!clubFunctions) { if (typeof notifications !== 'undefined') notifications.error('Subscription is not available.'); return; }
+      const subscribeButton = document.getElementById('subscribe-button');
+      const subscribeButtonText = document.getElementById('subscribe-button-text');
+      isCancellingSubscription = true;
+      if (subscribeButton) subscribeButton.disabled = true;
+      if (subscribeButtonText) subscribeButtonText.textContent = 'Processing...';
+      try {
+        const result = await clubFunctions.httpsCallable('resume_subscription')();
+        if (result.data != null) { if (typeof notifications !== 'undefined') notifications.success('Subscription started successfully'); }
+        else throw new Error('No response from server');
+      } catch (error) {
+        console.error('Error resuming subscription:', error);
+        if (typeof notifications !== 'undefined') notifications.error('Failed to start subscription. Please try again.');
+      } finally {
+        isCancellingSubscription = false;
+        if (subscribeButton) { subscribeButton.disabled = false; if (subscribeButtonText) subscribeButtonText.textContent = 'Start Subscription'; }
+      }
     }
     
     // Load club data from Firestore
