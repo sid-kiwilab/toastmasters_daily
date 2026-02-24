@@ -2539,7 +2539,7 @@
                 <div class="meeting-actions-title">Meeting Actions</div>
                 <div class="meeting-actions-buttons">
                   <a href="/meetings/${meeting.id}" target="_blank" class="meeting-action-btn meeting-action-btn-primary">Go to Meeting</a>
-                  <button type="button" class="meeting-action-btn" onclick="uploadAgendaForMeeting('${meeting.id}')">Upload Agenda</button>
+                  <button type="button" class="meeting-action-btn" onclick="uploadAgendaForMeeting('${meeting.id}')">Upload Agenda (PDF)</button>
                   ${meeting.agendaUrl ? `<a href="${agendaUrlEsc}" target="_blank" class="meeting-action-btn meeting-action-btn-primary">View Agenda</a>` : ''}
                   <button type="button" class="meeting-action-btn" onclick="showSetupPollsDialog('${meeting.id}')">Setup Polls</button>
                   <button type="button" class="meeting-action-btn" onclick="showViewPollsDialog('${meeting.id}')">View Polls</button>
