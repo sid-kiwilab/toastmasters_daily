@@ -1896,23 +1896,28 @@
 
         function sendChatMessage() {
           if (!chatInput) return;
+          const sendBtn = document.getElementById('chat-send-btn');
+          if (sendBtn && sendBtn.disabled) return;
           const text = chatInput.value.trim();
           if (!text) return;
           appendUserMessage(text);
           chatInput.value = '';
+          if (sendBtn) sendBtn.disabled = true;
+          if (chatInput) chatInput.disabled = true;
 
           const base = getChatApiBase();
           if (!base) {
             appendAgentMessage('Chat is not configured for this site yet. Use localhost to try Toasty.');
+            if (sendBtn) sendBtn.disabled = false;
+            if (chatInput) chatInput.disabled = false;
             return;
           }
 
           const history = buildChatHistory().slice(0, -1);
-          const sendBtn = document.getElementById('chat-send-btn');
-          if (sendBtn) sendBtn.disabled = true;
 
           function done() {
             if (sendBtn) sendBtn.disabled = false;
+            if (chatInput) chatInput.disabled = false;
             scrollChatToBottom();
           }
 
