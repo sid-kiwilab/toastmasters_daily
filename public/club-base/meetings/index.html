@@ -208,52 +208,120 @@
       gap: 0;
     }
     
-    .calendar-wrapper {
+    #date-and-meetings {
+      max-width: 900px;
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .selected-date-bold {
+      font-size: 22px;
+      font-weight: 700;
+      color: #060607;
+      margin-bottom: 16px;
+    }
+    
+    .meeting-tiles {
       display: flex;
       flex-direction: column;
-      gap: 32px;
+      gap: 10px;
+      margin-bottom: 16px;
     }
     
-    /* Reduced viewport: show selected date above the calendar */
-    @media (max-width: 1024px) {
-      .calendar-wrapper {
-        flex-direction: column;
-      }
-      #selected-date-container {
-        order: -1;
-      }
-      .calendar-container {
-        order: 0;
-      }
+    .meeting-tile {
+      background: linear-gradient(135deg, #004165 0%, #003049 100%);
+      border-radius: 10px;
+      padding: 18px 20px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
     }
     
-    @media (min-width: 1025px) {
-      .calendar-wrapper {
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 40px;
-      }
-      #selected-date-container,
-      .calendar-container {
-        order: unset;
-      }
+    .meeting-tile-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.85;
+      margin-bottom: 4px;
     }
     
-    /* Calendar Styles */
+    .meeting-tile-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    
+    .meeting-tile-meta {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    
+    .meeting-tile-actions {
+      display: flex;
+      gap: 6px;
+    }
+    
+    .meeting-tile-actions a,
+    .meeting-tile-actions button {
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    
+    .meeting-tile-actions .link-visit {
+      background: rgba(255,255,255,0.25);
+      color: white;
+    }
+    
+    .meeting-tile-actions .btn-actions {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+    
+    .meeting-tile-actions .btn-actions:hover,
+    .meeting-tile-actions .link-visit:hover {
+      background: rgba(255,255,255,0.35);
+    }
+    
+    .date-and-meetings-create {
+      padding: 8px 14px;
+      background: #004165;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .date-and-meetings-create:hover:not(:disabled) {
+      background: #003049;
+    }
+    
+    .date-and-meetings-create:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .calendar-wrapper {
+      display: block;
+    }
+    
     .calendar-container {
-      flex: 1;
       max-width: 900px;
-    }
-    
-    @media (min-width: 1025px) {
-      .calendar-container {
-        flex: 0 0 60%;
-        max-width: none;
-      }
-    }
-    
-    #selected-date-container {
-      flex: 0 0 35%;
     }
     
     .calendar-header {
@@ -2041,19 +2109,11 @@
       <div class="section-card">
         <h2 class="section-title">Meetings</h2>
         <div class="section-content">
-          <div id="upcoming-meetings-section" class="upcoming-meetings-section">
-            <div class="upcoming-meetings-header">
-              <div class="upcoming-meetings-title">Upcoming Meeting</div>
-            </div>
-            <div class="upcoming-meetings-grid">
-              <div class="upcoming-meeting-shimmer"></div>
-            </div>
-          </div>
+          <div id="date-and-meetings"></div>
           <div class="calendar-wrapper">
             <div class="calendar-container" id="calendar-container">
               <div class="loading-calendar">Loading calendar...</div>
             </div>
-            <div id="selected-date-container"></div>
           </div>
         </div>
       </div>
@@ -2346,11 +2406,11 @@
     }
     
     function updateSelectedDateDetails() {
-        const selectedDateContainer = document.getElementById('selected-date-container');
-        if (!selectedDateContainer) return;
+        const el = document.getElementById('date-and-meetings');
+        if (!el) return;
         
         if (!selectedDate) {
-          selectedDateContainer.innerHTML = '';
+          el.innerHTML = '';
           return;
         }
         
@@ -2376,264 +2436,35 @@
             let timeStr = '';
             if (meeting.meetingDateTime) {
               try {
-                let meetingTime;
-                if (meeting.meetingDateTime.toDate) {
-                  meetingTime = meeting.meetingDateTime.toDate();
-                } else if (meeting.meetingDateTime instanceof Date) {
-                  meetingTime = meeting.meetingDateTime;
-                } else {
-                  meetingTime = new Date(meeting.meetingDateTime);
-                }
-                
-                if (!isNaN(meetingTime.getTime())) {
-                  timeStr = meetingTime.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  });
-                }
-              } catch (e) {
-                console.warn('Error formatting meeting time:', e);
-              }
+                let t = meeting.meetingDateTime.toDate ? meeting.meetingDateTime.toDate() : (meeting.meetingDateTime instanceof Date ? meeting.meetingDateTime : new Date(meeting.meetingDateTime));
+                if (!isNaN(t.getTime())) timeStr = t.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+              } catch (e) {}
             }
-            
-            const actionsSection = `
-              <div class="meeting-detail-item-actions">
-                <button class="meeting-detail-actions-btn" onclick="event.stopPropagation(); event.preventDefault(); showMeetingActionsDialog('${meeting.id}', '${escapeHtml(meeting.title || 'Untitled Meeting')}', ${meeting.agendaUrl ? "'" + meeting.agendaUrl.replace(/'/g, "\\'").replace(/\\/g, '\\\\') + "'" : 'null'})">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                  </svg>
-                  <span>Actions</span>
-                </button>
+            const titleEsc = escapeHtml(meeting.title || 'Untitled Meeting');
+            const titleJs = String(meeting.title || 'Untitled Meeting').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const agendaJs = meeting.agendaUrl ? "'" + String(meeting.agendaUrl).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'" : 'null';
+            return `<div class="meeting-tile">
+              <div><div class="meeting-tile-label">Meeting</div><span class="meeting-tile-title">${titleEsc}</span>${timeStr ? `<span class="meeting-tile-meta"> · ${timeStr}</span>` : ''}</div>
+              <div class="meeting-tile-actions">
+                <a href="/meetings/${meeting.id}" target="_blank" class="link-visit">Visit</a>
+                <button type="button" class="btn-actions" onclick="showMeetingActionsDialog('${meeting.id}', '${titleJs}', ${agendaJs})">Actions</button>
+                ${canCreateMeetings ? `<button type="button" class="btn-actions" onclick="deleteMeeting('${meeting.id}')">Delete</button>` : ''}
               </div>
-            `;
-            
-            return `
-              <a href="/meetings/${meeting.id}" class="meeting-detail-item" target="_blank">
-                <div class="meeting-detail-item-header">
-                  <div class="meeting-detail-item-content">
-                    <div class="meeting-detail-title">
-                      <span class="meeting-detail-title-icon"></span>
-                      ${meeting.title || 'Untitled Meeting'}
-                    </div>
-                    ${timeStr ? `
-                      <div class="meeting-detail-time">
-                        <svg class="meeting-detail-time-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        ${timeStr}
-                      </div>
-                    ` : '<div class="meeting-detail-time">No time specified</div>'}
-                  </div>
-                  <div class="meeting-detail-item-header-actions">
-                    <button class="meeting-detail-visit-btn" onclick="event.stopPropagation(); event.preventDefault(); window.open('/meetings/${meeting.id}', '_blank')" title="Visit meeting">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </button>
-                    ${canCreateMeetings ? `
-                      <button class="meeting-detail-delete-btn" onclick="event.stopPropagation(); event.preventDefault(); deleteMeeting('${meeting.id}')" title="Delete meeting">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    ` : ''}
-                  </div>
-                </div>
-                ${actionsSection}
-              </a>
-            `;
+            </div>`;
           }).join('');
         } else {
-          meetingsHtml = '<div class="no-meetings">No meetings scheduled for this date</div>';
+          meetingsHtml = '<div style="font-size:14px;color:#64748b;padding:8px 0">No meetings</div>';
         }
-        
-        const disabledClass = canCreateMeetings ? '' : 'disabled';
-        const disabledMessage = canCreateMeetings ? '' : `
-          <div class="disabled-overlay-message">
-            <div class="disabled-overlay-message-title">Subscription Required</div>
-            <div class="disabled-overlay-message-text">You need an active subscription or trial to create or manage meetings. Please subscribe to continue.</div>
-          </div>
-        `;
-        
-        selectedDateContainer.innerHTML = `
-          <div class="selected-date-details ${disabledClass}">
-            <div class="selected-date-header">
-              <div class="selected-date-header-icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div class="selected-date-header-content">
-                <div class="selected-date-title">Selected Date</div>
-                <div class="selected-date-value">${dateStr}</div>
-              </div>
-            </div>
-            
-            <div class="meeting-details-list">
-              ${selectedMeetings.length > 0 ? '<div class="meeting-details-list-title">Meetings</div>' : ''}
-              ${meetingsHtml}
-            </div>
-            
-            <div class="create-meeting-button-container">
-              <button class="btn-create-meeting ${canCreateMeetings ? '' : 'disabled'}" 
-                      onclick="${canCreateMeetings ? 'showCreateMeetingDialog()' : 'showSubscriptionMessage()'}"
-                      ${canCreateMeetings ? '' : 'title="You need an active subscription or trial to create meetings"'}>
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Create Meeting
-              </button>
-            </div>
-            ${disabledMessage}
-          </div>
+        const createBtn = canCreateMeetings
+          ? `<button type="button" class="date-and-meetings-create" onclick="showCreateMeetingDialog()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Create Meeting</button>`
+          : `<button type="button" class="date-and-meetings-create" disabled>Create Meeting</button>`;
+        el.innerHTML = `
+          <div class="selected-date-bold">Selected date · ${dateStr}</div>
+          <div class="meeting-tiles">${meetingsHtml}</div>
+          ${createBtn}
         `;
       }
       
-      function updateUpcomingMeetingsSection() {
-        const upcomingSection = document.getElementById('upcoming-meetings-section');
-        if (!upcomingSection) return;
-        
-        // If meetings map is empty and data hasn't loaded yet, keep shimmer
-        if (meetingsMap.size === 0 && !meetingsLoaded) {
-          upcomingSection.innerHTML = `
-            <div class="upcoming-meetings-header">
-              <div class="upcoming-meetings-title">Upcoming Meeting</div>
-            </div>
-            <div class="upcoming-meetings-grid">
-              <div class="upcoming-meeting-shimmer"></div>
-            </div>
-          `;
-          upcomingSection.style.display = 'block';
-          return;
-        }
-        
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
-        let nextMeeting = null;
-        let earliestDateTime = null;
-        
-        meetingsMap.forEach((meetings, dateKey) => {
-          const [y, m, d] = dateKey.split('-').map(Number);
-          const meetingDate = new Date(y, m - 1, d);
-          meetingDate.setHours(0, 0, 0, 0);
-          
-          if (meetingDate >= today) {
-            meetings.forEach(meeting => {
-              let meetingDateTime = null;
-              try {
-                if (meeting.meetingDateTime) {
-                  if (meeting.meetingDateTime.toDate) {
-                    meetingDateTime = meeting.meetingDateTime.toDate();
-                  } else if (meeting.meetingDateTime instanceof Date) {
-                    meetingDateTime = meeting.meetingDateTime;
-                  } else {
-                    meetingDateTime = new Date(meeting.meetingDateTime);
-                  }
-                } else {
-                  meetingDateTime = new Date(meetingDate);
-                  meetingDateTime.setHours(0, 0, 0, 0);
-                }
-                
-                if (isNaN(meetingDateTime.getTime())) {
-                  return;
-                }
-                
-                if (meetingDateTime > now) {
-                  if (!earliestDateTime || meetingDateTime < earliestDateTime) {
-                    earliestDateTime = meetingDateTime;
-                    nextMeeting = {
-                      date: meetingDate,
-                      dateKey: dateKey,
-                      meetingDateTime: meetingDateTime,
-                      ...meeting
-                    };
-                  }
-                }
-              } catch (e) {
-                console.error('Error processing meeting date:', e, meeting);
-              }
-            });
-          }
-        });
-        
-        if (nextMeeting) {
-          try {
-            const dateStr = nextMeeting.date.toLocaleDateString('en-US', { 
-              weekday: 'long',
-              month: 'long', 
-              day: 'numeric',
-              year: 'numeric'
-            });
-            
-            let timeStr = '';
-            if (nextMeeting.meetingDateTime) {
-              try {
-                let meetingTime;
-                if (nextMeeting.meetingDateTime.toDate) {
-                  meetingTime = nextMeeting.meetingDateTime.toDate();
-                } else if (nextMeeting.meetingDateTime instanceof Date) {
-                  meetingTime = nextMeeting.meetingDateTime;
-                } else {
-                  meetingTime = new Date(nextMeeting.meetingDateTime);
-                }
-                
-                if (!isNaN(meetingTime.getTime())) {
-                  timeStr = meetingTime.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  });
-                }
-              } catch (e) {
-                console.warn('Error formatting time:', e);
-              }
-            }
-            
-            upcomingSection.innerHTML = `
-              <div class="upcoming-meetings-header">
-                <div class="upcoming-meetings-title">Upcoming Meeting</div>
-              </div>
-              <div class="upcoming-meetings-grid">
-                <div class="upcoming-meeting-card" onclick="selectDate('${nextMeeting.dateKey}')">
-                  <div class="upcoming-meeting-date">${dateStr}</div>
-                  <div class="upcoming-meeting-title">${nextMeeting.title || 'Untitled Meeting'}</div>
-                  ${timeStr ? `
-                    <div class="upcoming-meeting-time">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      ${timeStr}
-                    </div>
-                  ` : ''}
-                </div>
-              </div>
-            `;
-            upcomingSection.style.display = 'block';
-          } catch (e) {
-            console.error('Error formatting next meeting:', e, nextMeeting);
-            upcomingSection.innerHTML = `
-              <div class="upcoming-meetings-header">
-                <div class="upcoming-meetings-title">Upcoming Meeting</div>
-              </div>
-              <div class="no-upcoming-meetings">
-                <div class="no-upcoming-meetings-text">Error loading meeting details</div>
-              </div>
-            `;
-            upcomingSection.style.display = 'block';
-          }
-        } else {
-          upcomingSection.innerHTML = `
-            <div class="upcoming-meetings-header">
-              <div class="upcoming-meetings-title">Upcoming Meeting</div>
-            </div>
-            <div class="no-upcoming-meetings">
-              <div class="no-upcoming-meetings-text">No upcoming meetings</div>
-              <div class="no-upcoming-meetings-hint">Select a date below to create a meeting</div>
-            </div>
-          `;
-          upcomingSection.style.display = 'block';
-        }
-      }
     
     // Make navigation functions globally accessible
     window.previousMonth = function() {
@@ -2817,8 +2648,7 @@
           }
         });
           
-          meetingsLoaded = true; // Mark that data has finished loading
-          updateUpcomingMeetingsSection();
+          meetingsLoaded = true;
           renderCalendar();
           updateSelectedDateDetails();
         }, (error) => {
@@ -2826,18 +2656,6 @@
           const container = document.getElementById('calendar-container');
           if (container) {
             container.innerHTML = '<div class="loading-calendar">Error loading meetings. Please refresh the page.</div>';
-          }
-          const upcomingSection = document.getElementById('upcoming-meetings-section');
-          if (upcomingSection) {
-            upcomingSection.innerHTML = `
-              <div class="upcoming-meetings-header">
-                <div class="upcoming-meetings-title">Upcoming Meeting</div>
-              </div>
-              <div class="no-upcoming-meetings">
-                <div class="no-upcoming-meetings-text">Error loading meetings</div>
-              </div>
-            `;
-            upcomingSection.style.display = 'block';
           }
         });
     }
