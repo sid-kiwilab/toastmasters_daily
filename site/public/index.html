@@ -1102,6 +1102,33 @@
         align-self: flex-start;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
       }
+
+      /* Thinking indicator — visible in chat while waiting for first token */
+      .chat-thinking {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 14px;
+        color: #64748b;
+      }
+      .chat-thinking-dots {
+        display: inline-flex;
+        gap: 2px;
+      }
+      .chat-thinking-dots span {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #94a3b8;
+        animation: chatThinkingBounce 0.6s ease-in-out infinite;
+      }
+      .chat-thinking-dots span:nth-child(1) { animation-delay: 0s; }
+      .chat-thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
+      .chat-thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
+      @keyframes chatThinkingBounce {
+        0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+        30% { transform: translateY(-4px); opacity: 1; }
+      }
       
       @media (max-width: 768px) {
         .chat-agent-wrap {
@@ -1809,12 +1836,17 @@
             if (chatPanel) chatPanel.classList.toggle('expanded');
             chatPanelExpand.setAttribute('aria-label', chatPanel && chatPanel.classList.contains('expanded') ? 'Collapse chat' : 'Expand chat');
             chatPanelExpand.title = chatPanel && chatPanel.classList.contains('expanded') ? 'Collapse' : 'Expand';
-            requestAnimationFrame(function() {
-              if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
-            });
+            scrollChatToBottom();
           });
         }
 
+        function scrollChatToBottom() {
+          if (!chatMessages) return;
+          requestAnimationFrame(function() {
+            if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+          });
+        }
+        
         function renderMarkdown(text) {
           if (!text) return '';
           if (typeof marked !== 'undefined') {
@@ -1832,7 +1864,7 @@
           row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">Y</span><div class="chat-msg user"></div>';
           row.querySelector('.chat-msg').textContent = text.trim();
           chatMessages.appendChild(row);
-          chatMessages.scrollTop = chatMessages.scrollHeight;
+          scrollChatToBottom();
         }
         
         function appendAgentMessage(text) {
@@ -1843,7 +1875,7 @@
           const msgEl = row.querySelector('.chat-msg');
           msgEl.innerHTML = renderMarkdown(text || '');
           chatMessages.appendChild(row);
-          chatMessages.scrollTop = chatMessages.scrollHeight;
+          scrollChatToBottom();
         }
 
         function buildChatHistory() {
@@ -1881,7 +1913,7 @@
 
           function done() {
             if (sendBtn) sendBtn.disabled = false;
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            scrollChatToBottom();
           }
 
           fetch(base + '/chat', {
@@ -1904,12 +1936,17 @@
             row.className = 'chat-msg-row';
             row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">T</span><div class="chat-msg bot"></div>';
             const msgEl = row.querySelector('.chat-msg');
+            msgEl.innerHTML = '<span class="chat-thinking">Thinking<span class="chat-thinking-dots"><span></span><span></span><span></span></span></span>';
             chatMessages.appendChild(row);
+            scrollChatToBottom();
             let buffer = '';
             let streamText = '';
             function read() {
               return reader.read().then(function(result) {
                 if (result.done) {
+                  if (!streamText || !streamText.trim()) {
+                    msgEl.innerHTML = '<em>No response.</em>';
+                  }
                   done();
                   return;
                 }
@@ -1933,12 +1970,17 @@
                     } catch (e) {}
                   }
                 });
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                scrollChatToBottom();
                 return read();
               });
             }
             return read();
           }).catch(function(err) {
+            var thinkingRow = chatMessages && chatMessages.querySelector('.chat-msg-row .chat-thinking');
+            if (thinkingRow && thinkingRow.closest) {
+              var row = thinkingRow.closest('.chat-msg-row');
+              if (row) row.remove();
+            }
             appendAgentMessage('Could not reach Toasty. Please try again.');
             done();
           });
