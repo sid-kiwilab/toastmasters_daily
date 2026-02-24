@@ -216,6 +216,37 @@
       border-bottom: none;
     }
     
+    .profile-subheading {
+      font-size: 14px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 32px 0 16px 0;
+    }
+    
+    .subscription-status-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0;
+    }
+    
+    .subscription-status-inline::before {
+      content: "·";
+      margin: 0 8px 0 0;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+    
+    .subscription-status-inline.no-trial-sep::before {
+      display: none;
+    }
+    
+    .subscription-status-line.no-trial #trial-date-value {
+      display: none;
+    }
+    
     .section-content {
       padding: 0;
       display: flex;
@@ -297,6 +328,13 @@
       background: #eff6ff;
       color: #1e40af;
       border: 1px solid #bfdbfe;
+      margin: 0;
+      padding: 5px 12px;
+    }
+    
+    .subscription-status-line .field-badge {
+      margin-left: 0;
+      margin-right: 8px;
     }
     
     .field-action {
@@ -1006,23 +1044,19 @@
               </a>
             </div>
           </div>
+          <h3 class="profile-subheading">Subscription</h3>
           <div class="profile-field">
-            <div class="field-label">Trial Period</div>
+            <div class="field-label">Status</div>
             <div class="field-main">
-              <div class="field-value" id="trial-date-value">
-                <span id="trial-date-shimmer" class="shimmer shimmer-line"></span>
-                <span id="trial-date-text" class="field-content-loading"></span>
-              </div>
-              <div class="field-description">Your free trial allows access to all features</div>
-            </div>
-            <div class="field-action"></div>
-          </div>
-          <div class="profile-field">
-            <div class="field-label">Manage</div>
-            <div class="field-main">
-              <div class="field-value" id="subscription-status-value">
-                <span id="subscription-status-shimmer" class="shimmer shimmer-line"></span>
-                <span id="subscription-status-text" class="field-content-loading"></span>
+              <div class="field-value subscription-status-line">
+                <span id="trial-date-value">
+                  <span id="trial-date-shimmer" class="shimmer shimmer-line"></span>
+                  <span id="trial-date-text" class="field-content-loading"></span>
+                </span>
+                <span id="subscription-status-value" class="subscription-status-inline">
+                  <span id="subscription-status-shimmer" class="shimmer shimmer-line"></span>
+                  <span id="subscription-status-text" class="field-content-loading"></span>
+                </span>
               </div>
               <div class="field-description" id="subscription-description">
                 <span id="subscription-description-shimmer" class="shimmer shimmer-line-small"></span>
@@ -1475,6 +1509,7 @@
       const buttonShimmer = document.getElementById('button-shimmer');
       const subscribeButton = document.getElementById('subscribe-button');
       const stopSubscriptionButton = document.getElementById('stop-subscription-button');
+      const subscriptionStatusValueEl = document.getElementById('subscription-status-value');
       subscriptionUnsubscribe = clubDb.collection('users').doc(userId).onSnapshot((doc) => {
         if (trialDateShimmer) trialDateShimmer.style.display = 'none';
         if (subscriptionStatusShimmer) subscriptionStatusShimmer.style.display = 'none';
@@ -1489,16 +1524,13 @@
           const subscriptionStatus = userData.subscription;
           const cancelAtPeriodEnd = userData.subscription_cancel_at_period_end;
           const currentPeriodEnd = userData.subscription_current_period_end;
-          if (trialEndDate && trialDateText) {
-            const trialDate = trialEndDate.toDate();
-            const now = new Date();
-            const formattedDate = trialDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-            const daysRemaining = Math.ceil((trialDate - now) / (1000 * 60 * 60 * 24));
-            trialDateText.textContent = daysRemaining > 0 ? `Ends on ${formattedDate} (${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} remaining)` : `Ended on ${formattedDate}`;
-          } else if (trialDateText) trialDateText.textContent = 'No trial started';
-          const now = new Date();
-          const isActive = subscriptionStatus === 'active' || (trialEndDate && trialEndDate.toDate() > now);
-          if (isActive && subscriptionStatus === 'active') {
+          const hasSubscribed = userData.subscription != null || userData.stripe_customer_id != null;
+          const isPaidActive = subscriptionStatus === 'active';
+          const showTrial = !hasSubscribed;
+          if (isPaidActive) {
+            if (trialDateText) trialDateText.textContent = '';
+            if (subscriptionStatusValueEl) subscriptionStatusValueEl.classList.add('no-trial-sep');
+            if (subscriptionStatusValueEl && subscriptionStatusValueEl.parentElement) subscriptionStatusValueEl.parentElement.classList.add('no-trial');
             if (subscriptionStatusText) {
               if (cancelAtPeriodEnd && currentPeriodEnd) {
                 const periodEnd = currentPeriodEnd.toDate();
@@ -1506,21 +1538,38 @@
                 subscriptionStatusText.innerHTML = `<span class="field-badge active">Active</span> <span style="color: #64748b;">Ends ${formattedEnd}</span>`;
               } else subscriptionStatusText.innerHTML = `<span class="field-badge active">Active</span>`;
             }
-            if (subscriptionDescriptionText) subscriptionDescriptionText.textContent = cancelAtPeriodEnd && currentPeriodEnd ? 'Your subscription will remain active until the end of the current billing period' : 'Your subscription is active';
+            if (subscriptionDescriptionText) subscriptionDescriptionText.textContent = cancelAtPeriodEnd && currentPeriodEnd ? 'Active until end of billing period.' : 'Your subscription is active.';
             if (cancelAtPeriodEnd) { if (subscribeButton) subscribeButton.style.display = 'inline-flex'; if (stopSubscriptionButton) stopSubscriptionButton.style.display = 'none'; }
             else { if (subscribeButton) subscribeButton.style.display = 'none'; if (stopSubscriptionButton) stopSubscriptionButton.style.display = 'inline-flex'; }
           } else {
+            if (showTrial) {
+              if (subscriptionStatusValueEl) subscriptionStatusValueEl.classList.remove('no-trial-sep');
+              if (subscriptionStatusValueEl && subscriptionStatusValueEl.parentElement) subscriptionStatusValueEl.parentElement.classList.remove('no-trial');
+              if (trialEndDate && trialDateText) {
+                const trialDate = trialEndDate.toDate();
+                const now = new Date();
+                const formattedDate = trialDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const daysRemaining = Math.ceil((trialDate - now) / (1000 * 60 * 60 * 24));
+                trialDateText.textContent = daysRemaining > 0 ? `Trial ends ${formattedDate} (${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} left)` : `Trial ended ${formattedDate}`;
+              } else if (trialDateText) trialDateText.textContent = 'No trial';
+            } else {
+              if (trialDateText) trialDateText.textContent = '';
+              if (subscriptionStatusValueEl) subscriptionStatusValueEl.classList.add('no-trial-sep');
+              if (subscriptionStatusValueEl && subscriptionStatusValueEl.parentElement) subscriptionStatusValueEl.parentElement.classList.add('no-trial');
+            }
             if (subscribeButton) subscribeButton.style.display = 'inline-flex';
             if (stopSubscriptionButton) stopSubscriptionButton.style.display = 'none';
             if (subscriptionStatusText) subscriptionStatusText.innerHTML = `<span class="field-badge not-verified">Inactive</span>`;
-            if (subscriptionDescriptionText) subscriptionDescriptionText.textContent = 'Start your subscription to continue using all features';
+            if (subscriptionDescriptionText) subscriptionDescriptionText.textContent = hasSubscribed ? 'Subscribe again to restore access.' : 'Subscribe to keep access after your trial.';
           }
         } else {
+          if (subscriptionStatusValueEl) subscriptionStatusValueEl.classList.remove('no-trial-sep');
+          if (subscriptionStatusValueEl && subscriptionStatusValueEl.parentElement) subscriptionStatusValueEl.parentElement.classList.remove('no-trial');
           if (trialDateText) trialDateText.textContent = 'No trial data found';
           if (subscribeButton) subscribeButton.style.display = 'inline-flex';
           if (stopSubscriptionButton) stopSubscriptionButton.style.display = 'none';
           if (subscriptionStatusText) subscriptionStatusText.innerHTML = `<span class="field-badge not-verified">Inactive</span>`;
-          if (subscriptionDescriptionText) subscriptionDescriptionText.textContent = 'Start your subscription to continue using all features';
+          if (subscriptionDescriptionText) subscriptionDescriptionText.textContent = 'Subscribe to keep access after your trial.';
         }
       }, (error) => console.error('Error loading subscription data:', error));
     }
