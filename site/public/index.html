@@ -1708,13 +1708,20 @@
           document.body.classList.add('loaded');
         });
         
-        // Chat agent UI (open/close + append messages, no backend)
+        // Chat agent UI (open/close + append messages, backend by origin)
         const chatPanel = document.getElementById('chat-panel');
         const chatBubbleBtn = document.getElementById('chat-bubble-btn');
         const chatPanelClose = document.getElementById('chat-panel-close');
         const chatInput = document.getElementById('chat-input');
         const chatSendBtn = document.getElementById('chat-send-btn');
         const chatMessages = document.getElementById('chat-messages');
+
+        // Chat API base: localhost → local agent; production → set when you have the URL
+        function getChatApiBase() {
+          if (window.location.hostname === 'localhost') return 'http://localhost:8080';
+          if (window.location.hostname === 'toastmastersdaily.com') return ''; // TODO: set prod URL when ready
+          return '';
+        }
         
         function openChat() {
           if (chatPanel) {
@@ -1758,18 +1765,93 @@
           chatMessages.appendChild(row);
           chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-        
-        const AGENT_REPLY = 'Got it — thanks for reaching out! We can help with joining a meeting (use your club code on this page), creating a meeting, or finding your club. What do you need?';
-        
+
+        function buildChatHistory() {
+          if (!chatMessages) return [];
+          const history = [];
+          const rows = chatMessages.querySelectorAll('.chat-msg-row');
+          rows.forEach(function(row) {
+            const welcome = row.querySelector('.chat-welcome');
+            if (welcome) return;
+            const msgEl = row.querySelector('.chat-msg');
+            if (!msgEl) return;
+            const text = (msgEl.textContent || '').trim();
+            if (!text) return;
+            history.push({ sender: row.classList.contains('user') ? 'user' : 'bot', text: text });
+          });
+          return history;
+        }
+
         function sendChatMessage() {
           if (!chatInput) return;
           const text = chatInput.value.trim();
           if (!text) return;
           appendUserMessage(text);
           chatInput.value = '';
-          setTimeout(function() {
-            appendAgentMessage(AGENT_REPLY);
-          }, 400);
+
+          const base = getChatApiBase();
+          if (!base) {
+            appendAgentMessage('Chat is not configured for this site yet. Use localhost to try the assistant.');
+            return;
+          }
+
+          const history = buildChatHistory().slice(0, -1);
+          const sendBtn = document.getElementById('chat-send-btn');
+          if (sendBtn) sendBtn.disabled = true;
+
+          function done() {
+            if (sendBtn) sendBtn.disabled = false;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          }
+
+          fetch(base + '/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text, history: history, stream: true })
+          }).then(function(res) {
+            if (!res.ok) {
+              return res.json().then(function(body) {
+                appendAgentMessage(body.error || res.statusText || 'Request failed');
+                done();
+              }).catch(function() {
+                appendAgentMessage(res.status === 503 ? 'OPENAI_API_KEY not configured.' : 'Request failed.');
+                done();
+              });
+            }
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            const row = document.createElement('div');
+            row.className = 'chat-msg-row';
+            row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">A</span><div class="chat-msg bot"></div>';
+            const msgEl = row.querySelector('.chat-msg');
+            chatMessages.appendChild(row);
+            let buffer = '';
+            function read() {
+              return reader.read().then(function(result) {
+                if (result.done) { done(); return; }
+                buffer += decoder.decode(result.value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                lines.forEach(function(line) {
+                  if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') return;
+                    try {
+                      const obj = JSON.parse(data);
+                      if (obj.content) msgEl.textContent = (msgEl.textContent || '') + obj.content;
+                      if (obj.error) msgEl.textContent = (msgEl.textContent || '') + obj.error;
+                    } catch (e) {}
+                  }
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                return read();
+              });
+            }
+            return read();
+          }).catch(function(err) {
+            appendAgentMessage('Could not reach the assistant. Please try again.');
+            done();
+          });
         }
         
         if (chatBubbleBtn) chatBubbleBtn.addEventListener('click', openChat);
