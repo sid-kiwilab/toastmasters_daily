@@ -281,13 +281,18 @@
     .meeting-tile {
       background: linear-gradient(135deg, #004165 0%, #003049 100%);
       border-radius: 10px;
-      padding: 18px 20px;
+      padding: 20px 24px;
       color: white;
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .meeting-tile-header {
+      display: flex;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      flex-wrap: wrap;
     }
     
     .meeting-tile-label {
@@ -300,45 +305,77 @@
     }
     
     .meeting-tile-title {
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 600;
     }
     
     .meeting-tile-meta {
-      font-size: 13px;
+      font-size: 14px;
       opacity: 0.9;
     }
     
-    .meeting-tile-actions {
-      display: flex;
-      gap: 6px;
+    .meeting-actions-section {
+      background: rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 14px 16px;
     }
     
-    .meeting-tile-actions a,
-    .meeting-tile-actions button {
-      padding: 6px 10px;
-      font-size: 12px;
+    .meeting-actions-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.95;
+      margin-bottom: 12px;
+    }
+    
+    .meeting-actions-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .meeting-action-btn {
+      padding: 12px 18px;
+      font-size: 15px;
       font-weight: 500;
-      border-radius: 6px;
+      border-radius: 8px;
       text-decoration: none;
       border: none;
       cursor: pointer;
       font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      min-height: 44px;
     }
     
-    .meeting-tile-actions .link-visit {
+    .meeting-action-btn {
       background: rgba(255,255,255,0.25);
       color: white;
     }
     
-    .meeting-tile-actions .btn-actions {
-      background: rgba(255,255,255,0.2);
+    .meeting-action-btn:hover {
+      background: rgba(255,255,255,0.4);
+    }
+    
+    .meeting-action-btn-primary {
+      background: rgba(255,255,255,0.35);
       color: white;
     }
     
-    .meeting-tile-actions .btn-actions:hover,
-    .meeting-tile-actions .link-visit:hover {
-      background: rgba(255,255,255,0.35);
+    .meeting-action-btn-primary:hover {
+      background: rgba(255,255,255,0.5);
+    }
+    
+    .meeting-action-btn-danger {
+      background: rgba(239,68,68,0.4);
+      color: white;
+    }
+    
+    .meeting-action-btn-danger:hover {
+      background: rgba(239,68,68,0.6);
     }
     
     .date-and-meetings-create {
@@ -2490,14 +2527,24 @@
               } catch (e) {}
             }
             const titleEsc = escapeHtml(meeting.title || 'Untitled Meeting');
-            const titleJs = String(meeting.title || 'Untitled Meeting').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            const agendaJs = meeting.agendaUrl ? "'" + String(meeting.agendaUrl).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'" : 'null';
+            const agendaUrlEsc = meeting.agendaUrl ? escapeHtml(meeting.agendaUrl) : '';
             return `<div class="meeting-tile">
-              <div><div class="meeting-tile-label">Meeting</div><span class="meeting-tile-title">${titleEsc}</span>${timeStr ? `<span class="meeting-tile-meta"> · ${timeStr}</span>` : ''}</div>
-              <div class="meeting-tile-actions">
-                <a href="/meetings/${meeting.id}" target="_blank" class="link-visit">Visit</a>
-                <button type="button" class="btn-actions" onclick="showMeetingActionsDialog('${meeting.id}', '${titleJs}', ${agendaJs})">Actions</button>
-                ${canCreateMeetings ? `<button type="button" class="btn-actions" onclick="deleteMeeting('${meeting.id}')">Delete</button>` : ''}
+              <div class="meeting-tile-header">
+                <div>
+                  <div class="meeting-tile-label">Meeting</div>
+                  <span class="meeting-tile-title">${titleEsc}</span>${timeStr ? `<span class="meeting-tile-meta"> · ${timeStr}</span>` : ''}
+                </div>
+              </div>
+              <div class="meeting-actions-section">
+                <div class="meeting-actions-title">Meeting Actions</div>
+                <div class="meeting-actions-buttons">
+                  <a href="/meetings/${meeting.id}" target="_blank" class="meeting-action-btn meeting-action-btn-primary">Go to Meeting</a>
+                  <button type="button" class="meeting-action-btn" onclick="uploadAgendaForMeeting('${meeting.id}')">Upload Agenda</button>
+                  ${meeting.agendaUrl ? `<a href="${agendaUrlEsc}" target="_blank" class="meeting-action-btn meeting-action-btn-primary">View Agenda</a>` : ''}
+                  <button type="button" class="meeting-action-btn" onclick="showSetupPollsDialog('${meeting.id}')">Setup Polls</button>
+                  <button type="button" class="meeting-action-btn" onclick="showViewPollsDialog('${meeting.id}')">View Polls</button>
+                  ${canCreateMeetings ? `<button type="button" class="meeting-action-btn meeting-action-btn-danger" onclick="deleteMeeting('${meeting.id}')">Delete Meeting</button>` : ''}
+                </div>
               </div>
             </div>`;
           }).join('');
@@ -2962,36 +3009,12 @@
       return div.innerHTML;
     }
     
-    // Show meeting actions dialog
-    window.showMeetingActionsDialog = function(meetingId, meetingTitle, agendaUrl) {
-      const overlay = document.getElementById('meeting-actions-dialog-overlay');
-      const titleElement = document.getElementById('meeting-actions-dialog-title');
-      
-      if (overlay && titleElement) {
-        titleElement.textContent = meetingTitle || 'Untitled Meeting';
-        overlay.setAttribute('data-meeting-id', meetingId);
-        overlay.setAttribute('data-agenda-url', agendaUrl || '');
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        
-        // Show/hide view agenda button
-        const viewAgendaBtn = document.getElementById('meeting-actions-view-agenda');
-        if (viewAgendaBtn) {
-          if (agendaUrl) {
-            viewAgendaBtn.href = agendaUrl;
-            viewAgendaBtn.style.display = 'flex';
-          } else {
-            viewAgendaBtn.style.display = 'none';
-          }
-        }
-        
-        // Check if polls exist and show/hide view polls button
-        checkPollsExist(meetingId).then(hasPolls => {
-          const viewPollsBtn = document.getElementById('meeting-actions-view-polls');
-          if (viewPollsBtn) {
-            viewPollsBtn.style.display = hasPolls ? 'flex' : 'none';
-          }
-        });
+    // Upload agenda - trigger file input for a specific meeting
+    window.uploadAgendaForMeeting = function(meetingId) {
+      const fileInput = document.getElementById('agenda-file-input');
+      if (fileInput) {
+        fileInput.setAttribute('data-meeting-id', meetingId || '');
+        fileInput.click();
       }
     };
     
@@ -3017,14 +3040,6 @@
       }
     }
     
-    // Upload agenda
-    window.uploadAgenda = function() {
-      const fileInput = document.getElementById('agenda-file-input');
-      if (fileInput) {
-        fileInput.click();
-      }
-    };
-    
     // Handle agenda file selection
     window.handleAgendaFileSelect = async function(event) {
       const file = event.target.files[0];
@@ -3037,8 +3052,8 @@
         return;
       }
       
-      const overlay = document.getElementById('meeting-actions-dialog-overlay');
-      const meetingId = overlay ? overlay.getAttribute('data-meeting-id') : null;
+      const fileInput = event.target;
+      const meetingId = fileInput ? fileInput.getAttribute('data-meeting-id') : null;
       
       if (!meetingId) {
         if (typeof notifications !== 'undefined') {
@@ -3062,21 +3077,11 @@
         return;
       }
       
-      // Show loading state
-      const uploadBtn = document.getElementById('meeting-actions-upload-agenda');
-      const originalText = uploadBtn ? uploadBtn.innerHTML : '';
-      if (uploadBtn) {
-        uploadBtn.disabled = true;
-        uploadBtn.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px; animation: spin 1s linear infinite;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> Uploading...';
-      }
-      
       try {
-        // Read file as base64
         const reader = new FileReader();
         reader.onload = async function(e) {
           try {
-            const base64Data = e.target.result.split(',')[1]; // Remove data:application/pdf;base64, prefix
-            
+            const base64Data = e.target.result.split(',')[1];
             const uploadAgendaFn = clubFunctions.httpsCallable('upload_agenda');
             const result = await uploadAgendaFn({
               meetingId: meetingId,
@@ -3088,19 +3093,7 @@
               if (typeof notifications !== 'undefined') {
                 notifications.success('Agenda uploaded successfully!');
               }
-              
-              // Update the agenda URL in the overlay
-              if (overlay && result.data.agenda && result.data.agenda.download_url) {
-                overlay.setAttribute('data-agenda-url', result.data.agenda.download_url);
-                const viewAgendaBtn = document.getElementById('meeting-actions-view-agenda');
-                if (viewAgendaBtn) {
-                  viewAgendaBtn.href = result.data.agenda.download_url;
-                  viewAgendaBtn.style.display = 'flex';
-                }
-              }
-              
-              // Reload meetings to update the UI
-              loadMeetings();
+              if (clubUser) loadMeetings(clubUser.uid);
             } else {
               const errorMsg = result.data?.error || 'Failed to upload agenda';
               if (typeof notifications !== 'undefined') {
@@ -3113,15 +3106,7 @@
               notifications.error('Error uploading agenda: ' + error.message);
             }
           } finally {
-            // Reset button state
-            if (uploadBtn) {
-              uploadBtn.disabled = false;
-              uploadBtn.innerHTML = originalText;
-            }
-            // Reset file input
-            if (event.target) {
-              event.target.value = '';
-            }
+            if (event.target) event.target.value = '';
           }
         };
         reader.readAsDataURL(file);
@@ -3130,28 +3115,9 @@
         if (typeof notifications !== 'undefined') {
           notifications.error('Error reading file');
         }
-        if (uploadBtn) {
-          uploadBtn.disabled = false;
-          uploadBtn.innerHTML = originalText;
-        }
       }
     };
     
-    // Set up polls
-    window.setupPolls = function() {
-      const overlay = document.getElementById('meeting-actions-dialog-overlay');
-      const meetingId = overlay ? overlay.getAttribute('data-meeting-id') : null;
-      
-      if (!meetingId) {
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Meeting ID not found');
-        }
-        return;
-      }
-      
-      hideMeetingActionsDialog();
-      showSetupPollsDialog(meetingId);
-    };
     
     // Show setup polls dialog
     window.showSetupPollsDialog = function(meetingId) {
@@ -3673,21 +3639,6 @@
       showDeletePollDialog(pollId, meetingId);
     };
     
-    // View polls
-    window.viewPolls = function() {
-      const overlay = document.getElementById('meeting-actions-dialog-overlay');
-      const meetingId = overlay ? overlay.getAttribute('data-meeting-id') : null;
-      
-      if (!meetingId) {
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Meeting ID not found');
-        }
-        return;
-      }
-      
-      hideMeetingActionsDialog();
-      showViewPollsDialog(meetingId);
-    };
     
     // Show view polls dialog
     window.showViewPollsDialog = function(meetingId) {
@@ -3988,54 +3939,7 @@
     </div>
   </div>
   
-  <!-- Meeting Actions Dialog -->
-  <div class="dialog-overlay" id="meeting-actions-dialog-overlay" onclick="if(event.target === this) hideMeetingActionsDialog()">
-    <div class="dialog">
-      <h3 class="dialog-title">Meeting Actions</h3>
-      <p class="dialog-message" style="margin-bottom: 16px; color: #64748b; font-size: 14px;" id="meeting-actions-dialog-title"></p>
-      <div style="display: flex; flex-direction: column; gap: 0;">
-        <div class="meeting-action-group">
-          <div class="meeting-action-group-title">Agenda <span style="font-weight: 400; color: #94a3b8; font-size: 13px;">(PDFs only)</span></div>
-          <div class="meeting-action-group-buttons">
-            <button class="meeting-action-item" onclick="uploadAgenda()" id="meeting-actions-upload-agenda">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              Upload Agenda
-            </button>
-            <a href="#" id="meeting-actions-view-agenda" class="meeting-action-item meeting-action-item-view" target="_blank" onclick="hideMeetingActionsDialog()" style="display: none;">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              View Agenda
-            </a>
-          </div>
-        </div>
-        
-        <div class="meeting-action-group">
-          <div class="meeting-action-group-title">Polls</div>
-          <div class="meeting-action-group-buttons">
-            <button class="meeting-action-item" onclick="setupPolls()" id="meeting-actions-setup-polls">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-              Set Up Polls
-            </button>
-            <button class="meeting-action-item meeting-action-item-view" onclick="viewPolls()" id="meeting-actions-view-polls" style="display: none;">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              View Polls
-            </button>
-          </div>
-        </div>
-      </div>
-      <input type="file" id="agenda-file-input" accept=".pdf" style="display: none;" onchange="handleAgendaFileSelect(event)">
-      <div class="dialog-actions" style="margin-top: 24px;">
-        <button class="dialog-btn dialog-btn-cancel" onclick="hideMeetingActionsDialog()">Close</button>
-      </div>
-    </div>
-  </div>
+  <input type="file" id="agenda-file-input" accept=".pdf" style="display: none;" onchange="handleAgendaFileSelect(event)">
   
   <!-- Setup Polls Dialog -->
   <div class="dialog-overlay" id="setup-polls-dialog-overlay" onclick="if(event.target === this) hideSetupPollsDialog()">
