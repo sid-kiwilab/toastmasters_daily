@@ -8,7 +8,7 @@ import socketserver
 import urllib.parse
 import os
 
-PORT = 8080
+PORT = 3000
 
 class RewriteHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
