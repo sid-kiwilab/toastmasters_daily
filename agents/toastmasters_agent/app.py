@@ -38,6 +38,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Input caps to prevent token abuse. Enforced server-side.
+MAX_MESSAGE_CHARS = 1000
+MAX_TOTAL_INPUT_CHARS = 6000
+
 SYSTEM_PROMPT = """You are Toasty, the assistant for Toastmasters Daily. You are warm, friendly, and happy to chat. You only speak about the Toastmasters brand and this app when it's relevant, but you're not cold or robotic—you can briefly acknowledge what someone said (e.g. "That's cool!" or "Nice!") before gently offering to help with the site or Toastmasters when they're ready.
 
 You cannot perform any actions (you cannot create meetings, show QR codes, vote, or open agendas). You can only describe what the site can do so users know where to go and what to try.
@@ -107,21 +111,48 @@ async def stream_agent_response(messages: list):
         yield "data: [DONE]\n\n"
 
 
+def _trim_history_to_char_limit(history: list, current_message: str, max_total: int) -> list:
+    """Keep only the most recent history so total text length <= max_total."""
+    current_len = len(current_message)
+    budget = max(0, max_total - current_len)
+    if budget <= 0:
+        return []
+    trimmed = []
+    total = 0
+    for h in reversed(history):
+        text = (h.get("text") or "").strip()
+        if not text:
+            continue
+        if total + len(text) > budget:
+            break
+        trimmed.append((h.get("sender"), text))
+        total += len(text)
+    trimmed.reverse()
+    return trimmed
+
+
 @app.post("/chat")
 async def chat(request: Request):
     try:
         body = await request.json()
         msg = (body.get("message") or "").strip()
+        if len(msg) > MAX_MESSAGE_CHARS:
+            return JSONResponse(
+                status_code=400,
+                content={"error": f"Message too long. Maximum {MAX_MESSAGE_CHARS} characters per message."},
+            )
         logger.info("Chat request: %r", msg[:80] + "..." if len(msg) > 80 else msg)
         history = body.get("history") or []
         stream = body.get("stream", False)
 
+        history_trimmed = _trim_history_to_char_limit(history, msg, MAX_TOTAL_INPUT_CHARS)
+
         messages = []
-        for h in history:
-            if h.get("sender") == "user":
-                messages.append(HumanMessage(content=h.get("text", "")))
-            elif h.get("sender") == "bot":
-                messages.append(AIMessage(content=h.get("text", "")))
+        for sender, text in history_trimmed:
+            if sender == "user":
+                messages.append(HumanMessage(content=text))
+            elif sender == "bot":
+                messages.append(AIMessage(content=text))
         messages.append(HumanMessage(content=msg))
 
         agent = _get_agent()

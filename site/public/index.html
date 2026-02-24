@@ -975,24 +975,6 @@
         flex-direction: row-reverse;
       }
       
-      .chat-msg-avatar {
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        font-weight: 600;
-        color: #fff;
-        background: #004165;
-      }
-      
-      .chat-msg-row.user .chat-msg-avatar {
-        background: #0f172a;
-      }
-      
       .chat-msg {
         max-width: 82%;
         padding: 8px 12px;
@@ -1287,13 +1269,12 @@
         </div>
         <div class="chat-messages" id="chat-messages">
           <div class="chat-msg-row">
-            <span class="chat-msg-avatar" aria-hidden="true">T</span>
             <div class="chat-welcome">Hey! I'm Toasty. Need help with a meeting or your club? Just ask!</div>
           </div>
         </div>
         <div class="chat-input-wrap">
           <div class="chat-input-row">
-            <input type="text" class="chat-input" id="chat-input" placeholder="Message Toasty..." aria-label="Chat message">
+            <input type="text" class="chat-input" id="chat-input" placeholder="Message Toasty..." aria-label="Chat message" maxlength="1000" title="Max 1000 characters">
             <button type="button" class="chat-send-btn" id="chat-send-btn" aria-label="Send">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
             </button>
@@ -1861,7 +1842,7 @@
           if (welcomeEl && welcomeEl.closest('.chat-msg-row')) welcomeEl.closest('.chat-msg-row').remove();
           const row = document.createElement('div');
           row.className = 'chat-msg-row user';
-          row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">Y</span><div class="chat-msg user"></div>';
+          row.innerHTML = '<div class="chat-msg user"></div>';
           row.querySelector('.chat-msg').textContent = text.trim();
           chatMessages.appendChild(row);
           scrollChatToBottom();
@@ -1871,7 +1852,7 @@
           if (!chatMessages) return;
           const row = document.createElement('div');
           row.className = 'chat-msg-row';
-          row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">T</span><div class="chat-msg bot"></div>';
+          row.innerHTML = '<div class="chat-msg bot"></div>';
           const msgEl = row.querySelector('.chat-msg');
           msgEl.innerHTML = renderMarkdown(text || '');
           chatMessages.appendChild(row);
@@ -1913,7 +1894,7 @@
             return;
           }
 
-          const history = buildChatHistory().slice(0, -1);
+          const history = buildChatHistory().slice(0, -1).slice(-20);
 
           function done() {
             if (sendBtn) sendBtn.disabled = false;
@@ -1921,12 +1902,21 @@
             scrollChatToBottom();
           }
 
+          var row = document.createElement('div');
+          row.className = 'chat-msg-row';
+          row.innerHTML = '<div class="chat-msg bot"></div>';
+          var msgEl = row.querySelector('.chat-msg');
+          msgEl.innerHTML = '<span class="chat-thinking">Thinking<span class="chat-thinking-dots"><span></span><span></span><span></span></span></span>';
+          chatMessages.appendChild(row);
+          scrollChatToBottom();
+
           fetch(base + '/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: text, history: history, stream: true })
           }).then(function(res) {
             if (!res.ok) {
+              row.remove();
               return res.json().then(function(body) {
                 appendAgentMessage(body.error || res.statusText || 'Request failed');
                 done();
@@ -1937,13 +1927,6 @@
             }
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
-            const row = document.createElement('div');
-            row.className = 'chat-msg-row';
-            row.innerHTML = '<span class="chat-msg-avatar" aria-hidden="true">T</span><div class="chat-msg bot"></div>';
-            const msgEl = row.querySelector('.chat-msg');
-            msgEl.innerHTML = '<span class="chat-thinking">Thinking<span class="chat-thinking-dots"><span></span><span></span><span></span></span></span>';
-            chatMessages.appendChild(row);
-            scrollChatToBottom();
             let buffer = '';
             let streamText = '';
             function read() {
@@ -1981,11 +1964,7 @@
             }
             return read();
           }).catch(function(err) {
-            var thinkingRow = chatMessages && chatMessages.querySelector('.chat-msg-row .chat-thinking');
-            if (thinkingRow && thinkingRow.closest) {
-              var row = thinkingRow.closest('.chat-msg-row');
-              if (row) row.remove();
-            }
+            if (row.parentNode) row.remove();
             appendAgentMessage('Could not reach Toasty. Please try again.');
             done();
           });
