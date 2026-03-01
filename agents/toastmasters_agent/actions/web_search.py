@@ -202,14 +202,32 @@ Answer:"""
         return {"error": str(e)}
 
 
-def run(query: str) -> str:
-    """
-    Run web search: DuckDuckGo search -> scrape top 4 URLs with curl_chrome110 -> summarize with OpenAI.
-    Returns a string answer or an error message.
-    """
-    query = (query or "").strip()
-    if not query:
-        return "Error: empty query."
+def _is_retry_eligible(query: str) -> bool:
+    """Only retry for: find club near me, or when does Toastmasters meet."""
+    q = (query or "").lower()
+    if not q:
+        return False
+    club_near = "club" in q and ("near" in q or "nearest" in q or "closest" in q or "find" in q or "meet" in q)
+    when_meet = "when" in q and ("meet" in q or "meeting" in q) and "toastmaster" in q
+    return bool(club_near or when_meet)
+
+
+def _is_no_good_result(response: str) -> bool:
+    """True if the response indicates no/failed results (retry once allowed)."""
+    if not (response or response.strip()):
+        return True
+    r = response.strip().lower()
+    if r.startswith("search failed:") or r.startswith("no search results") or r.startswith("no valid urls"):
+        return True
+    if r.startswith("could not scrape") or r.startswith("summarization failed:"):
+        return True
+    if "no response" in r or "no results" in r or "no clubs" in r or "couldn't find" in r:
+        return True
+    return False
+
+
+def _run_once(query: str) -> str:
+    """Single pass: search -> scrape -> summarize. Returns answer or error string."""
     search_result = _search_duckduckgo(query)
     if "error" in search_result:
         return f"Search failed: {search_result['error']}"
@@ -235,3 +253,18 @@ def run(query: str) -> str:
     if "error" in ai_result:
         return f"Summarization failed: {ai_result['error']}"
     return ai_result.get("response", "No response.")
+
+
+def run(query: str) -> str:
+    """
+    Run web search: DuckDuckGo search -> scrape top 4 URLs with curl_chrome110 -> summarize with OpenAI.
+    For "club near me" and "when does Toastmasters meet" queries, retry once if the first result is no good.
+    """
+    query = (query or "").strip()
+    if not query:
+        return "Error: empty query."
+    out = _run_once(query)
+    if _is_retry_eligible(query) and _is_no_good_result(out):
+        logger.info("Retry once for query: %s", query[:60])
+        out = _run_once(query)
+    return out

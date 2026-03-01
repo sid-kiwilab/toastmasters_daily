@@ -1786,6 +1786,34 @@
           if (window.location.hostname === 'toastmastersdaily.com' || window.location.hostname === 'www.toastmastersdaily.com' || window.location.hostname.endsWith('.toastmastersdaily.com')) return 'https://toastmasters-agent-864717492615.us-central1.run.app';
           return '';
         }
+
+        // User location for "nearest to me" — browser geolocation + Nominatim reverse to place name
+        var chatUserLocation = null;
+        function ensureChatLocation() {
+          if (chatUserLocation || !navigator.geolocation) return;
+          navigator.geolocation.getCurrentPosition(
+            function(pos) {
+              var lat = pos.coords.latitude;
+              var lon = pos.coords.longitude;
+              fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lon + '&format=json', {
+                headers: { 'Accept': 'application/json', 'User-Agent': 'ToastmastersDaily/1.0 (https://toastmastersdaily.com)' }
+              }).then(function(r) { return r.json(); }).then(function(data) {
+                var a = data && data.address;
+                if (!a) return;
+                var parts = [];
+                if (a.suburb) parts.push(a.suburb);
+                else if (a.neighbourhood) parts.push(a.neighbourhood);
+                else if (a.village) parts.push(a.village);
+                if (a.city || a.town || a.municipality) parts.push(a.city || a.town || a.municipality);
+                else if (a.county && !parts.length) parts.push(a.county);
+                if (a.country && parts.indexOf(a.country) === -1) parts.push(a.country);
+                chatUserLocation = parts.length ? parts.join(', ') : (data.display_name || null);
+              }).catch(function() {});
+            },
+            function() {},
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
+          );
+        }
         
         function openChat() {
           if (chatPanel) {
@@ -1798,6 +1826,7 @@
             requestAnimationFrame(function() {
               if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
             });
+            ensureChatLocation();
           }
         }
         
@@ -1910,10 +1939,12 @@
           chatMessages.appendChild(row);
           scrollChatToBottom();
 
+          var payload = { message: text, history: history, stream: true };
+          if (chatUserLocation) payload.location = chatUserLocation;
           fetch(base + '/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text, history: history, stream: true })
+            body: JSON.stringify(payload)
           }).then(function(res) {
             if (!res.ok) {
               row.remove();

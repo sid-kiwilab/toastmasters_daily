@@ -30,7 +30,7 @@ from langgraph.prebuilt import ToolNode
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.tools import tool
-from typing import TypedDict, Annotated, Sequence, Any
+from typing import TypedDict, Annotated, Sequence, Any, NotRequired
 from langgraph.graph.message import add_messages
 
 # Load web_search action from file (no __init__.py)
@@ -69,13 +69,17 @@ What Toastmasters Daily lets users do on the site:
 Direct users to use the site for those things. You can also give speech tips and general Toastmasters advice. Keep answers concise. If the topic is clearly off Toastmasters and the app, stay friendly and briefly engage, then offer to help with meetings or speaking when they'd like."""
 
 
-def _system_prompt_with_datetime() -> str:
+def _system_prompt_with_datetime(location: str | None = None) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    return f"Current date and time: {now}.\n\n{SYSTEM_PROMPT}"
+    out = f"Current date and time: {now}.\n\n{SYSTEM_PROMPT}"
+    if location and location.strip():
+        out += f"\n\nThe user's location is: {location.strip()}. When they ask for 'nearest', 'near me', 'closest', or similar, use the web_search tool with this location (e.g. 'Toastmasters clubs near {location.strip()}' or 'Toastmasters meetings {location.strip()}')."
+    return out
 
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[Any], add_messages]
+    location: NotRequired[str]
 
 
 _agent = None
@@ -106,8 +110,9 @@ def _get_agent():
 
     def agent_node(state: AgentState) -> AgentState:
         messages = state["messages"]
+        location = state.get("location") if isinstance(state.get("location"), str) else None
         if not messages or not isinstance(messages[0], SystemMessage):
-            messages = [SystemMessage(content=_system_prompt_with_datetime())] + list(messages)
+            messages = [SystemMessage(content=_system_prompt_with_datetime(location=location))] + list(messages)
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
 
@@ -129,14 +134,17 @@ def _get_agent():
     return _agent
 
 
-async def stream_agent_response(messages: list):
+async def stream_agent_response(messages: list, location: str | None = None):
     agent = _get_agent()
     if not agent:
         yield f"data: {json.dumps({'error': 'OPENAI_API_KEY not configured'})}\n\n"
         yield "data: [DONE]\n\n"
         return
+    state = {"messages": messages}
+    if location and str(location).strip():
+        state["location"] = str(location).strip()
     try:
-        async for event in agent.astream({"messages": messages}, stream_mode="messages"):
+        async for event in agent.astream(state, stream_mode="messages"):
             for msg in event:
                 if isinstance(msg, AIMessage) and msg.content:
                     yield f"data: {json.dumps({'content': msg.content})}\n\n"
@@ -191,18 +199,23 @@ async def chat(request: Request):
                 messages.append(AIMessage(content=text))
         messages.append(HumanMessage(content=msg))
 
+        location = (body.get("location") or "").strip() or None
+
         agent = _get_agent()
         if not agent:
             return JSONResponse(status_code=503, content={"error": "OPENAI_API_KEY not configured"})
 
         if stream:
             return StreamingResponse(
-                stream_agent_response(messages),
+                stream_agent_response(messages, location=location),
                 media_type="text/event-stream",
                 headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
             )
 
-        result = agent.invoke({"messages": messages})
+        state = {"messages": messages}
+        if location:
+            state["location"] = location
+        result = agent.invoke(state)
         msgs = result.get("messages", [])
         for m in reversed(msgs):
             if isinstance(m, AIMessage) and m.content:

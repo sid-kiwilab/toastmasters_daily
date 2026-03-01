@@ -51,4 +51,6 @@ Example with optional flags:
 
 | Path   | Method | Description |
 |--------|--------|-------------|
-| `/chat` | POST  | Body: `{ "message": "...", "history": [], "stream": true }`. `stream: true` → SSE; `stream: false` → JSON `{ "response": "..." }`. |
+| `/chat` | POST  | Body: `{ "message": "...", "history": [], "stream": true, "location": "optional place name" }`. Optional `location` (e.g. from browser reverse-geocode) is used for "nearest/near me" and passed to web_search. `stream: true` → SSE; `stream: false` → JSON `{ "response": "..." }`. |
+
+**CORS:** Allowed origins are in `app.py` (localhost:3000, toastmastersdaily.com, www). If the site is served from another origin (e.g. Firebase `*.web.app`), add it to `CORSMiddleware` `allow_origins`.
