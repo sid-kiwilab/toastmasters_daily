@@ -1,6 +1,8 @@
 import os
 import json
 import logging
+import importlib.util
+from datetime import datetime, timezone
 
 # Load env.yaml from next to this file (YAML map: KEY: "value" — same as kiwilab_functions)
 _env_path = os.path.join(os.path.dirname(__file__), "env.yaml")
@@ -24,10 +26,19 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import ToolNode
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.tools import tool
 from typing import TypedDict, Annotated, Sequence, Any
 from langgraph.graph.message import add_messages
+
+# Load web_search action from file (no __init__.py)
+_web_search_path = os.path.join(os.path.dirname(__file__), "actions", "web_search.py")
+_spec = importlib.util.spec_from_file_location("web_search", _web_search_path)
+_web_search_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_web_search_mod)
+web_search_run = _web_search_mod.run
 
 app = FastAPI()
 app.add_middleware(
@@ -46,6 +57,8 @@ SYSTEM_PROMPT = """You are Toasty, the assistant for Toastmasters Daily. You are
 
 You cannot perform any actions (you cannot create meetings, show QR codes, vote, or open agendas). You can only describe what the site can do so users know where to go and what to try.
 
+When the user asks for current information, facts, or things you are unsure about, use the web_search tool to look up real information (DuckDuckGo + scrape). Use it for: recent events, dates, official info, or anything you want to verify.
+
 What Toastmasters Daily lets users do on the site:
 - QR codes for meetings so members can join quickly
 - Manage meetings online (create and run meetings digitally)
@@ -56,11 +69,22 @@ What Toastmasters Daily lets users do on the site:
 Direct users to use the site for those things. You can also give speech tips and general Toastmasters advice. Keep answers concise. If the topic is clearly off Toastmasters and the app, stay friendly and briefly engage, then offer to help with meetings or speaking when they'd like."""
 
 
+def _system_prompt_with_datetime() -> str:
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    return f"Current date and time: {now}.\n\n{SYSTEM_PROMPT}"
+
+
 class AgentState(TypedDict):
     messages: Annotated[Sequence[Any], add_messages]
 
 
 _agent = None
+
+
+@tool
+def web_search(query: str) -> str:
+    """Search the web for current information. Use for: recent events, facts, dates, official info, or anything to verify. Returns a summarized answer from search results."""
+    return web_search_run(query)
 
 
 def _get_agent():
@@ -77,18 +101,30 @@ def _get_agent():
         max_tokens=1000,
         api_key=key,
     )
+    tools = [web_search]
+    llm_with_tools = llm.bind_tools(tools)
 
     def agent_node(state: AgentState) -> AgentState:
         messages = state["messages"]
         if not messages or not isinstance(messages[0], SystemMessage):
-            messages = [SystemMessage(content=SYSTEM_PROMPT)] + list(messages)
-        response = llm.invoke(messages)
+            messages = [SystemMessage(content=_system_prompt_with_datetime())] + list(messages)
+        response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
+
+    tool_node = ToolNode(tools)
+
+    def should_continue(state: AgentState):
+        last = state["messages"][-1]
+        if hasattr(last, "tool_calls") and last.tool_calls:
+            return "tools"
+        return END
 
     workflow = StateGraph(AgentState)
     workflow.add_node("agent", agent_node)
+    workflow.add_node("tools", tool_node)
     workflow.set_entry_point("agent")
-    workflow.add_edge("agent", END)
+    workflow.add_conditional_edges("agent", should_continue)
+    workflow.add_edge("tools", "agent")
     _agent = workflow.compile()
     return _agent
 
