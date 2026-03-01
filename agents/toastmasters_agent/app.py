@@ -33,12 +33,16 @@ from langchain_core.tools import tool
 from typing import TypedDict, Annotated, Sequence, Any, NotRequired
 from langgraph.graph.message import add_messages
 
-# Load web_search action from file (no __init__.py)
-_web_search_path = os.path.join(os.path.dirname(__file__), "actions", "web_search.py")
-_spec = importlib.util.spec_from_file_location("web_search", _web_search_path)
-_web_search_mod = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_web_search_mod)
-web_search_run = _web_search_mod.run
+# Load actions from files (no __init__.py)
+def _load_action(name: str):
+    path = os.path.join(os.path.dirname(__file__), "actions", f"{name}.py")
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.run
+
+web_search_run = _load_action("web_search")
+join_meeting_run = _load_action("join_meeting")
 
 app = FastAPI()
 app.add_middleware(
@@ -66,7 +70,9 @@ What Toastmasters Daily lets users do on the site:
 - View agendas
 - Makes the Toastmasters meeting experience digital and easier
 
-Direct users to use the site for those things. You can also give speech tips and general Toastmasters advice. Keep answers concise. If the topic is clearly off Toastmasters and the app, stay friendly and briefly engage, then offer to help with meetings or speaking when they'd like."""
+Direct users to use the site for those things. You can also give speech tips and general Toastmasters advice. Keep answers concise. If the topic is clearly off Toastmasters and the app, stay friendly and briefly engage, then offer to help with meetings or speaking when they'd like.
+
+When the user wants to join a meeting or a specific club by name (e.g. "join Botany Toastmasters", "can I join the X meeting"), use the find_club tool with the club name they said, then give them the join link(s) from the result."""
 
 
 def _system_prompt_with_datetime(location: str | None = None) -> str:
@@ -91,6 +97,12 @@ def web_search(query: str) -> str:
     return web_search_run(query)
 
 
+@tool
+def find_club(query: str) -> str:
+    """Find a club by name so the user can get the join link. Use when they ask to join a meeting or a specific club (e.g. 'join Botany Toastmasters'). Pass the club name (or part of it). Returns club name(s) and join URL(s) or 'No matching clubs.'"""
+    return join_meeting_run(query)
+
+
 def _get_agent():
     """Lazy-init LangGraph agent so the app boots even when OPENAI_API_KEY is missing."""
     global _agent
@@ -105,7 +117,7 @@ def _get_agent():
         max_tokens=1000,
         api_key=key,
     )
-    tools = [web_search]
+    tools = [web_search, find_club]
     llm_with_tools = llm.bind_tools(tools)
 
     def agent_node(state: AgentState) -> AgentState:

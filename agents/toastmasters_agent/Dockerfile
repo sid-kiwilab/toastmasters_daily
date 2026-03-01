@@ -19,6 +19,7 @@ COPY requirements.txt .
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir -r requirements.txt
 
+# App + service-account.json (for find_club Firestore). Must exist at build if using find_club.
 COPY . .
 
 ENV PORT=8080
