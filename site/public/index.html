@@ -990,6 +990,8 @@
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
       }
 
+      .chat-msg.bot .chat-msg-body { display: block; }
+      .chat-msg.bot .chat-msg-body + .chat-join-card { margin-top: 12px; }
       .chat-msg.bot p { margin: 0 0 0.5em 0; }
       .chat-msg.bot p:last-child { margin-bottom: 0; }
       .chat-msg.bot ul, .chat-msg.bot ol { margin: 0.25em 0 0.5em 1em; padding-left: 1em; }
@@ -997,6 +999,61 @@
       .chat-msg.bot strong { font-weight: 600; }
       .chat-msg.bot a { color: #004165; text-decoration: none; }
       .chat-msg.bot a:hover { text-decoration: underline; }
+      .chat-msg.bot .chat-msg-body a::after {
+        content: " \2197";
+        font-size: 0.7em;
+        opacity: 0.9;
+        vertical-align: super;
+      }
+      .chat-join-card-btn::after { display: none; }
+      .chat-join-card {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+        padding: 18px 20px;
+        background: #fff;
+        border: 2px solid #004165;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 2px 12px rgba(0, 65, 101, 0.12);
+      }
+      .chat-join-card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a1f3a;
+        margin: 0;
+        letter-spacing: 0.02em;
+      }
+      .chat-join-card-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 20px;
+        background: #004165;
+        color: #ffffff !important;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        font-family: 'GoogleSans', -apple-system, sans-serif;
+        text-decoration: none !important;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0, 65, 101, 0.3);
+        -webkit-font-smoothing: antialiased;
+      }
+      .chat-join-card-btn:hover {
+        background: #003049;
+        color: #ffffff !important;
+      }
+      .chat-join-card-btn svg {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+        stroke: currentColor;
+      }
       .chat-msg.bot code { font-size: 0.9em; background: #f1f5f9; padding: 0.15em 0.4em; border-radius: 4px; }
       .chat-msg.bot pre { margin: 0.5em 0; overflow-x: auto; }
       .chat-msg.bot pre code { padding: 8px; display: block; background: #f1f5f9; border-radius: 6px; }
@@ -1859,10 +1916,36 @@
         
         function renderMarkdown(text) {
           if (!text) return '';
+          var html;
           if (typeof marked !== 'undefined') {
-            try { return (marked.parse || marked)(text); } catch (e) { return text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
+            try { html = (marked.parse || marked)(text); } catch (e) { html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
+          } else {
+            html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
           }
-          return text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+          return html.replace(/<a /gi, '<a target="_blank" rel="noopener noreferrer" ');
+        }
+
+        function getJoinUrl(text) {
+          if (!text) return null;
+          var m = text.match(/(https?:\/\/[^\s\)\]"]*\/clubs\/\d{8}[^\s\)\]"]*)/);
+          return m ? m[1] : null;
+        }
+
+        function renderJoinCard(url) {
+          return '<div class="chat-join-card">' +
+            '<p class="chat-join-card-title">Join this meeting</p>' +
+            '<a href="' + url.replace(/"/g, '&quot;') + '" class="chat-join-card-btn" target="_blank" rel="noopener noreferrer">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+            ' Join meeting</a></div>';
+        }
+
+        function setBotMessageContent(el, text) {
+          if (!el) return;
+          var joinUrl = getJoinUrl(text || '');
+          el.innerHTML = '<div class="chat-msg-body">' + renderMarkdown(text || '') + '</div>';
+          if (joinUrl) {
+            el.insertAdjacentHTML('beforeend', renderJoinCard(joinUrl));
+          }
         }
         
         function appendUserMessage(text) {
@@ -1883,7 +1966,7 @@
           row.className = 'chat-msg-row';
           row.innerHTML = '<div class="chat-msg bot"></div>';
           const msgEl = row.querySelector('.chat-msg');
-          msgEl.innerHTML = renderMarkdown(text || '');
+          setBotMessageContent(msgEl, text || '');
           chatMessages.appendChild(row);
           scrollChatToBottom();
         }
@@ -1980,11 +2063,11 @@
                       const obj = JSON.parse(data);
                       if (obj.content) {
                         streamText += obj.content;
-                        msgEl.innerHTML = renderMarkdown(streamText);
+                        setBotMessageContent(msgEl, streamText);
                       }
                       if (obj.error) {
                         streamText += obj.error;
-                        msgEl.innerHTML = renderMarkdown(streamText);
+                        setBotMessageContent(msgEl, streamText);
                       }
                     } catch (e) {}
                   }
