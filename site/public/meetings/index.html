@@ -624,7 +624,8 @@
     .evals-error { color: #DC2626; font-size: 14px; margin-bottom: 12px; }
     .evals-list { margin-top: 16px; }
     .evals-item { background: #fff; border: 2px solid #E0E0E0; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; font-size: 14px; }
-    .evals-item-for { font-weight: 600; color: #212121; margin-bottom: 4px; }
+    .evals-item-for { font-weight: 500; color: #424242; margin-bottom: 4px; }
+    .evals-item-for-name { font-weight: 700; color: #004165; background: #E0F2FE; padding: 2px 6px; border-radius: 4px; }
     .evals-item-by { font-size: 12px; color: #6B7280; margin-top: 6px; }
     .evals-item-actions { margin-top: 8px; }
     .evals-item-actions button { margin-right: 8px; padding: 6px 12px; font-size: 13px; border-radius: 4px; cursor: pointer; border: 1px solid; }
@@ -1935,7 +1936,7 @@
           const truncated = content.length > 200 ? content.slice(0, 200) + '…' : content;
           const moreBtn = content.length > 200 ? '<button type="button" class="evals-item-more" data-eval-id="' + escapeHtml(e.id) + '">Show more</button>' : '';
           return '<div class="evals-item" data-eval-id="' + escapeHtml(e.id) + '">' +
-            '<div class="evals-item-for">' + escapeHtml(name) + '</div>' +
+            '<div class="evals-item-for">Evaluation for <span class="evals-item-for-name">' + escapeHtml(name) + '</span></div>' +
             '<div class="evals-item-content">' + escapeHtml(truncated) + '</div>' + moreBtn +
             '<div class="evals-item-by">' + byLine + (timeStr ? ' · ' + timeStr : '') + '</div>' +
             actionsHtml + '</div>';
