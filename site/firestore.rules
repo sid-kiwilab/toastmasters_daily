@@ -46,6 +46,11 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == userId && hasActiveSubscription(userId);
       // Voting goes through Cloud Function (submit_vote) which has admin access
     }
+    // Evals: read-only for clients; writes via Cloud Function (submit_eval)
+    match /users/{userId}/meetings/{meetingId}/evals/{evalId} {
+      allow read: if true;
+      allow write: if false;
+    }
     
     // Allow guests to create entries in guests subcollection (for guest entry form)
     match /users/{userId}/guests/{deviceId} {
