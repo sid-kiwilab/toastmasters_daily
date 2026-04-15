@@ -1181,6 +1181,39 @@
       to { transform: rotate(360deg); }
     }
     
+    #agenda-upload-dialog-overlay .agenda-upload-dialog-body {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 4px;
+    }
+    
+    #agenda-upload-dialog-overlay .agenda-upload-spinner {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      margin-top: 2px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #004165;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+    }
+    
+    #agenda-upload-dialog-overlay .agenda-upload-spinner.is-hidden {
+      display: none;
+    }
+    
+    #agenda-upload-dialog-overlay .dialog-message {
+      margin-bottom: 0;
+    }
+    
+    #agenda-upload-dialog-filename {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0 0 16px 0;
+      word-break: break-all;
+    }
+    
     @media (max-width: 768px) {
       .dialog-form-row {
         grid-template-columns: 1fr;
@@ -3009,6 +3042,55 @@
       return div.innerHTML;
     }
     
+    function showAgendaUploadDialog(fileName) {
+      const overlay = document.getElementById('agenda-upload-dialog-overlay');
+      if (!overlay) return;
+      const titleEl = document.getElementById('agenda-upload-dialog-title');
+      const msgEl = document.getElementById('agenda-upload-dialog-message');
+      const nameEl = document.getElementById('agenda-upload-dialog-filename');
+      const spinner = document.getElementById('agenda-upload-dialog-spinner');
+      const closeBtn = document.getElementById('agenda-upload-dialog-close');
+      if (titleEl) titleEl.textContent = 'Upload agenda';
+      if (msgEl) msgEl.textContent = 'Reading file…';
+      if (nameEl) nameEl.textContent = fileName ? 'File: ' + fileName : '';
+      if (spinner) spinner.classList.remove('is-hidden');
+      if (closeBtn) closeBtn.style.display = 'none';
+      overlay.setAttribute('data-uploading', '1');
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function setAgendaUploadDialogMessage(message) {
+      const msgEl = document.getElementById('agenda-upload-dialog-message');
+      if (msgEl) msgEl.textContent = message;
+    }
+    
+    function finishAgendaUploadDialog(success, message) {
+      const overlay = document.getElementById('agenda-upload-dialog-overlay');
+      const titleEl = document.getElementById('agenda-upload-dialog-title');
+      const spinner = document.getElementById('agenda-upload-dialog-spinner');
+      const closeBtn = document.getElementById('agenda-upload-dialog-close');
+      if (overlay) overlay.removeAttribute('data-uploading');
+      if (titleEl) titleEl.textContent = success ? 'Upload complete' : 'Upload failed';
+      if (spinner) spinner.classList.add('is-hidden');
+      setAgendaUploadDialogMessage(message);
+      if (closeBtn) closeBtn.style.display = 'inline-block';
+    }
+    
+    window.hideAgendaUploadDialog = function() {
+      const overlay = document.getElementById('agenda-upload-dialog-overlay');
+      if (!overlay) return;
+      if (overlay.hasAttribute('data-uploading')) return;
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+      const titleEl = document.getElementById('agenda-upload-dialog-title');
+      const nameEl = document.getElementById('agenda-upload-dialog-filename');
+      const closeBtn = document.getElementById('agenda-upload-dialog-close');
+      if (titleEl) titleEl.textContent = 'Upload agenda';
+      if (nameEl) nameEl.textContent = '';
+      if (closeBtn) closeBtn.style.display = 'none';
+    };
+    
     // Upload agenda - trigger file input for a specific meeting
     window.uploadAgendaForMeeting = function(meetingId) {
       const fileInput = document.getElementById('agenda-file-input');
@@ -3042,6 +3124,10 @@
     
     // Handle agenda file selection
     window.handleAgendaFileSelect = async function(event) {
+      const clearFileInput = function() {
+        if (event.target) event.target.value = '';
+      };
+      
       const file = event.target.files[0];
       if (!file) return;
       
@@ -3049,6 +3135,7 @@
         if (typeof notifications !== 'undefined') {
           notifications.error('Only PDF files are allowed');
         }
+        clearFileInput();
         return;
       }
       
@@ -3059,6 +3146,7 @@
         if (typeof notifications !== 'undefined') {
           notifications.error('Meeting ID not found');
         }
+        clearFileInput();
         return;
       }
       
@@ -3067,6 +3155,7 @@
         if (typeof notifications !== 'undefined') {
           notifications.error('Please log in to upload agenda');
         }
+        clearFileInput();
         return;
       }
       
@@ -3074,47 +3163,71 @@
         if (typeof notifications !== 'undefined') {
           notifications.error('Firebase Functions not initialized');
         }
+        clearFileInput();
         return;
       }
       
+      showAgendaUploadDialog(file.name);
+      
       try {
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-          try {
-            const base64Data = e.target.result.split(',')[1];
-            const uploadAgendaFn = clubFunctions.httpsCallable('upload_agenda');
-            const result = await uploadAgendaFn({
-              meetingId: meetingId,
-              fileData: base64Data,
-              fileName: file.name
-            });
-            
-            if (result.data && result.data.success) {
-              if (typeof notifications !== 'undefined') {
-                notifications.success('Agenda uploaded successfully!');
+        const base64Data = await new Promise(function(resolve, reject) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              const data = e.target.result;
+              const parts = typeof data === 'string' ? data.split(',') : [];
+              if (parts.length < 2) {
+                reject(new Error('Could not read the file'));
+                return;
               }
-              if (clubUser) loadMeetings(clubUser.uid);
-            } else {
-              const errorMsg = result.data?.error || 'Failed to upload agenda';
-              if (typeof notifications !== 'undefined') {
-                notifications.error(errorMsg);
-              }
+              resolve(parts[1]);
+            } catch (err) {
+              reject(err);
             }
-          } catch (error) {
-            console.error('Error uploading agenda:', error);
-            if (typeof notifications !== 'undefined') {
-              notifications.error('Error uploading agenda: ' + error.message);
-            }
-          } finally {
-            if (event.target) event.target.value = '';
+          };
+          reader.onerror = function() {
+            reject(new Error('Could not read the file'));
+          };
+          reader.readAsDataURL(file);
+        });
+        
+        setAgendaUploadDialogMessage('Uploading…');
+        
+        const uploadAgendaFn = clubFunctions.httpsCallable('upload_agenda');
+        const result = await uploadAgendaFn({
+          meetingId: meetingId,
+          fileData: base64Data,
+          fileName: file.name
+        });
+        
+        if (result.data && result.data.success) {
+          finishAgendaUploadDialog(true, 'Agenda uploaded successfully.');
+          if (typeof notifications !== 'undefined') {
+            notifications.success('Agenda uploaded successfully!');
           }
-        };
-        reader.readAsDataURL(file);
-      } catch (error) {
-        console.error('Error reading file:', error);
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Error reading file');
+          if (clubUser) {
+            try {
+              loadMeetings(clubUser.uid);
+            } catch (reloadErr) {
+              console.error('loadMeetings after agenda upload:', reloadErr);
+            }
+          }
+        } else {
+          const errorMsg = result.data?.error || 'Failed to upload agenda';
+          finishAgendaUploadDialog(false, errorMsg);
+          if (typeof notifications !== 'undefined') {
+            notifications.error(errorMsg);
+          }
         }
+      } catch (error) {
+        console.error('Error uploading agenda:', error);
+        const msg = (error && error.message) ? error.message : 'Something went wrong';
+        finishAgendaUploadDialog(false, 'Error uploading agenda: ' + msg);
+        if (typeof notifications !== 'undefined') {
+          notifications.error('Error uploading agenda: ' + msg);
+        }
+      } finally {
+        clearFileInput();
       }
     };
     
@@ -3935,6 +4048,21 @@
       <div class="dialog-actions">
         <button class="dialog-btn dialog-btn-cancel" id="delete-meeting-cancel-btn" onclick="hideDeleteMeetingDialog()">Cancel</button>
         <button class="dialog-btn dialog-btn-confirm" id="delete-meeting-confirm-btn" onclick="confirmDeleteMeeting()">Delete</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Agenda upload progress / result (stays open until server responds or read fails) -->
+  <div class="dialog-overlay" id="agenda-upload-dialog-overlay" onclick="if (event.target === this && !this.hasAttribute('data-uploading')) hideAgendaUploadDialog()">
+    <div class="dialog" style="max-width: 440px;" onclick="event.stopPropagation()">
+      <h3 class="dialog-title" id="agenda-upload-dialog-title">Upload agenda</h3>
+      <div class="agenda-upload-dialog-body">
+        <div id="agenda-upload-dialog-spinner" class="agenda-upload-spinner" role="status" aria-live="polite"></div>
+        <p class="dialog-message" id="agenda-upload-dialog-message">Reading file…</p>
+      </div>
+      <p id="agenda-upload-dialog-filename"></p>
+      <div class="dialog-actions">
+        <button type="button" class="dialog-btn dialog-btn-submit" id="agenda-upload-dialog-close" onclick="hideAgendaUploadDialog()" style="display: none;">Close</button>
       </div>
     </div>
   </div>
