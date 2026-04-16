@@ -1218,59 +1218,44 @@
       .dialog-form-row {
         grid-template-columns: 1fr;
       }
-      
-      .poll-option-item {
-        gap: 6px;
-      }
-      
-      .poll-option-input {
-        padding: 8px 10px;
-        font-size: 14px;
-      }
-      
-      .poll-remove-option-btn {
-        width: 32px;
-        height: 32px;
-        padding: 6px;
-      }
-      
-      .poll-remove-option-btn svg {
-        width: 14px;
-        height: 14px;
-      }
     }
     
     /* Poll Setup Styles */
     .poll-form {
-      margin-bottom: 24px;
-      padding: 20px;
+      margin-bottom: 8px;
+      padding: clamp(18px, 2.2vw, 26px);
       background: #f8fafc;
-      border-radius: 8px;
+      border-radius: 12px;
       border: 1px solid #e5e7eb;
+    }
+    
+    #setup-polls-dialog-overlay .dialog--polls .poll-form {
+      margin-bottom: 4px;
     }
     
     .poll-options-list {
       margin-top: 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 12px;
     }
     
     .poll-option-item {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       min-width: 0;
     }
     
     .poll-option-input {
       flex: 1;
       min-width: 0;
-      padding: 10px 12px;
+      padding: 12px 16px;
       border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      font-size: 14px;
+      border-radius: 8px;
+      font-size: 16px;
       font-family: 'GoogleSans', sans-serif;
+      min-height: 48px;
     }
     
     .poll-option-input:focus {
@@ -1280,18 +1265,18 @@
     
     .poll-remove-option-btn {
       flex-shrink: 0;
-      padding: 8px;
+      padding: 10px;
       background: transparent;
       border: 1px solid #e5e7eb;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       color: #dc2626;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
-      width: 36px;
-      height: 36px;
+      width: 48px;
+      height: 48px;
     }
     
     .poll-remove-option-btn:hover {
@@ -1305,20 +1290,23 @@
     }
     
     .poll-add-option-btn {
-      margin-top: 8px;
-      padding: 8px 12px;
+      margin-top: 10px;
+      padding: 12px 16px;
       background: transparent;
       border: 1px dashed #cbd5e1;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       color: #64748b;
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 500;
       font-family: 'GoogleSans', sans-serif;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      width: 100%;
     }
     
     .poll-add-option-btn:hover {
@@ -1334,17 +1322,18 @@
     
     .poll-add-btn {
       width: 100%;
-      padding: 12px;
+      padding: 14px 20px;
       background: #004165;
       color: white;
       border: none;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 10px;
+      font-size: 16px;
       font-weight: 600;
       font-family: 'GoogleSans', sans-serif;
       cursor: pointer;
       transition: all 0.2s ease;
-      margin-top: 16px;
+      margin-top: 18px;
+      min-height: 52px;
     }
     
     .poll-add-btn:hover {
@@ -1356,18 +1345,63 @@
       cursor: not-allowed;
     }
     
-    #setup-polls-dialog-overlay .dialog {
-      max-height: 90vh;
+    /* Polls modals: wide and padded on laptop; near-fullscreen on phone */
+    #setup-polls-dialog-overlay .dialog--polls,
+    #view-polls-dialog-overlay .dialog--polls {
+      width: min(100%, 94vw);
+      max-width: min(1020px, 94vw);
+      max-height: min(94vh, 960px);
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      padding: clamp(22px, 2.8vw, 36px);
+      border-radius: 14px;
+    }
+    
+    #setup-polls-dialog-overlay .dialog--polls-setup {
+      max-width: min(980px, 94vw);
+    }
+    
+    #view-polls-dialog-overlay .dialog--polls-view {
+      max-width: min(1040px, 94vw);
+    }
+    
+    #setup-polls-dialog-overlay .dialog--polls .dialog-title,
+    #view-polls-dialog-overlay .dialog--polls .dialog-title {
+      font-size: clamp(1.35rem, 2.2vw, 1.6rem);
+      font-weight: 700;
+      margin-bottom: 4px;
+      flex-shrink: 0;
+      line-height: 1.25;
+    }
+    
+    .polls-dialog-lead {
+      font-size: 15px;
+      line-height: 1.55;
+      color: #64748b;
+      margin: 0 0 18px 0;
+      flex-shrink: 0;
+      max-width: 62ch;
+    }
+    
+    .polls-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #64748b;
+      margin: 8px 0 14px 0;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e5e7eb;
     }
     
     .setup-polls-dialog-content {
       overflow-y: auto;
       flex: 1;
       min-height: 0;
-      padding-right: 4px;
+      padding-right: 8px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-gutter: stable;
     }
     
     .setup-polls-dialog-content::-webkit-scrollbar {
@@ -1388,23 +1422,47 @@
       background: #94a3b8;
     }
     
-    #setup-polls-dialog-overlay .dialog .dialog-actions {
+    #setup-polls-dialog-overlay .dialog--polls .dialog-actions,
+    #view-polls-dialog-overlay .dialog--polls .dialog-actions {
       flex-shrink: 0;
-      margin-top: 16px;
-      padding-top: 16px;
+      margin-top: 18px;
+      padding-top: 18px;
       border-top: 1px solid #e5e7eb;
     }
     
+    #setup-polls-dialog-overlay .dialog--polls .dialog-btn,
+    #view-polls-dialog-overlay .dialog--polls .dialog-btn {
+      min-height: 48px;
+      padding: 12px 28px;
+      font-size: 15px;
+    }
+    
+    #setup-polls-dialog-overlay .dialog--polls .dialog-input {
+      font-size: 16px;
+      min-height: 48px;
+      padding: 14px 16px;
+      border-radius: 8px;
+    }
+    
+    #setup-polls-dialog-overlay .dialog--polls .dialog-label {
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+    
+    #setup-polls-dialog-overlay .dialog--polls .dialog-form-group {
+      margin-bottom: 22px;
+    }
+    
     .polls-list {
-      margin-top: 24px;
+      margin-top: 0;
     }
     
     .poll-item {
-      padding: 16px;
+      padding: 20px 22px;
       background: #ffffff;
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      margin-bottom: 12px;
+      border-radius: 12px;
+      margin-bottom: 14px;
     }
     
     .poll-item:last-child {
@@ -1412,14 +1470,15 @@
     }
     
     .poll-question {
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 600;
       color: #060607;
       margin-bottom: 8px;
+      line-height: 1.35;
     }
     
     .poll-options-display {
-      font-size: 13px;
+      font-size: 14px;
       color: #64748b;
       margin-bottom: 8px;
     }
@@ -1438,8 +1497,9 @@
     
     .poll-item-actions {
       display: flex;
-      gap: 8px;
-      margin-top: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
       align-items: center;
     }
     
@@ -1507,16 +1567,17 @@
     }
     
     .poll-edit-btn {
-      padding: 6px 12px;
+      padding: 10px 18px;
       background: transparent;
       border: 1px solid #e5e7eb;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       color: #004165;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 14px;
+      font-weight: 600;
       font-family: 'GoogleSans', sans-serif;
       transition: all 0.2s ease;
+      min-height: 44px;
     }
     
     .poll-edit-btn:hover {
@@ -1525,16 +1586,17 @@
     }
     
     .poll-delete-btn {
-      padding: 6px 12px;
+      padding: 10px 18px;
       background: transparent;
       border: 1px solid #e5e7eb;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       color: #dc2626;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 14px;
+      font-weight: 600;
       font-family: 'GoogleSans', sans-serif;
       transition: all 0.2s ease;
+      min-height: 44px;
     }
     
     .poll-delete-btn:hover {
@@ -1548,17 +1610,19 @@
     }
     
     .poll-cancel-edit-btn {
-      margin-top: 16px;
-      padding: 8px 16px;
+      margin-top: 14px;
+      padding: 12px 20px;
       background: transparent;
       border: 1px solid #e5e7eb;
       border-radius: 8px;
       cursor: pointer;
       color: #64748b;
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 15px;
+      font-weight: 600;
       font-family: 'GoogleSans', sans-serif;
       transition: all 0.2s ease;
+      min-height: 48px;
+      width: 100%;
     }
     
     .poll-cancel-edit-btn:hover {
@@ -1568,24 +1632,20 @@
     
     .no-polls-message {
       text-align: center;
-      padding: 32px 16px;
+      padding: 36px 20px;
       color: #64748b;
-      font-size: 14px;
+      font-size: 15px;
+      line-height: 1.5;
     }
     
     /* View Polls Dialog Styles */
-    #view-polls-dialog-overlay .dialog {
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    
     .view-polls-dialog-content {
       overflow-y: auto;
       flex: 1;
       min-height: 0;
-      padding-right: 4px;
+      padding-right: 8px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-gutter: stable;
     }
     
     .view-polls-dialog-content::-webkit-scrollbar {
@@ -1606,19 +1666,12 @@
       background: #94a3b8;
     }
     
-    #view-polls-dialog-overlay .dialog .dialog-actions {
-      flex-shrink: 0;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid #e5e7eb;
-    }
-    
     .view-poll-item {
-      padding: 20px;
+      padding: 24px 26px;
       background: #ffffff;
       border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      margin-bottom: 16px;
+      border-radius: 12px;
+      margin-bottom: 18px;
     }
     
     .view-poll-item:last-child {
@@ -1634,25 +1687,27 @@
     }
     
     .view-poll-question {
-      font-size: 18px;
+      font-size: clamp(1.1rem, 1.8vw, 1.35rem);
       font-weight: 600;
       color: #060607;
       flex: 1;
+      line-height: 1.35;
     }
     
     .view-poll-meta {
-      font-size: 12px;
+      font-size: 14px;
       color: #64748b;
-      margin-top: 8px;
+      margin-top: 10px;
     }
     
     .view-poll-status {
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
     }
     
     .view-poll-status.active {
@@ -1668,15 +1723,15 @@
     .view-poll-options {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-top: 16px;
+      gap: 14px;
+      margin-top: 18px;
     }
     
     .view-poll-option {
-      padding: 12px;
+      padding: 16px 18px;
       background: #f8fafc;
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
+      border-radius: 10px;
     }
     
     .view-poll-option-header {
@@ -1687,19 +1742,19 @@
     }
     
     .view-poll-option-label {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 500;
       color: #060607;
     }
     
     .view-poll-option-count {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: #004165;
     }
     
     .view-poll-option-bar {
-      height: 8px;
+      height: 10px;
       background: #e5e7eb;
       border-radius: 4px;
       overflow: hidden;
@@ -1714,10 +1769,10 @@
     }
     
     .view-poll-total {
-      margin-top: 16px;
-      padding-top: 16px;
+      margin-top: 18px;
+      padding-top: 18px;
       border-top: 1px solid #e5e7eb;
-      font-size: 13px;
+      font-size: 15px;
       color: #64748b;
       text-align: center;
     }
@@ -1725,6 +1780,25 @@
     .view-poll-total strong {
       color: #060607;
       font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+      #setup-polls-dialog-overlay,
+      #view-polls-dialog-overlay {
+        padding: 0;
+        align-items: stretch;
+      }
+      
+      #setup-polls-dialog-overlay .dialog--polls,
+      #view-polls-dialog-overlay .dialog--polls {
+        margin: 0;
+        width: 100%;
+        max-width: none;
+        max-height: none;
+        min-height: 100%;
+        border-radius: 0;
+        padding: max(14px, env(safe-area-inset-top, 0px)) 16px max(20px, env(safe-area-inset-bottom, 0px)) 16px;
+      }
     }
     
     .create-meeting-form {
@@ -4071,8 +4145,9 @@
   
   <!-- Setup Polls Dialog -->
   <div class="dialog-overlay" id="setup-polls-dialog-overlay" onclick="if(event.target === this) hideSetupPollsDialog()">
-    <div class="dialog" style="max-width: 600px;">
-      <h3 class="dialog-title">Set Up Polls</h3>
+    <div class="dialog dialog--polls dialog--polls-setup">
+      <h3 class="dialog-title">Set up polls</h3>
+      <p class="polls-dialog-lead">Enter a question and at least two options, then use <strong>Add Poll</strong>. You can edit, activate, or delete saved polls below.</p>
       
       <div class="setup-polls-dialog-content">
         <!-- Create New Poll Form -->
@@ -4127,6 +4202,7 @@
         <button type="button" class="poll-cancel-edit-btn" id="cancel-edit-poll-btn" onclick="cancelEditPoll()" style="display: none;">Cancel Edit</button>
       </div>
       
+      <h4 class="polls-section-title">Saved polls for this meeting</h4>
       <!-- Existing Polls List -->
       <div class="polls-list" id="polls-list">
         <div class="no-polls-message">No polls created yet. Create your first poll above.</div>
@@ -4153,8 +4229,9 @@
   
   <!-- View Polls Dialog -->
   <div class="dialog-overlay" id="view-polls-dialog-overlay" onclick="if(event.target === this) hideViewPollsDialog()">
-    <div class="dialog" style="max-width: 700px;">
-      <h3 class="dialog-title">View Polls</h3>
+    <div class="dialog dialog--polls dialog--polls-view">
+      <h3 class="dialog-title">View polls</h3>
+      <p class="polls-dialog-lead">Counts update live as members vote. Inactive polls stay visible but no longer accept new responses.</p>
       
       <div class="view-polls-dialog-content">
         <div id="view-polls-list">
