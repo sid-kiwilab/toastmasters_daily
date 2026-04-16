@@ -963,8 +963,8 @@
           </div>
         </div>
         
-        <!-- Guest Entry Section -->
-        <div class="exit-meeting-section">
+        <!-- Guest Entry Section (hidden when signed-in host opens this meeting) -->
+        <div class="exit-meeting-section" id="guest-entry-action-section">
           <div class="action-card" onclick="showGuestEntryDialog()">
             <div class="action-card-icon">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1300,6 +1300,57 @@
       GuestEntry.close();
     }
     
+    let meetingOwnerAuthUnsub = null;
+    
+    function applyOwnerMeetingView() {
+      window.isOwnerMeetingView = true;
+      const guestSection = document.getElementById('guest-entry-action-section');
+      if (guestSection) guestSection.style.display = 'none';
+    }
+    
+    function clearOwnerMeetingView() {
+      window.isOwnerMeetingView = false;
+      const guestSection = document.getElementById('guest-entry-action-section');
+      if (guestSection) guestSection.style.display = '';
+    }
+    
+    function waitForInitialClubAuth(clubAuth) {
+      if (!clubAuth) return Promise.resolve(null);
+      return new Promise((resolve) => {
+        const unsub = clubAuth.onAuthStateChanged((user) => {
+          unsub();
+          resolve(user);
+        });
+      });
+    }
+    
+    function setupMeetingOwnerAuthListener() {
+      if (meetingOwnerAuthUnsub) {
+        meetingOwnerAuthUnsub();
+        meetingOwnerAuthUnsub = null;
+      }
+      const auth = firebase.auth(firebase.app('club'));
+      meetingOwnerAuthUnsub = auth.onAuthStateChanged((user) => {
+        const creator = window.creatorId;
+        if (!creator) return;
+        const mc = document.getElementById('meeting-content');
+        const visible = mc && mc.style.display !== 'none';
+        if (user && user.uid === creator) {
+          applyOwnerMeetingView();
+          const greet = document.getElementById('welcome-greeting');
+          if (greet && visible) {
+            greet.textContent = "You're viewing this meeting as the host (signed in).";
+          }
+        } else {
+          clearOwnerMeetingView();
+          const greet = document.getElementById('welcome-greeting');
+          if (greet && visible) {
+            greet.textContent = getRandomWelcomeMessage();
+          }
+        }
+      });
+    }
+    
     // Exit Meeting Dialog functions
     function showExitMeetingDialog() {
       const overlay = document.getElementById('exit-meeting-dialog-overlay');
@@ -1388,11 +1439,21 @@
         const userDoc = await clubDb.collection('users').doc(creatorId).get();
         const userData = userDoc.exists ? userDoc.data() : {};
         
+        const clubAuth = firebase.auth(firebase.app('club'));
+        const signedInUid = clubAuth.currentUser?.uid || null;
+        const isHostSignedIn = !!signedInUid && signedInUid === creatorId;
+        if (isHostSignedIn) {
+          applyOwnerMeetingView();
+        } else {
+          clearOwnerMeetingView();
+        }
+        
         // Display meeting title
         document.getElementById('meeting-title').textContent = meetingData?.title || 'Untitled Meeting';
         
-        // Display random welcome message
-        document.getElementById('welcome-greeting').textContent = getRandomWelcomeMessage();
+        document.getElementById('welcome-greeting').textContent = isHostSignedIn
+          ? "You're viewing this meeting as the host (signed in)."
+          : getRandomWelcomeMessage();
         
         // Display agenda card
         const agendaUrl = meetingData?.agenda_url || meetingData?.agendaUrl;
@@ -1416,6 +1477,7 @@
           window.clubCode = userData.club_code;
         }
         
+        setupMeetingOwnerAuthListener();
         showMeetingContent();
       } catch (error) {
         console.error('Error loading meeting data:', error);
@@ -2309,9 +2371,11 @@
         // Load guest entry HTML first
         await loadGuestEntryHTML();
         
-        initClubAuth();
+        const clubAuth = initClubAuth();
         const clubApp = firebase.app('club');
         clubDb = firebase.firestore(clubApp);
+        
+        await waitForInitialClubAuth(clubAuth);
         
         // Initialize guest entry widget (creatorId will be set in loadMeetingData)
         GuestEntry.init(clubDb, null, null);
@@ -2327,6 +2391,10 @@
     window.addEventListener('beforeunload', () => {
       cleanupPollsListener();
       if (evalsListener) { evalsListener(); evalsListener = null; }
+      if (meetingOwnerAuthUnsub) {
+        meetingOwnerAuthUnsub();
+        meetingOwnerAuthUnsub = null;
+      }
     });
     
     // Wait for scripts to load
