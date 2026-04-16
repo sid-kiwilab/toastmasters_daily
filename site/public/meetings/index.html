@@ -425,11 +425,103 @@
     }
     
     .polls-viewer-title {
-      font-size: 32px;
+      font-size: 30px;
       font-weight: 700;
       color: #212121;
-      margin-bottom: 32px;
+      margin: 0 0 16px 0;
       text-align: center;
+    }
+    
+    .polls-toolbar-row {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    
+    .polls-refresh-btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      color: #fff;
+      background: #004165;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    
+    .polls-refresh-btn:hover:not(:disabled) {
+      background: #003049;
+    }
+    
+    .polls-refresh-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+    
+    .polls-viewer-hint {
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.45;
+      color: #6B7280;
+      margin: 0 auto 28px;
+      max-width: 34em;
+    }
+    
+    .polls-voting-fullscreen,
+    .polls-refresh-fullscreen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10050;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, 0.48);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+    
+    .polls-voting-fullscreen.is-visible,
+    .polls-refresh-fullscreen.is-visible {
+      display: flex;
+    }
+    
+    .polls-voting-fullscreen-card {
+      width: 100%;
+      max-width: 400px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 36px 32px 32px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    
+    .polls-voting-fs-spinner {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 20px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #004165;
+      border-radius: 50%;
+      animation: poll-spin 0.7s linear infinite;
+    }
+    
+    .polls-voting-fs-title {
+      margin: 0 0 12px 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    
+    .polls-voting-fs-text {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #475569;
+      font-weight: 500;
     }
     
     .polls-container {
@@ -633,42 +725,33 @@
     .evals-item-delete { background: #FEE2E2; color: #B91C1C; border-color: #B91C1C; }
     .evals-item-more { background: none; border: none; color: #004165; font-size: 13px; cursor: pointer; padding: 0; text-decoration: underline; }
     
-    /* Loading spinner for voting */
-    .poll-option-loading {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #ffffff;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: poll-spin 0.6s linear infinite;
-    }
-    
-    @keyframes poll-spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-    
-    .poll-option.voting .poll-option-check {
-      background: #004165;
-      border-color: #004165;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .poll-option.voting .poll-option-check svg {
-      display: none;
-    }
-    
     @media (max-width: 600px) {
       .polls-viewer-content {
         padding: 0;
       }
       
+      .polls-refresh-btn {
+        width: 100%;
+        max-width: 320px;
+        padding: 14px 20px;
+        font-size: 17px;
+      }
+      
+      .polls-viewer-hint {
+        font-size: 14px;
+        padding: 0 12px;
+      }
+      
       .polls-viewer-title {
         font-size: 24px;
+      }
+      
+      .polls-voting-fs-title {
+        font-size: 20px;
+      }
+      
+      .polls-voting-fs-text {
+        font-size: 15px;
       }
       
       .polls-tabs-container {
@@ -941,8 +1024,26 @@
     <button class="polls-close-btn" onclick="closePollsViewer()" title="Close">×</button>
     <div class="polls-viewer-content">
       <h2 class="polls-viewer-title">Meeting Polls</h2>
+      <div class="polls-toolbar-row">
+        <button type="button" class="polls-refresh-btn" id="polls-refresh-btn" onclick="refreshMeetingPolls()" title="Load the latest polls from the server">Refresh polls</button>
+      </div>
+      <p class="polls-viewer-hint">If a poll is missing, use <strong>Refresh polls</strong>.</p>
       <div id="polls-container" class="polls-container">
         <div class="polls-loading">Loading polls...</div>
+      </div>
+    </div>
+    <div id="polls-voting-fullscreen" class="polls-voting-fullscreen" aria-hidden="true" role="alertdialog" aria-modal="true" aria-labelledby="polls-voting-fs-title" aria-describedby="polls-voting-fs-text">
+      <div class="polls-voting-fullscreen-card">
+        <div class="polls-voting-fs-spinner" aria-hidden="true"></div>
+        <h3 id="polls-voting-fs-title" class="polls-voting-fs-title">Registering your vote</h3>
+        <p id="polls-voting-fs-text" class="polls-voting-fs-text">Please wait a few seconds while we save your choice. This screen will close on its own.</p>
+      </div>
+    </div>
+    <div id="polls-refresh-fullscreen" class="polls-refresh-fullscreen" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="polls-refresh-fs-title" aria-describedby="polls-refresh-fs-text">
+      <div class="polls-voting-fullscreen-card">
+        <div class="polls-voting-fs-spinner" aria-hidden="true"></div>
+        <h3 id="polls-refresh-fs-title" class="polls-voting-fs-title">Refreshing polls</h3>
+        <p id="polls-refresh-fs-text" class="polls-voting-fs-text">Loading the latest polls from the server. This screen will close on its own.</p>
       </div>
     </div>
   </div>
@@ -1333,6 +1434,8 @@
     let votingOption = null; // Track which option is being voted on
     let pollsDeviceId = null;
     let selectedPollIndex = 0; // Currently selected poll tab
+    let pollsRefreshing = false;
+    let pollsRefreshGeneration = 0;
     
     // Get device ID for polls (reuses same device ID as guest entry)
     function getPollsDeviceId() {
@@ -1372,6 +1475,66 @@
       return pollsDeviceId;
     }
     
+    function applyPollsSnapshot(snapshot) {
+      if (snapshot && snapshot.metadata && snapshot.metadata.fromCache && snapshot.metadata.hasPendingWrites) {
+        console.warn('Polls data is from cache and may be stale');
+      }
+      
+      pollsData = {};
+      pollsOrder = [];
+      
+      snapshot.docs.forEach((doc) => {
+        if (!doc.exists) return;
+        
+        try {
+          const data = doc.data();
+          pollsData[doc.id] = {
+            id: doc.id,
+            question: data.question || '',
+            options: Array.isArray(data.options) ? data.options : [],
+            tallies: data.tallies || {},
+            device_votes: data.device_votes || {},
+            is_active: data.is_active !== false,
+            created_at: data.created_at
+          };
+          pollsOrder.push(doc.id);
+        } catch (docError) {
+          console.error(`Error parsing poll document ${doc.id}:`, docError);
+        }
+      });
+      
+      try {
+        pollsOrder.sort((a, b) => {
+          const aTime = pollsData[a]?.created_at?.toMillis?.() || 0;
+          const bTime = pollsData[b]?.created_at?.toMillis?.() || 0;
+          return aTime - bTime;
+        });
+      } catch (sortError) {
+        console.error('Error sorting polls:', sortError);
+      }
+      
+      activePollsOrder = pollsOrder.filter((pollId) => {
+        const poll = pollsData[pollId];
+        return poll && poll.is_active === true;
+      });
+      
+      if (selectedPollIndex >= activePollsOrder.length) {
+        selectedPollIndex = Math.max(0, activePollsOrder.length - 1);
+      }
+      
+      const currentPollsCard = document.getElementById('polls-card');
+      if (currentPollsCard) {
+        currentPollsCard.style.display = activePollsOrder.length > 0 ? 'flex' : 'none';
+      }
+      
+      checkExistingVotes();
+      
+      const overlay = document.getElementById('polls-viewer-overlay');
+      if (overlay && overlay.style.display !== 'none') {
+        renderPolls();
+      }
+    }
+    
     // Setup polls listener
     function setupPollsListener(meetingId, creatorId) {
       if (!clubDb || !meetingId || !creatorId) {
@@ -1379,7 +1542,6 @@
         return;
       }
       
-      // Get polls card reference
       const pollsCard = document.getElementById('polls-card');
       if (pollsCard) {
         pollsCard.onclick = (e) => {
@@ -1388,13 +1550,11 @@
         };
       }
       
-      // Clean up existing listener
       if (pollsListener) {
         pollsListener();
         pollsListener = null;
       }
       
-      // Set up real-time listener
       const pollsRef = clubDb
         .collection('users')
         .doc(creatorId)
@@ -1405,85 +1565,17 @@
       
       pollsListener = pollsRef.onSnapshot((snapshot) => {
         try {
-          // Handle snapshot errors
-          if (snapshot.metadata.fromCache && snapshot.metadata.hasPendingWrites) {
-            console.warn('Polls data is from cache and may be stale');
-          }
-          
-          pollsData = {};
-          pollsOrder = [];
-          
-          snapshot.docs.forEach((doc) => {
-            if (!doc.exists) return;
-            
-            try {
-              const data = doc.data();
-              pollsData[doc.id] = {
-                id: doc.id,
-                question: data.question || '',
-                options: Array.isArray(data.options) ? data.options : [],
-                tallies: data.tallies || {},
-                device_votes: data.device_votes || {},
-                is_active: data.is_active !== false,
-                created_at: data.created_at
-              };
-              pollsOrder.push(doc.id);
-            } catch (docError) {
-              console.error(`Error parsing poll document ${doc.id}:`, docError);
-              // Skip this document but continue processing others
-            }
-          });
-          
-          // Sort by created_at (query already orders, but ensure consistency)
-          try {
-            pollsOrder.sort((a, b) => {
-              const aTime = pollsData[a]?.created_at?.toMillis?.() || 0;
-              const bTime = pollsData[b]?.created_at?.toMillis?.() || 0;
-              return aTime - bTime;
-            });
-          } catch (sortError) {
-            console.error('Error sorting polls:', sortError);
-            // Keep original order if sort fails
-          }
-          
-          // Filter to only active polls (don't show inactive ones)
-          activePollsOrder = pollsOrder.filter((pollId) => {
-            const poll = pollsData[pollId];
-            return poll && poll.is_active === true;
-          });
-          
-          // Reset selected index if current selection is out of bounds
-          if (selectedPollIndex >= activePollsOrder.length) {
-            selectedPollIndex = Math.max(0, activePollsOrder.length - 1);
-          }
-          
-          // Get fresh reference to polls card (in case DOM changed)
-          const currentPollsCard = document.getElementById('polls-card');
-          if (currentPollsCard) {
-            currentPollsCard.style.display = activePollsOrder.length > 0 ? 'flex' : 'none';
-          }
-          
-          // Check existing votes
-          checkExistingVotes();
-          
-          // Update UI if polls viewer is open
-          const overlay = document.getElementById('polls-viewer-overlay');
-          if (overlay && overlay.style.display !== 'none') {
-            renderPolls();
-          }
+          applyPollsSnapshot(snapshot);
         } catch (error) {
           console.error('Error processing polls snapshot:', error);
-          // Don't break the listener, just log the error
         }
       }, (error) => {
         console.error('Error listening to polls:', error);
         
-        // Hide polls card on error
         if (pollsCard) {
           pollsCard.style.display = 'none';
         }
         
-        // Only show error if viewer is open
         const overlay = document.getElementById('polls-viewer-overlay');
         if (overlay && overlay.style.display !== 'none') {
           showPollsError('Error loading polls. Please refresh the page.');
@@ -1498,6 +1590,89 @@
         pollsListener = null;
       }
     }
+    
+    function updatePollsVotingOverlay() {
+      const el = document.getElementById('polls-voting-fullscreen');
+      const btn = document.getElementById('polls-refresh-btn');
+      if (btn) {
+        btn.disabled = !!isVoting;
+      }
+      if (!el) return;
+      if (!isVoting) {
+        el.classList.remove('is-visible');
+        el.setAttribute('aria-hidden', 'true');
+        return;
+      }
+      el.classList.add('is-visible');
+      el.setAttribute('aria-hidden', 'false');
+    }
+    
+    window.refreshMeetingPolls = async function() {
+      if (isVoting || pollsRefreshing) return;
+      const mid = window.meetingId;
+      const cid = window.creatorId;
+      if (!mid || !cid || !clubDb) return;
+      
+      pollsRefreshGeneration++;
+      const myPollsRefreshGen = pollsRefreshGeneration;
+      pollsRefreshing = true;
+      const btn = document.getElementById('polls-refresh-btn');
+      const refreshFs = document.getElementById('polls-refresh-fullscreen');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Refreshing…';
+      }
+      if (refreshFs) {
+        refreshFs.classList.add('is-visible');
+        refreshFs.setAttribute('aria-hidden', 'false');
+      }
+      
+      const refreshStartedAt = Date.now();
+      const minPollsRefreshVisibleMs = 750;
+      
+      try {
+        const pollsRef = clubDb
+          .collection('users')
+          .doc(cid)
+          .collection('meetings')
+          .doc(mid)
+          .collection('polls')
+          .orderBy('created_at', 'asc');
+        
+        let snapshot;
+        try {
+          snapshot = await pollsRef.get({ source: 'server' });
+        } catch (serverErr) {
+          console.warn('Server-only poll fetch failed, falling back:', serverErr);
+          snapshot = await pollsRef.get();
+        }
+        
+        applyPollsSnapshot(snapshot);
+      } catch (error) {
+        console.error('Error refreshing polls:', error);
+        showPollsError('Could not refresh polls. Please try again.');
+      } finally {
+        const elapsed = Date.now() - refreshStartedAt;
+        const remaining = minPollsRefreshVisibleMs - elapsed;
+        if (remaining > 0) {
+          await new Promise(function(resolve) {
+            setTimeout(resolve, remaining);
+          });
+        }
+        pollsRefreshing = false;
+        if (myPollsRefreshGen !== pollsRefreshGeneration) {
+          return;
+        }
+        if (btn) {
+          btn.textContent = 'Refresh polls';
+          btn.disabled = !!isVoting;
+        }
+        if (refreshFs) {
+          refreshFs.classList.remove('is-visible');
+          refreshFs.setAttribute('aria-hidden', 'true');
+        }
+      }
+    };
     
     // Check existing votes
     function checkExistingVotes() {
@@ -1526,7 +1701,19 @@
       
       overlay.style.display = 'block';
       document.body.style.overflow = 'hidden';
+      pollsRefreshing = false;
+      const rfsOpen = document.getElementById('polls-refresh-fullscreen');
+      if (rfsOpen) {
+        rfsOpen.classList.remove('is-visible');
+        rfsOpen.setAttribute('aria-hidden', 'true');
+      }
+      const refreshBtnOpen = document.getElementById('polls-refresh-btn');
+      if (refreshBtnOpen) {
+        refreshBtnOpen.disabled = false;
+        refreshBtnOpen.textContent = 'Refresh polls';
+      }
       renderPolls();
+      updatePollsVotingOverlay();
     }
     
     // Switch to a different poll tab
@@ -1540,10 +1727,27 @@
     
     // Close polls viewer
     function closePollsViewer() {
+      pollsRefreshGeneration++;
       const overlay = document.getElementById('polls-viewer-overlay');
       if (overlay) {
         overlay.style.display = 'none';
         document.body.style.overflow = '';
+      }
+      pollsRefreshing = false;
+      const voteFs = document.getElementById('polls-voting-fullscreen');
+      if (voteFs) {
+        voteFs.classList.remove('is-visible');
+        voteFs.setAttribute('aria-hidden', 'true');
+      }
+      const refreshFs = document.getElementById('polls-refresh-fullscreen');
+      if (refreshFs) {
+        refreshFs.classList.remove('is-visible');
+        refreshFs.setAttribute('aria-hidden', 'true');
+      }
+      const btn = document.getElementById('polls-refresh-btn');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Refresh polls';
       }
     }
     
@@ -1554,6 +1758,7 @@
       
       if (activePollsOrder.length === 0) {
         container.innerHTML = '<div class="polls-loading">No active polls available</div>';
+        updatePollsVotingOverlay();
         return;
       }
       
@@ -1604,12 +1809,14 @@
       const selectedPollId = activePollsOrder[selectedPollIndex];
       if (!selectedPollId) {
         container.innerHTML = '<div class="polls-loading">Error loading poll</div>';
+        updatePollsVotingOverlay();
         return;
       }
       
       const poll = pollsData[selectedPollId];
       if (!poll) {
         container.innerHTML = '<div class="polls-loading">Poll data not found</div>';
+        updatePollsVotingOverlay();
         return;
       }
       
@@ -1694,6 +1901,8 @@
       // Use event delegation (single listeners on container, prevents memory leaks)
       container.addEventListener('click', handlePollOptionClickDelegated);
       container.addEventListener('click', handlePollTabClickDelegated);
+      
+      updatePollsVotingOverlay();
     }
     
     // Event delegation handler for poll tabs
