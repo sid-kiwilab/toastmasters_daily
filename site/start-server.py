@@ -16,23 +16,27 @@ class RewriteHandler(http.server.SimpleHTTPRequestHandler):
         parsed_path = urllib.parse.urlparse(self.path)
         path = parsed_path.path
         
-        # Handle /clubs/{club_code} routes
+        # Handle /clubs/{club_code} routes (not static files like .js / .css under that folder)
         if path.startswith('/clubs/') and path != '/clubs/' and not path.endswith('.html'):
-            # Extract club code
             parts = path.strip('/').split('/')
             if len(parts) >= 2 and parts[0] == 'clubs':
-                # Rewrite to /clubs/index.html
-                self.path = '/clubs/index.html'
-                print(f"Rewrote {path} to /clubs/index.html")
+                last = parts[-1]
+                if '.' in last and not last.endswith('.html'):
+                    pass  # e.g. /clubs/foo.js — serve the real file
+                else:
+                    self.path = '/clubs/index.html'
+                    print(f"Rewrote {path} to /clubs/index.html")
         
-        # Handle /meetings/{meeting_id} routes
+        # Handle /meetings/{meeting_id} routes (not .js / .css / etc. next to index.html)
         if path.startswith('/meetings/') and path != '/meetings/' and not path.endswith('.html'):
-            # Extract meeting ID
             parts = path.strip('/').split('/')
             if len(parts) >= 2 and parts[0] == 'meetings':
-                # Rewrite to /meetings/index.html
-                self.path = '/meetings/index.html'
-                print(f"Rewrote {path} to /meetings/index.html")
+                last = parts[-1]
+                if '.' in last and not last.endswith('.html'):
+                    pass  # e.g. /meetings/meeting-app.js — serve the real file
+                else:
+                    self.path = '/meetings/index.html'
+                    print(f"Rewrote {path} to /meetings/index.html")
         
         # Call the parent class to handle the request
         return super().do_GET()
