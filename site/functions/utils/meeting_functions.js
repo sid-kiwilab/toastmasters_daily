@@ -154,7 +154,8 @@ exports.create_meeting = functions.https.onCall(
 );
 
 /**
- * Deletes a meeting from both active_meetings and user's meetings collection
+ * Deletes a meeting from both active_meetings and the user's meetings doc, including
+ * all nested subcollections (polls, evals, etc.) under users/.../meetings/{id}.
  * @param {Object} data - The request data object
  * @param {string} data.meeting_id - ID of the meeting to delete
  * @param {string} data.creator_id - ID of the user who created the meeting
@@ -190,92 +191,81 @@ const delete_meeting_handler = async (data, context) => {
       return { success: false, error: 'Deleting meetings requires an active subscription or trial' };
     }
     
-    // Delete all polls in the polls subcollection first
-    try {
-      const polls_ref = db
-        .collection('users')
-        .doc(creator_id)
-        .collection('meetings')
-        .doc(meeting_id)
-        .collection('polls');
-      
-      const polls_snapshot = await polls_ref.get();
-      
-      if (!polls_snapshot.empty) {
-        // Use batch to delete all polls (Firestore batch limit is 500 operations)
-        let batch = db.batch();
-        let batch_count = 0;
-        const total_polls = polls_snapshot.size;
-        
-        for (const poll_doc of polls_snapshot.docs) {
-          batch.delete(poll_doc.ref);
-          batch_count++;
-          
-          // Commit batch if we reach 500 operations (Firestore limit)
-          if (batch_count >= 500) {
-            await batch.commit();
-            batch = db.batch(); // Create new batch
-            batch_count = 0;
-          }
-        }
-        
-        // Commit remaining deletions
-        if (batch_count > 0) {
-          await batch.commit();
-        }
-        
-        console.log(`Deleted ${total_polls} poll(s) for meeting ${meeting_id}`);
+    const active_meeting_ref = db.collection('active_meetings').doc(meeting_id);
+    const user_meeting_ref = db
+      .collection('users')
+      .doc(creator_id)
+      .collection('meetings')
+      .doc(meeting_id);
+
+    const [active_meeting_doc, user_meeting_doc] = await Promise.all([
+      active_meeting_ref.get(),
+      user_meeting_ref.get(),
+    ]);
+
+    if (active_meeting_doc.exists) {
+      const meeting_data = active_meeting_doc.data();
+      if (meeting_data && meeting_data.creator_id !== creator_id) {
+        return { success: false, error: 'Unauthorized: Meeting does not belong to this user' };
       }
-    } catch (polls_error) {
-      console.error(`Error deleting polls for meeting ${meeting_id}:`, polls_error);
-      // Continue with meeting deletion even if polls deletion fails
     }
-    
-    // Use transaction to ensure both deletions happen atomically
-    await db.runTransaction(async (transaction) => {
-      // Read both documents first
-      const active_meeting_ref = db.collection('active_meetings').doc(meeting_id);
-      const user_meeting_ref = db
-        .collection('users')
-        .doc(creator_id)
-        .collection('meetings')
-        .doc(meeting_id);
-      
-      const active_meeting_doc = await transaction.get(active_meeting_ref);
-      const user_meeting_doc = await transaction.get(user_meeting_ref);
-      
-      // Verify the meeting belongs to the creator
-      if (active_meeting_doc.exists) {
-        const meeting_data = active_meeting_doc.data();
-        if (meeting_data && meeting_data.creator_id !== creator_id) {
-          throw new Error('Unauthorized: Meeting does not belong to this user');
-        }
-      }
-      
-      // Delete from both collections
-      if (active_meeting_doc.exists) {
-        transaction.delete(active_meeting_ref);
-      }
-      
-      if (user_meeting_doc.exists) {
-        transaction.delete(user_meeting_ref);
-      }
-    });
-    
-    // Delete agenda file from Firebase Storage if it exists
+
+    // Agendas live in Storage (must run before recursiveDelete, which drops agenda_url on the user meeting doc)
+    // upload_agenda uses agendas/{creator_id}/{meetingId}_{timestamp}.pdf; older code used agendas/{meetingId}.pdf
     try {
       const bucket = admin.storage().bucket();
-      const agenda_file_path = `agendas/${meeting_id}.pdf`;
-      const agenda_file = bucket.file(agenda_file_path);
-      
-      const [exists] = await agenda_file.exists();
-      if (exists) {
-        await agenda_file.delete();
-        console.log(`Deleted agenda file: ${agenda_file_path}`);
+      const [versioned] = await bucket.getFiles({ prefix: `agendas/${creator_id}/${meeting_id}_` });
+      for (const f of versioned) {
+        await f.delete();
+        console.log(`Deleted agenda file: ${f.name}`);
+      }
+      const legacy = bucket.file(`agendas/${meeting_id}.pdf`);
+      const [legacyExists] = await legacy.exists();
+      if (legacyExists) {
+        await legacy.delete();
+        console.log(`Deleted legacy agenda file: agendas/${meeting_id}.pdf`);
+      }
+      if (user_meeting_doc.exists) {
+        const agendaUrl = user_meeting_doc.get('agenda_url') ?? user_meeting_doc.data()?.agenda_url;
+        if (agendaUrl) {
+          try {
+            const u = new URL(String(agendaUrl));
+            if (u.hostname === 'storage.googleapis.com' && u.pathname) {
+              const segs = u.pathname.split('/').filter(Boolean);
+              if (segs[0] === bucket.name) {
+                const objectPath = segs.slice(1).join('/');
+                if (objectPath && !objectPath.startsWith(`agendas/${creator_id}/${meeting_id}_`)) {
+                  const obj = bucket.file(decodeURIComponent(objectPath));
+                  const [exists] = await obj.exists();
+                  if (exists) {
+                    await obj.delete();
+                    console.log(`Deleted agenda from agenda_url: ${objectPath}`);
+                  }
+                }
+              }
+            }
+          } catch (urlErr) {
+            console.error(`Error parsing/deleting agenda_url for meeting ${meeting_id}:`, urlErr);
+          }
+        }
       }
     } catch (storage_error) {
-      console.error(`Error deleting agenda file for meeting ${meeting_id}:`, storage_error);
-      // Continue even if storage deletion fails
+      console.error(`Error deleting agenda file(s) for meeting ${meeting_id}:`, storage_error);
+    }
+
+    // users/{id}/meetings/{id} may have polls, evals, and other nested data — delete recursively
+    try {
+      await db.recursiveDelete(user_meeting_ref);
+    } catch (recursive_error) {
+      console.error(
+        `Error recursive-deleting user meeting ${meeting_id} for ${creator_id}:`,
+        recursive_error,
+      );
+      return { success: false, error: 'Failed to delete meeting data' };
+    }
+
+    if (active_meeting_doc.exists) {
+      await active_meeting_ref.delete();
     }
     
     return {

@@ -39,40 +39,40 @@ exports.delete_user_document = functions.auth.user().onDelete(async (user) => {
     // Get user document to find club_code
     const userDocSnap = await userRef.get();
     
-    // Delete club code if it exists
+    // Delete club_codes document when it belongs to this user (doc shape: { uid })
     if (userDocSnap.exists) {
       const userData = userDocSnap.data();
       const clubCode = userData?.club_code;
-      
-      if (clubCode) {
+
+      if (clubCode != null && clubCode !== '') {
         try {
-          // Convert to string for document ID (club_code is stored as number)
-          const clubCodeString = typeof clubCode === 'number' ? clubCode.toString() : clubCode;
+          const clubCodeString =
+            typeof clubCode === 'number' ? clubCode.toString() : String(clubCode);
           const clubCodeRef = db.collection('club_codes').doc(clubCodeString);
-          await clubCodeRef.delete();
-          console.log(`Deleted club code ${clubCodeString} for user ${user.uid}`);
+          const clubCodeSnap = await clubCodeRef.get();
+
+          if (clubCodeSnap.exists) {
+            const owner = clubCodeSnap.get('uid');
+            if (owner != null && owner !== user.uid) {
+              console.warn(
+                `Skipping club_codes/${clubCodeString} delete: owned by ${owner}, not ${user.uid}`,
+              );
+            } else {
+              await clubCodeRef.delete();
+              console.log(`Deleted club_codes/${clubCodeString} for user ${user.uid}`);
+            }
+          }
         } catch (clubCodeError) {
           console.error(`Error deleting club code ${clubCode} for user ${user.uid}:`, clubCodeError);
-          // Continue with user deletion even if club code deletion fails
+          // Continue; still remove user data below
         }
       }
     }
-    
-    // Delete all subcollections first
-    const collections = await userRef.listCollections();
-    
-    for (const collection of collections) {
-      // Get all documents in the subcollection
-      const snapshot = await collection.get();
-      
-      // Delete each document in the subcollection
-      const deletePromises = snapshot.docs.map(doc => doc.ref.delete());
-      await Promise.all(deletePromises);
-    }
-    
-    // Delete the user document itself
-    await userRef.delete();
-    
+
+    // Recursively delete users/{uid}, all subcollections, and any nested subcollections
+    // (e.g. meetings/*/{evals,polls,...}, guests/*, …)
+    await db.recursiveDelete(userRef);
+
     console.log(`Successfully deleted user document and all associated data for user ${user.uid}`);
   } catch (error) {
     console.error('Error deleting user document and subcollections:', error);
