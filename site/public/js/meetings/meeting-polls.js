@@ -113,6 +113,9 @@ function applyPollsSnapshot(snapshot) {
     if (!doc.exists) return;
     try {
       const data = doc.data();
+      const tr = data.total_responses;
+      const totalResponses =
+        typeof tr === 'number' && !Number.isNaN(tr) ? tr : 0;
       pollsData[doc.id] = {
         id: doc.id,
         question: data.question || '',
@@ -120,6 +123,7 @@ function applyPollsSnapshot(snapshot) {
         tallies: data.tallies || {},
         device_votes: data.device_votes || {},
         is_active: data.is_active !== false,
+        total_responses: totalResponses,
         created_at: data.created_at
       };
       pollsOrder.push(doc.id);
@@ -438,6 +442,111 @@ function buildHostActionBar(pollId) {
   del.textContent = 'Delete';
   bar.appendChild(del);
   return bar;
+}
+
+function getPollOptionCount(poll, option) {
+  if (!poll || !poll.tallies) return 0;
+  const c = poll.tallies[option];
+  if (c == null) return 0;
+  if (typeof c === 'number' && !Number.isNaN(c)) return c;
+  const n = Number(c);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getPollDisplayTotal(poll) {
+  if (!poll) return 0;
+  const options = Array.isArray(poll.options) ? poll.options : [];
+  let sumTallies = 0;
+  for (const o of options) {
+    sumTallies += getPollOptionCount(poll, o);
+  }
+  const tr = poll.total_responses;
+  if (typeof tr === 'number' && !Number.isNaN(tr)) {
+    if (tr > 0) return tr;
+    if (tr === 0 && sumTallies > 0) return sumTallies;
+    return 0;
+  }
+  return sumTallies;
+}
+
+/**
+ * Host-only snapshot of total responses and which option(s) are ahead (or tied).
+ * Uses the same tallies/positions as the Cloud Function and guest voting.
+ */
+function getHostPollStats(poll) {
+  const displayTotal = getPollDisplayTotal(poll);
+  const options = Array.isArray(poll.options) ? poll.options : [];
+  let maxCount = 0;
+  for (const o of options) {
+    const n = getPollOptionCount(poll, o);
+    if (n > maxCount) maxCount = n;
+  }
+  const leaders =
+    maxCount > 0
+      ? options.filter((o) => getPollOptionCount(poll, o) === maxCount)
+      : [];
+  return {
+    displayTotal,
+    maxCount,
+    leaders,
+    hasVotes: displayTotal > 0
+  };
+}
+
+function buildHostPollStatsBar(stats) {
+  const box = document.createElement('div');
+  box.className = 'poll-host-stats';
+  box.setAttribute('role', 'status');
+  box.setAttribute('aria-live', 'polite');
+  box.setAttribute('aria-atomic', 'true');
+
+  const totalCol = document.createElement('div');
+  totalCol.className = 'poll-host-stat poll-host-stat--total';
+  const totalLabel = document.createElement('div');
+  totalLabel.className = 'poll-host-stat-label';
+  totalLabel.textContent = 'Total votes';
+  const totalValue = document.createElement('div');
+  totalValue.className = 'poll-host-stat-value';
+  totalValue.textContent = String(stats.displayTotal);
+  totalCol.appendChild(totalLabel);
+  totalCol.appendChild(totalValue);
+  box.appendChild(totalCol);
+
+  const leadCol = document.createElement('div');
+  leadCol.className = 'poll-host-stat poll-host-stat--lead';
+  const leadLabel = document.createElement('div');
+  leadLabel.className = 'poll-host-stat-label';
+  const leadValue = document.createElement('div');
+  leadValue.className = 'poll-host-stat-value poll-host-stat-value--answer';
+
+  if (!stats.hasVotes) {
+    leadLabel.textContent = 'In the lead';
+    leadValue.classList.add('poll-host-stat-value--muted');
+    leadValue.textContent = '—';
+  } else if (stats.leaders.length === 1) {
+    leadLabel.textContent = 'In the lead';
+    leadValue.textContent = stats.leaders[0];
+  } else if (stats.leaders.length > 1) {
+    leadLabel.textContent = 'Tie';
+    leadValue.textContent = stats.leaders.join(' · ');
+    const sub = document.createElement('div');
+    sub.className = 'poll-host-stat-sub';
+    sub.textContent = stats.maxCount === 1 ? '1 vote each' : stats.maxCount + ' votes each';
+    leadCol.appendChild(leadLabel);
+    leadCol.appendChild(leadValue);
+    leadCol.appendChild(sub);
+    box.appendChild(leadCol);
+    return box;
+  } else {
+    leadLabel.textContent = 'In the lead';
+    leadValue.classList.add('poll-host-stat-value--muted');
+    leadValue.textContent = '—';
+  }
+
+  leadCol.appendChild(leadLabel);
+  leadCol.appendChild(leadValue);
+  box.appendChild(leadCol);
+  return box;
 }
 
 function buildComposeCard() {
@@ -875,6 +984,7 @@ function renderPolls() {
   const isActive = poll.is_active !== false;
   const canVote = isActive && !isVoting;
   const selectedOption = userVotes[selectedPollId];
+  const hostStats = isPollHost() ? getHostPollStats(poll) : null;
 
   const pollItem = document.createElement('div');
   pollItem.className = 'poll-item active';
@@ -893,10 +1003,16 @@ function renderPolls() {
 
   const pollHeader = document.createElement('div');
   pollHeader.className = 'poll-header';
+  if (isPollHost()) {
+    pollHeader.classList.add('poll-header--host');
+  }
   const pollQuestion = document.createElement('div');
   pollQuestion.className = 'poll-question';
   pollQuestion.textContent = poll.question || '';
   pollHeader.appendChild(pollQuestion);
+  if (isPollHost() && hostStats) {
+    pollHeader.appendChild(buildHostPollStatsBar(hostStats));
+  }
   pollItem.appendChild(pollHeader);
 
   const pollOptions = document.createElement('div');
@@ -907,7 +1023,12 @@ function renderPolls() {
     const isVotingThis = isVoting && votingPollId === selectedPollId && votingOption === option;
     const optionDiv = document.createElement('div');
     const den = !canVote;
-    optionDiv.className = `poll-option ${isSel ? 'selected' : ''} ${isVotingThis ? 'voting' : ''} ${den ? 'disabled' : ''}`.replace(/\s+/g, ' ').trim();
+    const isLeading =
+      hostStats &&
+      hostStats.maxCount > 0 &&
+      getPollOptionCount(poll, option) === hostStats.maxCount;
+    const leadingClass = isLeading ? ' poll-option--leading' : '';
+    optionDiv.className = `poll-option ${isSel ? 'selected' : ''} ${isVotingThis ? 'voting' : ''} ${den ? 'disabled' : ''}${leadingClass}`.replace(/\s+/g, ' ').trim();
     optionDiv.setAttribute('data-poll-id', String(selectedPollId));
     optionDiv.setAttribute('data-option', String(option));
     if (canVote) {
@@ -939,6 +1060,13 @@ function renderPolls() {
     optionText.textContent = option || '';
     optionDiv.appendChild(checkDiv);
     optionDiv.appendChild(optionText);
+    if (isPollHost()) {
+      const count = getPollOptionCount(poll, option);
+      const votes = document.createElement('span');
+      votes.className = 'poll-option-votes';
+      votes.textContent = count + (count === 1 ? ' vote' : ' votes');
+      optionDiv.appendChild(votes);
+    }
     pollOptions.appendChild(optionDiv);
   });
   pollItem.appendChild(pollOptions);

@@ -903,6 +903,126 @@ body.loaded {
   cursor: pointer;
 }
 
+.poll-header--host {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.poll-host-stats {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  width: 100%;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #E0F2FE 0%, #F0F9FF 100%);
+  border: 2px solid #004165;
+  border-radius: 12px;
+  align-items: flex-start;
+}
+
+.poll-host-stat {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.poll-host-stat--total {
+  flex: 0 0 auto;
+  min-width: 8rem;
+  border-right: 1px solid #93C5FD;
+  padding-right: 16px;
+  margin-right: 4px;
+}
+
+.poll-host-stat-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #0E7490;
+  margin-bottom: 2px;
+}
+
+.poll-host-stat--total .poll-host-stat-value {
+  color: #004165;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.poll-host-stat--lead .poll-host-stat-value--answer {
+  color: #004165;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.poll-host-stat-value--muted {
+  color: #94A3B8;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.poll-host-stat-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0E7490;
+  margin-top: 4px;
+}
+
+@media (max-width: 500px) {
+  .poll-host-stat--total {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #93C5FD;
+    padding-right: 0;
+    margin-right: 0;
+    padding-bottom: 12px;
+    margin-bottom: 0;
+  }
+  .poll-host-stat--lead {
+    width: 100%;
+  }
+}
+
+.poll-option--leading {
+  border-color: #0E7490;
+  background: #ECFEFF;
+  box-shadow: 0 0 0 1px rgba(14, 116, 144, 0.25);
+}
+
+.poll-option--leading .poll-option-votes {
+  color: #0E7490;
+  font-weight: 800;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.poll-option--leading:hover {
+  background: #E0F2FE;
+}
+
+.poll-option--leading.poll-option.selected {
+  border-color: #004165;
+  background: #E0F2FE;
+}
+
+.poll-option-votes {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748B;
+  margin-left: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-self: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .poll-header {
   display: flex;
   align-items: center;
