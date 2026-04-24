@@ -245,6 +245,9 @@ function setupMeetingOwnerAuthListener() {
         renderAgendaCard(mid, window.lastMeetingData, isHost);
       }
     }
+    if (typeof window.syncMeetingPollsActionCard === 'function') {
+      window.syncMeetingPollsActionCard();
+    }
   });
 }
 
@@ -479,10 +482,16 @@ document.addEventListener('keydown', function(e) {
     const pdfOverlay = document.getElementById('pdf-viewer-overlay');
     const exitDialog = document.getElementById('exit-meeting-dialog-overlay');
     const agendaUpload = document.getElementById('agenda-upload-dialog-overlay');
+    const pollsDel = document.getElementById('polls-delete-dialog-overlay');
+    const pollsTog = document.getElementById('polls-toggle-dialog-overlay');
     if (pdfOverlay.classList.contains('active')) {
       closePdfViewer();
     } else if (agendaUpload && agendaUpload.classList.contains('active') && !agendaUpload.hasAttribute('data-uploading')) {
       hideAgendaUploadDialog();
+    } else if (pollsDel && pollsDel.classList.contains('active') && window.hideHostPollDeleteDialog) {
+      window.hideHostPollDeleteDialog();
+    } else if (pollsTog && pollsTog.classList.contains('active') && window.hideHostPollToggleDialog) {
+      window.hideHostPollToggleDialog();
     } else if (exitDialog.classList.contains('active')) {
       hideExitMeetingDialog();
     }
@@ -573,6 +582,9 @@ async function loadMeetingData() {
     }
     
     setupMeetingOwnerAuthListener();
+    if (typeof window.syncMeetingPollsActionCard === 'function') {
+      window.syncMeetingPollsActionCard();
+    }
     showMeetingContent();
   } catch (error) {
     console.error('Error loading meeting data:', error);

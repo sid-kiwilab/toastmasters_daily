@@ -163,10 +163,12 @@
     <button class="polls-close-btn" onclick="closePollsViewer()" title="Close">×</button>
     <div class="polls-viewer-content">
       <h2 class="polls-viewer-title">Meeting Polls</h2>
-      <div class="polls-toolbar-row">
+      <div class="polls-toolbar-row" id="polls-toolbar-row">
         <button type="button" class="polls-refresh-btn" id="polls-refresh-btn" onclick="refreshMeetingPolls()" title="Load the latest polls from the server">Refresh polls</button>
+        <button type="button" class="polls-add-poll-btn" id="polls-add-poll-btn" style="display: none;">Add poll</button>
       </div>
-      <p class="polls-viewer-hint">If a poll is missing, use <strong>Refresh polls</strong>.</p>
+      <p id="polls-viewer-hint-guest" class="polls-viewer-hint">If a poll is missing, use <strong>Refresh polls</strong>.</p>
+      <p id="polls-viewer-hint-host" class="polls-viewer-hint" style="display: none;">Same view as your members, plus the buttons below. <strong>Refresh polls</strong> if something looks stale.</p>
       <div id="polls-container" class="polls-container">
         <div class="polls-loading">Loading polls...</div>
       </div>
@@ -183,6 +185,28 @@
         <div class="polls-voting-fs-spinner" aria-hidden="true"></div>
         <h3 id="polls-refresh-fs-title" class="polls-voting-fs-title">Refreshing polls</h3>
         <p id="polls-refresh-fs-text" class="polls-voting-fs-text">Loading the latest polls from the server. This screen will close on its own.</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="dialog-overlay" id="polls-delete-dialog-overlay" onclick="if(event.target === this) hideHostPollDeleteDialog()">
+    <div class="dialog">
+      <h3 class="dialog-title">Delete this poll?</h3>
+      <p class="dialog-message">This cannot be undone.</p>
+      <div class="dialog-actions">
+        <button type="button" class="dialog-btn dialog-btn-cancel" onclick="hideHostPollDeleteDialog()">Cancel</button>
+        <button type="button" class="dialog-btn dialog-btn-confirm" id="polls-delete-confirm-btn" onclick="confirmHostPollDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="dialog-overlay" id="polls-toggle-dialog-overlay" onclick="if(event.target === this) hideHostPollToggleDialog()">
+    <div class="dialog">
+      <h3 class="dialog-title" id="polls-toggle-dialog-title">Turn poll on?</h3>
+      <p class="dialog-message" id="polls-toggle-dialog-message"></p>
+      <div class="dialog-actions">
+        <button type="button" class="dialog-btn dialog-btn-cancel" onclick="hideHostPollToggleDialog()">Cancel</button>
+        <button type="button" class="dialog-btn dialog-btn-confirm" id="polls-toggle-confirm-btn" onclick="confirmHostPollToggle()">Confirm</button>
       </div>
     </div>
   </div>

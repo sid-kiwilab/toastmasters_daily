@@ -18,3 +18,7 @@ let evalsListener = null;
 let evalsData = [];
 let editingEvalId = null;
 let evalToDeleteId = null;
+
+/** Host: 'none' | 'create' | 'edit' — show same poll card style for compose */
+let hostPollUiMode = 'none';
+let hostEditPollId = null;
