@@ -265,6 +265,70 @@
       cursor: not-allowed;
     }
     
+    .agenda-card-host-actions {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .agenda-host-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'GoogleSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background: #004165;
+      color: #ffffff;
+    }
+    
+    .agenda-host-btn:hover {
+      background: #003049;
+    }
+    
+    #agenda-upload-dialog-overlay {
+      z-index: 10001;
+    }
+    
+    #agenda-upload-dialog-overlay .agenda-upload-dialog-body {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 4px;
+    }
+    
+    #agenda-upload-dialog-overlay .agenda-upload-spinner {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      margin-top: 2px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #004165;
+      border-radius: 50%;
+      animation: agenda-spin 0.65s linear infinite;
+    }
+    
+    #agenda-upload-dialog-overlay .agenda-upload-spinner.is-hidden {
+      display: none;
+    }
+    
+    #agenda-upload-dialog-overlay .dialog-message {
+      margin-bottom: 0;
+    }
+    
+    #agenda-upload-dialog-filename {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0 0 16px 0;
+      word-break: break-all;
+    }
+    
+    @keyframes agenda-spin {
+      to { transform: rotate(360deg); }
+    }
+    
     /* PDF Viewer Modal */
     .pdf-viewer-overlay {
       position: fixed;
@@ -916,7 +980,7 @@
         <div class="quick-actions-section">
           <h2 class="section-header">Quick Actions</h2>
           
-          <!-- View Agenda Card -->
+          <!-- View Agenda Card (host: empty state + upload, or view + change) -->
           <div id="agenda-card" class="action-card" style="display: none;">
             <div class="action-card-icon">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -924,10 +988,14 @@
               </svg>
             </div>
             <div class="action-card-content">
-              <div class="action-card-title">View Agenda</div>
-              <div class="action-card-description">Open agenda in full screen</div>
+              <div class="action-card-title" id="agenda-card-title">View Agenda</div>
+              <div class="action-card-description" id="agenda-card-description">Open agenda in full screen</div>
+              <div id="agenda-card-host-actions" class="agenda-card-host-actions" style="display: none;">
+                <button type="button" id="agenda-upload-btn" class="agenda-host-btn">Upload agenda</button>
+                <button type="button" id="agenda-change-btn" class="agenda-host-btn" style="display: none;">Change agenda</button>
+              </div>
             </div>
-            <svg class="action-card-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="action-card-arrow" id="agenda-card-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </div>
@@ -1089,6 +1157,22 @@
     </div>
   </div>
   
+  <!-- Upload agenda (host) -->
+  <div class="dialog-overlay" id="agenda-upload-dialog-overlay" onclick="if (event.target === this && !this.hasAttribute('data-uploading')) hideAgendaUploadDialog()">
+    <div class="dialog">
+      <h3 class="dialog-title" id="agenda-upload-dialog-title">Upload agenda</h3>
+      <div class="agenda-upload-dialog-body">
+        <div id="agenda-upload-dialog-spinner" class="agenda-upload-spinner" role="status" aria-live="polite"></div>
+        <p class="dialog-message" id="agenda-upload-dialog-message">Reading file…</p>
+      </div>
+      <p id="agenda-upload-dialog-filename"></p>
+      <div class="dialog-actions">
+        <button type="button" class="dialog-btn dialog-btn-confirm" id="agenda-upload-dialog-close" onclick="hideAgendaUploadDialog()" style="display: none;">Close</button>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="agenda-file-input" accept=".pdf" style="display: none;" onchange="handleAgendaFileSelect(event)">
+  
   <!-- PDF.js library for reliable PDF rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
@@ -1115,6 +1199,7 @@
     
     // Initialize Firebase
     let clubDb = null;
+    let clubFunctions = null;
     
     function showError(message) {
       document.getElementById('loading-state').style.display = 'none';
@@ -1335,7 +1420,8 @@
         if (!creator) return;
         const mc = document.getElementById('meeting-content');
         const visible = mc && mc.style.display !== 'none';
-        if (user && user.uid === creator) {
+        const isHost = !!(user && user.uid === creator);
+        if (isHost) {
           applyOwnerMeetingView();
           const greet = document.getElementById('welcome-greeting');
           if (greet && visible) {
@@ -1346,6 +1432,12 @@
           const greet = document.getElementById('welcome-greeting');
           if (greet && visible) {
             greet.textContent = getRandomWelcomeMessage();
+          }
+        }
+        if (window.lastMeetingData && visible) {
+          const mid = getMeetingIdFromUrl();
+          if (mid) {
+            renderAgendaCard(mid, window.lastMeetingData, isHost);
           }
         }
       });
@@ -1373,13 +1465,219 @@
       }
     }
     
+    function renderAgendaCard(meetingId, meetingData, isHost) {
+      const card = document.getElementById('agenda-card');
+      if (!card) return;
+      const titleEl = document.getElementById('agenda-card-title');
+      const descEl = document.getElementById('agenda-card-description');
+      const arrow = document.getElementById('agenda-card-arrow');
+      const hostRow = document.getElementById('agenda-card-host-actions');
+      const uploadBtn = document.getElementById('agenda-upload-btn');
+      const changeBtn = document.getElementById('agenda-change-btn');
+      const fileInput = document.getElementById('agenda-file-input');
+      if (fileInput && meetingId) {
+        fileInput.setAttribute('data-meeting-id', meetingId);
+      }
+      const agendaUrl = meetingData?.agenda_url || meetingData?.agendaUrl;
+      card.onclick = null;
+      if (uploadBtn) uploadBtn.onclick = null;
+      if (changeBtn) changeBtn.onclick = null;
+      if (!isHost && !agendaUrl) {
+        card.style.display = 'none';
+        if (hostRow) hostRow.style.display = 'none';
+        return;
+      }
+      if (!isHost) {
+        if (hostRow) hostRow.style.display = 'none';
+        if (titleEl) titleEl.textContent = 'View Agenda';
+        if (descEl) descEl.textContent = 'Open agenda in full screen';
+        if (arrow) arrow.style.display = '';
+        card.style.display = 'flex';
+        card.style.cursor = 'pointer';
+        card.onclick = (e) => {
+          e.preventDefault();
+          openPdfViewer(agendaUrl);
+        };
+        return;
+      }
+      if (hostRow) hostRow.style.display = 'flex';
+      if (titleEl) {
+        titleEl.textContent = agendaUrl ? 'View Agenda' : 'Agenda';
+      }
+      if (descEl) {
+        descEl.textContent = agendaUrl
+          ? 'Open agenda in full screen'
+          : 'No agenda uploaded yet.';
+      }
+      if (arrow) arrow.style.display = agendaUrl ? '' : 'none';
+      if (uploadBtn) uploadBtn.style.display = agendaUrl ? 'none' : 'inline-block';
+      if (changeBtn) changeBtn.style.display = agendaUrl ? 'inline-block' : 'none';
+      card.style.display = 'flex';
+      if (agendaUrl) {
+        card.style.cursor = 'pointer';
+        card.onclick = (e) => {
+          e.preventDefault();
+          openPdfViewer(agendaUrl);
+        };
+      } else {
+        card.style.cursor = 'default';
+      }
+      if (uploadBtn) {
+        uploadBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (fileInput) fileInput.click();
+        };
+      }
+      if (changeBtn) {
+        changeBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (fileInput) fileInput.click();
+        };
+      }
+    }
+    
+    function showAgendaUploadDialog(fileName) {
+      const overlay = document.getElementById('agenda-upload-dialog-overlay');
+      if (!overlay) return;
+      const titleEl = document.getElementById('agenda-upload-dialog-title');
+      const msgEl = document.getElementById('agenda-upload-dialog-message');
+      const nameEl = document.getElementById('agenda-upload-dialog-filename');
+      const spinner = document.getElementById('agenda-upload-dialog-spinner');
+      const closeBtn = document.getElementById('agenda-upload-dialog-close');
+      if (titleEl) titleEl.textContent = 'Upload agenda';
+      if (msgEl) msgEl.textContent = 'Reading file…';
+      if (nameEl) nameEl.textContent = fileName ? 'File: ' + fileName : '';
+      if (spinner) spinner.classList.remove('is-hidden');
+      if (closeBtn) closeBtn.style.display = 'none';
+      overlay.setAttribute('data-uploading', '1');
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function setAgendaUploadDialogMessage(message) {
+      const msgEl = document.getElementById('agenda-upload-dialog-message');
+      if (msgEl) msgEl.textContent = message;
+    }
+    
+    function finishAgendaUploadDialog(success, message) {
+      const overlay = document.getElementById('agenda-upload-dialog-overlay');
+      const titleEl = document.getElementById('agenda-upload-dialog-title');
+      const spinner = document.getElementById('agenda-upload-dialog-spinner');
+      const closeBtn = document.getElementById('agenda-upload-dialog-close');
+      if (overlay) overlay.removeAttribute('data-uploading');
+      if (titleEl) titleEl.textContent = success ? 'Upload complete' : 'Upload failed';
+      if (spinner) spinner.classList.add('is-hidden');
+      setAgendaUploadDialogMessage(message);
+      if (closeBtn) closeBtn.style.display = 'inline-block';
+    }
+    
+    function hideAgendaUploadDialog() {
+      const overlay = document.getElementById('agenda-upload-dialog-overlay');
+      if (!overlay) return;
+      if (overlay.hasAttribute('data-uploading')) return;
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+      const titleEl = document.getElementById('agenda-upload-dialog-title');
+      const nameEl = document.getElementById('agenda-upload-dialog-filename');
+      const closeBtn = document.getElementById('agenda-upload-dialog-close');
+      if (titleEl) titleEl.textContent = 'Upload agenda';
+      if (nameEl) nameEl.textContent = '';
+      if (closeBtn) closeBtn.style.display = 'none';
+    }
+    
+    async function handleAgendaFileSelect(event) {
+      const clearFileInput = function() {
+        if (event.target) event.target.value = '';
+      };
+      const file = event.target.files[0];
+      if (!file) return;
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        showAgendaUploadDialog(file.name);
+        finishAgendaUploadDialog(false, 'Only PDF files are allowed.');
+        clearFileInput();
+        return;
+      }
+      const fileInput = event.target;
+      const meetingId = fileInput ? fileInput.getAttribute('data-meeting-id') : null;
+      if (!meetingId) {
+        showAgendaUploadDialog(file.name);
+        finishAgendaUploadDialog(false, 'Meeting ID not found. Please refresh the page.');
+        clearFileInput();
+        return;
+      }
+      const clubAuth = firebase.auth(firebase.app('club'));
+      const clubUser = clubAuth.currentUser;
+      if (!clubUser) {
+        showAgendaUploadDialog(file.name);
+        finishAgendaUploadDialog(false, 'Please sign in to upload the agenda.');
+        clearFileInput();
+        return;
+      }
+      if (!clubFunctions) {
+        showAgendaUploadDialog(file.name);
+        finishAgendaUploadDialog(false, 'Meeting features are not ready. Please refresh the page.');
+        clearFileInput();
+        return;
+      }
+      showAgendaUploadDialog(file.name);
+      try {
+        const base64Data = await new Promise(function(resolve, reject) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              const data = e.target.result;
+              const parts = typeof data === 'string' ? data.split(',') : [];
+              if (parts.length < 2) {
+                reject(new Error('Could not read the file'));
+                return;
+              }
+              resolve(parts[1]);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          reader.onerror = function() {
+            reject(new Error('Could not read the file'));
+          };
+          reader.readAsDataURL(file);
+        });
+        setAgendaUploadDialogMessage('Uploading…');
+        const uploadAgendaFn = clubFunctions.httpsCallable('upload_agenda');
+        const result = await uploadAgendaFn({
+          meetingId: meetingId,
+          fileData: base64Data,
+          fileName: file.name
+        });
+        if (result.data && result.data.success) {
+          finishAgendaUploadDialog(true, 'Agenda uploaded successfully.');
+          try {
+            await loadMeetingData();
+          } catch (reloadErr) {
+            console.error('loadMeetingData after agenda upload:', reloadErr);
+          }
+        } else {
+          const errorMsg = result.data?.error || 'Failed to upload agenda';
+          finishAgendaUploadDialog(false, errorMsg);
+        }
+      } catch (error) {
+        console.error('Error uploading agenda:', error);
+        const msg = (error && error.message) ? error.message : 'Something went wrong';
+        finishAgendaUploadDialog(false, 'Error uploading agenda: ' + msg);
+      } finally {
+        clearFileInput();
+      }
+    }
+    
     // Close PDF viewer on Escape key
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         const pdfOverlay = document.getElementById('pdf-viewer-overlay');
         const exitDialog = document.getElementById('exit-meeting-dialog-overlay');
+        const agendaUpload = document.getElementById('agenda-upload-dialog-overlay');
         if (pdfOverlay.classList.contains('active')) {
           closePdfViewer();
+        } else if (agendaUpload && agendaUpload.classList.contains('active') && !agendaUpload.hasAttribute('data-uploading')) {
+          hideAgendaUploadDialog();
         } else if (exitDialog.classList.contains('active')) {
           hideExitMeetingDialog();
         }
@@ -1434,6 +1732,7 @@
         }
         
         const meetingData = meetingDoc.data();
+        window.lastMeetingData = meetingData;
         
         // Query users collection to get club info
         const userDoc = await clubDb.collection('users').doc(creatorId).get();
@@ -1455,16 +1754,7 @@
           ? "You're viewing this meeting as the host (signed in)."
           : getRandomWelcomeMessage();
         
-        // Display agenda card
-        const agendaUrl = meetingData?.agenda_url || meetingData?.agendaUrl;
-        if (agendaUrl) {
-          const agendaCard = document.getElementById('agenda-card');
-          agendaCard.style.display = 'flex';
-          agendaCard.onclick = (e) => {
-            e.preventDefault();
-            openPdfViewer(agendaUrl);
-          };
-        }
+        renderAgendaCard(meetingId, meetingData, isHostSignedIn);
         
         // Set up polls and evaluations
         window.meetingId = meetingId;
@@ -2374,6 +2664,7 @@
         const clubAuth = initClubAuth();
         const clubApp = firebase.app('club');
         clubDb = firebase.firestore(clubApp);
+        clubFunctions = firebase.functions(clubApp);
         
         await waitForInitialClubAuth(clubAuth);
         

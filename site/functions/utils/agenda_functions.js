@@ -46,6 +46,13 @@ const upload_agenda_handler = async (data, context) => {
     if (!creator_id) {
       return { success: false, error: 'Meeting creator not found' };
     }
+
+    if (!context.auth || !context.auth.uid) {
+      return { success: false, error: 'Authentication required' };
+    }
+    if (context.auth.uid !== creator_id) {
+      return { success: false, error: 'Only the meeting host can upload the agenda' };
+    }
     
     // Verify subscription is active OR trial is active
     const userDoc = await db.collection('users').doc(creator_id).get();
