@@ -9,6 +9,9 @@ Usage (from agents/toastmasters_agent):
   python scripts/seed_nz_clubs.py --dry-run
 
 Requires FIREBASE_SERVICE_ACCOUNT_JSON or service-account.json (Admin SDK).
+
+Do NOT run against production — creates fake clubs that duplicate real signups.
+Use only on dev/staging, or remove with scripts/remove_seed_clubs.py.
 """
 from __future__ import annotations
 

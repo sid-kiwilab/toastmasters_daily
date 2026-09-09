@@ -17,7 +17,7 @@ site/
 └── theme.md          # Design system
 ```
 
-AI chat agent lives in `../agents/toastmasters_agent/` (Cloud Run, separate deploy). Nearest-club discovery uses Firestore geo lookup; seed demo clubs with `python scripts/seed_nz_clubs.py` from that folder.
+AI chat agent lives in `../agents/toastmasters_agent/` (Cloud Run, separate deploy). Nearest-club discovery uses Firestore geo lookup (~80 km); demo seed clubs were removed from prod — do not re-run `seed_nz_clubs.py` there.
 
 ## Quick start
 

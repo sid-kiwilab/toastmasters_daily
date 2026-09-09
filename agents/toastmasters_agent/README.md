@@ -53,21 +53,22 @@ Example with optional flags:
 |--------|--------|-------------|
 | `/chat` | POST  | Body: `{ "message": "...", "history": [], "stream": true, "location": "optional place name", "lat": -36.89, "lng": 174.91 }`. GPS is used for "near me"; a named city is geocoded instead. `find_nearby_clubs` returns signed-up clubs within ~80 km, else official TI clubs via web search. `stream: true` → SSE; `stream: false` → JSON `{ "response": "..." }`. |
 
-## Seed demo clubs (NZ)
-
-From `agents/toastmasters_agent` (requires Admin SDK credentials):
-
-```cmd
-python scripts/seed_nz_clubs.py
-python scripts/seed_nz_clubs.py --dry-run
-```
-
-Seeds Botany, Howick, Pakuranga, and Shoreditch (London) demo clubs with locations, timezones, club codes, and upcoming meetings.
+## Club geo backfill
 
 ```cmd
 python scripts/backfill_club_geo.py
 ```
 
 Backfills `club_lat`, `club_lng`, and `club_timezone` for existing clubs missing geo data.
+
+## Demo seed clubs (dev only)
+
+**Do not run `seed_nz_clubs.py` on production** — it creates fake clubs (`is_seed: true`) that can duplicate real clubs in Toasty search. Production seeds were removed; agent search skips `is_seed` clubs.
+
+```cmd
+python scripts/seed_nz_clubs.py --dry-run
+python scripts/remove_seed_clubs.py --dry-run
+python scripts/remove_seed_clubs.py
+```
 
 **CORS:** Allowed origins are in `app.py` (localhost:3000, toastmastersdaily.com, www). If the site is served from another origin (e.g. Firebase `*.web.app`), add it to `CORSMiddleware` `allow_origins`.

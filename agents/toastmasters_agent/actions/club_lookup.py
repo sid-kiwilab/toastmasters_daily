@@ -162,7 +162,7 @@ def load_all_clubs(db) -> list[dict]:
         d = doc.to_dict() or {}
         name = (d.get("club_name") or "").strip()
         code = d.get("club_code")
-        if not name or code is None:
+        if not name or code is None or d.get("is_seed"):
             continue
         code_str = str(int(code)) if isinstance(code, (int, float)) else str(code).strip()
         if not code_str:
