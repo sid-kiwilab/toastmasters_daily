@@ -1,11 +1,14 @@
 const functions = require('firebase-functions');
 const { rateLimit } = require('./rate_limiter_functions');
 
-let findTimezone;
-try {
-  findTimezone = require('geo-tz').find;
-} catch (e) {
-  console.warn('geo-tz not installed; timezone lookup will fail until npm install');
+function lookupTimezone(lat, lng) {
+  try {
+    const zones = require('geo-tz').find(lat, lng);
+    return zones && zones.length ? zones[0] : null;
+  } catch (e) {
+    console.warn('geo-tz lookup failed:', e.message);
+    return null;
+  }
 }
 
 const RATE_LIMITS = {
@@ -64,13 +67,7 @@ const geocode_club_location_handler = async (data, context) => {
       return { success: false, error: 'Invalid geocoding result' };
     }
 
-    let timezone = null;
-    if (findTimezone) {
-      const zones = findTimezone(lat, lng);
-      if (zones && zones.length) {
-        timezone = zones[0];
-      }
-    }
+    const timezone = lookupTimezone(lat, lng);
 
     return {
       success: true,
