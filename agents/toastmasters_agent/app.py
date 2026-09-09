@@ -1,7 +1,9 @@
 import os
+import sys
 import json
 import logging
 import importlib.util
+import contextvars
 from datetime import datetime, timezone
 
 # Load env.yaml from next to this file (YAML map: KEY: "value" — same as kiwilab_functions)
@@ -30,12 +32,22 @@ from langgraph.prebuilt import ToolNode
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.tools import tool
-from typing import TypedDict, Annotated, Sequence, Any, NotRequired
+from typing import TypedDict, Annotated, Sequence, Any
+
+try:
+    from typing import NotRequired
+except ImportError:
+    from typing_extensions import NotRequired
 from langgraph.graph.message import add_messages
 
 # Load actions from files (no __init__.py)
+_ACTIONS_DIR = os.path.join(os.path.dirname(__file__), "actions")
+if _ACTIONS_DIR not in sys.path:
+    sys.path.insert(0, _ACTIONS_DIR)
+
+
 def _load_action(name: str):
-    path = os.path.join(os.path.dirname(__file__), "actions", f"{name}.py")
+    path = os.path.join(_ACTIONS_DIR, f"{name}.py")
     spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -43,6 +55,14 @@ def _load_action(name: str):
 
 web_search_run = _load_action("web_search")
 join_meeting_run = _load_action("join_meeting")
+find_nearby_clubs_run = _load_action("find_nearby_clubs")
+
+_request_location: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "request_location", default=None
+)
+_request_coords: contextvars.ContextVar[tuple[float, float] | None] = contextvars.ContextVar(
+    "request_coords", default=None
+)
 
 app = FastAPI()
 app.add_middleware(
@@ -63,13 +83,15 @@ IMPORTANT: Treat the LATEST user message as the primary intent. Do not get confu
 
 You have exactly three action types; use them only when the latest message clearly fits. Otherwise, reply with normal chat (no tools).
 
-1) JOIN MEETING — Only when the user's message indicates they want to JOIN or get a join link. Look for intent like: "join", "join link", "get the link", "how do I join", "join the meeting", "join [club name]", "link to join", etc. (fuzzy match is fine). If they only ask "what is X club?" or "tell me about Botany Toastmasters" without any join intent, do NOT use find_club—answer in chat or use web_search if you need info. Only call find_club when join (or equivalent) is clearly in the request.
+1) NEARBY CLUBS — When the user asks for clubs "near me", "nearest", "closest", "clubs near [place]", or wants to join their nearest/closest club, call find_nearby_clubs. Pass their location from context, or a place name they typed. Do NOT use web_search for finding nearby clubs. Do NOT use find_club for geographic search (never pass "nearest" or a suburb to find_club).
 
-2) SEARCH CLUB / TOASTMASTERS INFO — Use web_search for: general Toastmasters facts, club info, recent events, dates, official info, or anything you want to verify. Do not use find_club for this.
+2) JOIN A NAMED CLUB — When the user wants to JOIN a specific club by name (e.g. "join Botany Toastmasters", "get link for Pakuranga"), call find_club with that club name. If they only ask "what is X club?" without join intent, you may use find_club to show details or answer in chat.
 
-3) LIST CLUBS NEAR USER — When the user asks for clubs "near me", "nearest", "closest", or similar, use web_search with the location already provided in this conversation (see below). Only do this when you have been given the user's location—do not ask the user for their location if it is already provided.
+3) GENERAL TOASTMASTERS INFO — Use web_search only for general Toastmasters facts, Pathways, official TI info, or things not stored on Toastmasters Daily. Never use web_search to find clubs near the user.
 
-LOCATION: If the user's location is provided below, use it. Do not ask the user for their location when it is already in context. For "near me" / "nearest" requests, use that location in your web search.
+LOCATION: If the user's location is provided below, use it for find_nearby_clubs. Do not ask for location when it is already in context.
+
+RESPONSE FORMAT: When presenting clubs from find_club or find_nearby_clubs, always show the tool output details (name, location, about, next meeting, links). Then briefly explain that "Club page (guest join)" is a temporary guest visit on Toastmasters Daily, not official TI membership. Include the URLs from the tool output so the user can click through.
 
 You cannot perform any other actions (no creating meetings, QR codes, voting, or opening agendas). You can describe what the site can do so users know where to go.
 
@@ -80,9 +102,9 @@ def _system_prompt_with_datetime(location: str | None = None) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     out = f"Current date and time: {now}.\n\n{SYSTEM_PROMPT}"
     if location and location.strip():
-        out += f"\n\nThe user's location is: {location.strip()}. Use this when they ask for clubs/meetings 'near me', 'nearest', or 'closest'—search with this location; do not ask them for it."
+        out += f"\n\nThe user's location is: {location.strip()}. Use find_nearby_clubs with this location when they ask for clubs 'near me', 'nearest', or 'closest'—do not ask them for it."
     else:
-        out += "\n\nThe user's location was not provided. If they ask for clubs 'near me' or 'closest', reply in chat and suggest they share location or type their city—do not call find_club for that."
+        out += "\n\nThe user's location was not provided. If they ask for clubs 'near me' or 'closest', reply in chat and suggest they share location or type their city—or call find_nearby_clubs with a city they mention."
     return out
 
 
@@ -102,8 +124,17 @@ def web_search(query: str) -> str:
 
 @tool
 def find_club(query: str) -> str:
-    """Only use when the user clearly wants to JOIN a meeting or get a join link (e.g. 'join Botany Toastmasters', 'get link for X'). Do NOT use for general club info or 'what is X club'. Pass the club name (or part of it). Returns club name(s) and join URL(s) or 'No matching clubs.'"""
+    """Use when the user wants to JOIN a specific club by name (e.g. 'join Botany Toastmasters'). Pass the club name (or part of it). Do NOT use for 'nearest' or location-based search. Returns club details, next meeting, and guest join URLs."""
     return join_meeting_run(query)
+
+
+@tool
+def find_nearby_clubs(place: str = "") -> str:
+    """Find Toastmasters Daily clubs closest to a location. Use for 'near me', 'nearest', 'closest', or 'clubs near [place]'. Pass the user's location from context, or a city/suburb they typed. Returns club details, distance, next meeting, and guest join URLs."""
+    loc = (place or "").strip() or (_request_location.get() or "")
+    coords = _request_coords.get()
+    lat, lng = (coords if coords else (None, None))
+    return find_nearby_clubs_run(loc, lat=lat, lng=lng)
 
 
 def _get_agent():
@@ -120,7 +151,7 @@ def _get_agent():
         max_tokens=1000,
         api_key=key,
     )
-    tools = [web_search, find_club]
+    tools = [web_search, find_club, find_nearby_clubs]
     llm_with_tools = llm.bind_tools(tools)
 
     def agent_node(state: AgentState) -> AgentState:
@@ -149,12 +180,29 @@ def _get_agent():
     return _agent
 
 
-async def stream_agent_response(messages: list, location: str | None = None):
+def _parse_coords(body: dict) -> tuple[float, float] | None:
+    try:
+        lat = body.get("lat")
+        lng = body.get("lng")
+        if lat is None or lng is None:
+            return None
+        return (float(lat), float(lng))
+    except (TypeError, ValueError):
+        return None
+
+
+async def stream_agent_response(
+    messages: list,
+    location: str | None = None,
+    coords: tuple[float, float] | None = None,
+):
     agent = _get_agent()
     if not agent:
         yield f"data: {json.dumps({'error': 'OPENAI_API_KEY not configured'})}\n\n"
         yield "data: [DONE]\n\n"
         return
+    loc_token = _request_location.set(str(location).strip() if location else None)
+    coord_token = _request_coords.set(coords)
     state = {"messages": messages}
     if location and str(location).strip():
         state["location"] = str(location).strip()
@@ -168,6 +216,9 @@ async def stream_agent_response(messages: list, location: str | None = None):
         logger.exception("Chat stream error")
         yield f"data: {json.dumps({'error': str(e)})}\n\n"
         yield "data: [DONE]\n\n"
+    finally:
+        _request_location.reset(loc_token)
+        _request_coords.reset(coord_token)
 
 
 def _trim_history_to_char_limit(history: list, current_message: str, max_total: int) -> list:
@@ -215,6 +266,7 @@ async def chat(request: Request):
         messages.append(HumanMessage(content=msg))
 
         location = (body.get("location") or "").strip() or None
+        coords = _parse_coords(body)
 
         agent = _get_agent()
         if not agent:
@@ -222,15 +274,21 @@ async def chat(request: Request):
 
         if stream:
             return StreamingResponse(
-                stream_agent_response(messages, location=location),
+                stream_agent_response(messages, location=location, coords=coords),
                 media_type="text/event-stream",
                 headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
             )
 
+        loc_token = _request_location.set(location)
+        coord_token = _request_coords.set(coords)
         state = {"messages": messages}
         if location:
             state["location"] = location
-        result = agent.invoke(state)
+        try:
+            result = agent.invoke(state)
+        finally:
+            _request_location.reset(loc_token)
+            _request_coords.reset(coord_token)
         msgs = result.get("messages", [])
         for m in reversed(msgs):
             if isinstance(m, AIMessage) and m.content:

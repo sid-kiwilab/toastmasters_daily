@@ -1990,12 +1990,40 @@
       saveBtn.textContent = 'Saving...';
       
       try {
-        await clubDb.collection('users').doc(clubAuth.currentUser.uid).set({
-          club_location: newValue || ''
-        }, { merge: true });
-        
+        const userRef = clubDb.collection('users').doc(clubAuth.currentUser.uid);
+        const update = { club_location: newValue || '' };
+        if (!newValue) {
+          update.club_lat = firebase.firestore.FieldValue.delete();
+          update.club_lng = firebase.firestore.FieldValue.delete();
+          update.club_timezone = firebase.firestore.FieldValue.delete();
+        }
+        await userRef.set(update, { merge: true });
+
+        if (newValue && clubFunctions) {
+          try {
+            const geocodeFn = clubFunctions.httpsCallable('geocode_club_location');
+            const geoResult = await geocodeFn({ location: newValue });
+            if (geoResult.data && geoResult.data.success) {
+              const geo = geoResult.data;
+              const geoUpdate = {
+                club_lat: geo.lat,
+                club_lng: geo.lng,
+              };
+              if (geo.timezone) geoUpdate.club_timezone = geo.timezone;
+              await userRef.set(geoUpdate, { merge: true });
+            } else if (typeof notifications !== 'undefined') {
+              notifications.warning('Location saved; map lookup failed — nearest-club search may be less accurate.');
+            }
+          } catch (geoErr) {
+            console.warn('Geocode failed:', geoErr);
+            if (typeof notifications !== 'undefined') {
+              notifications.warning('Location saved; map lookup failed — nearest-club search may be less accurate.');
+            }
+          }
+        }
+
         hideClubLocationDialog();
-        
+
         if (typeof notifications !== 'undefined') {
           notifications.success(newValue ? 'Club location saved successfully' : 'Club location cleared');
         }

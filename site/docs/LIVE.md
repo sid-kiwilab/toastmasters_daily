@@ -49,7 +49,7 @@ Client config: `public/js/firebase-config.js`. Shared auth helpers: `public/js/a
 
 | Route | Purpose |
 |-------|---------|
-| `/` | Marketing home |
+| `/` | Marketing home + Toasty chat (nearest-club discovery) |
 | `/club-login`, `/club-signup` | Club officer auth |
 | `/member-login`, `/member-signup` | Member auth |
 | `/club-base/` | Club dashboard (meetings, guests) |
@@ -73,13 +73,14 @@ Auto-loaded from `functions/utils/*.js` via `functions/index.js`.
 | `create_checkout_session`, `cancel_subscription`, `resume_subscription`, `handle_stripe_webhook` | `stripe_functions.js` | Stripe config via `functions.config().stripe` |
 | `create_user_document`, `delete_user_document` | `auth_functions.js` | Auth triggers; 30-day trial on signup |
 | `ping_toastmasters_agent` | `pinger_functions.js` | Pub/Sub every 5 min |
+| `geocode_club_location` | `geocode_functions.js` | Nominatim + geo-tz; rate limited (20/min) |
 | `cleanup_rate_limits` | `rate_limiter_functions.js` | Hourly cleanup |
 
 Rate limit tuning: [`RATE_LIMITING_GUIDE.md`](../RATE_LIMITING_GUIDE.md).
 
 ### Firestore model (summary)
 
-- `users/{uid}` — profile, subscription, trial_end_date, stripe_customer_id, club_code
+- `users/{uid}` — profile, subscription, trial_end_date, stripe_customer_id, club_code, `club_name`, `club_location`, `club_info`, `club_lat`, `club_lng`, `club_timezone` (IANA)
 - `users/{uid}/meetings/{meetingId}` — meeting docs; subcollections `polls/`, `evals/`
 - `users/{uid}/guests/{deviceId}` — guest registry; subcollection `attendances/`
 - `club_codes/{id}` — club share codes
@@ -92,8 +93,10 @@ Rules: [`firestore.rules`](../firestore.rules).
 
 - Path: `agents/toastmasters_agent/`
 - Deploy: Cloud Run (`gcloud run deploy toastmasters-agent …`)
-- API: `POST /chat` (SSE when `stream: true`)
+- API: `POST /chat` (SSE when `stream: true`; optional `location`, `lat`, `lng` from browser geolocation)
+- Tools: `find_nearby_clubs` (Firestore + haversine), `find_club` (name lookup + details), `web_search` (general TI info only — not for nearest club)
 - Warmth: Firebase pinger + optional `--min-instances 1`
+- Seed/backfill: `scripts/seed_nz_clubs.py`, `scripts/backfill_club_geo.py`
 
 See [`agents/toastmasters_agent/README.md`](../../agents/toastmasters_agent/README.md).
 
@@ -118,6 +121,7 @@ See [`agents/toastmasters_agent/README.md`](../../agents/toastmasters_agent/READ
 |---------|------|
 | Meeting runtime | `public/js/meetings/meeting-app.js`, `meeting-state.js`, `meeting-polls.js`, `meeting-evals.js` |
 | Guest entry | `public/js/guest-entry.js` |
+| Club timezone helpers | `public/js/club-timezone.js` |
 | Notifications | `public/js/notifications.js` |
 | Hosting | `firebase.json`, `.firebaserc` |
 | Local server | `start-server.py`, `start-server.bat` |

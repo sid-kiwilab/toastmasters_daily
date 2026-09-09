@@ -5,6 +5,7 @@
 | Git user | Journal |
 |----------|---------|
 | sid-kiwilab | [journal/sid-kiwilab.md](journal/sid-kiwilab.md) |
+| agentic-systems-nz | [journal/agentic-systems-nz.md](journal/agentic-systems-nz.md) |
 
 ## New contributor
 

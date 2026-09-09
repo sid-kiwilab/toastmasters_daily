@@ -45,6 +45,9 @@ Club hosts need an **active Stripe subscription or 30-day trial** to create meet
 
 - Club officers get a shareable club code (`club_codes` collection)
 - Public club pages under `/clubs/**`
+- Club location save geocodes via `geocode_club_location` → `club_lat`, `club_lng`, `club_timezone`
+- Toasty (homepage chat): nearest-club search over registered Firestore clubs (not toastmasters.org web scrape); shows club details + guest join links
+- Meeting times displayed and created in **club timezone** (`club-timezone.js`)
 
 ### Subscriptions (Stripe)
 
@@ -106,4 +109,6 @@ Local dev: `python start-server.py` or `start-server.bat` on port **3000** (URL 
 | Live meeting | `site/public/meetings/`, `site/public/js/meetings/` |
 | Design tokens | `site/theme.md` |
 | Agent | `agents/toastmasters_agent/` |
+| Club timezone JS | `site/public/js/club-timezone.js` |
+| Geocode function | `site/functions/utils/geocode_functions.js` |
 | Rate limits | `site/RATE_LIMITING_GUIDE.md` |

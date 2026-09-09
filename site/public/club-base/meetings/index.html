@@ -2351,6 +2351,7 @@
   <script src="../../js/firebase-config.js"></script>
   <script src="../../js/notifications.js"></script>
   <script src="../../js/auth-utils.js"></script>
+  <script src="../../js/club-timezone.js"></script>
   
   <script>
     // Set current year
@@ -2399,16 +2400,52 @@
     let currentDate = new Date();
     let meetingsMap = new Map(); // Map of date strings to meetings
     let meetingsUnsubscribe = null;
-    let selectedDate = new Date(); // Selected date object (default to today)
+    let selectedDate = new Date(); // Selected date (for display)
+    let selectedDateKey = null; // YYYY-MM-DD in club calendar
     let meetingsLoaded = false; // Track if meetings data has finished loading
     let canCreateMeetings = false; // Track if user has active subscription or trial
+    let clubTimezone = null;
+
+    function buildMeetingDateTimeUtc(dateStr, timeStr) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      if (window.ClubTimezone && clubTimezone) {
+        return ClubTimezone.zonedTimeToUtcDate(year, month, day, hours, minutes, clubTimezone);
+      }
+      return new Date(year, month - 1, day, hours, minutes);
+    }
+
+    function updateMeetingTimezoneHint() {
+      const hint = document.getElementById('meeting-timezone-hint');
+      if (!hint) return;
+      hint.textContent = clubTimezone
+        ? 'Meeting time is in ' + clubTimezone + ' (club timezone)'
+        : 'Set your club location in profile for accurate meeting timezone';
+    }
     
-    // Calendar functions
+    // Calendar functions — date keys are YYYY-MM-DD (club calendar days)
     function formatDateKey(date) {
+      if (window.ClubTimezone) {
+        return ClubTimezone.dateKeyFromInstant(date, clubTimezone || undefined);
+      }
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
+    }
+
+    function calendarDateKey(year, monthIndex, day) {
+      if (window.ClubTimezone) {
+        return ClubTimezone.dateKeyFromYmd(year, monthIndex + 1, day);
+      }
+      return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    function isTodayDateKey(dateKey) {
+      const todayKey = window.ClubTimezone
+        ? ClubTimezone.todayDateKey(clubTimezone || undefined)
+        : formatDateKey(new Date());
+      return dateKey === todayKey;
     }
     
     function getDaysInMonth(date) {
@@ -2417,13 +2454,6 @@
     
     function getFirstDayOfMonth(date) {
       return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    }
-    
-    function isToday(date) {
-      const today = new Date();
-      return date.getDate() === today.getDate() &&
-             date.getMonth() === today.getMonth() &&
-             date.getFullYear() === today.getFullYear();
     }
     
     function renderCalendar() {
@@ -2513,22 +2543,20 @@
       const prevMonthDays = getDaysInMonth(new Date(year, month - 1, 1));
       for (let i = firstDay - 1; i >= 0; i--) {
         const day = prevMonthDays - i;
-        const prevDate = new Date(year, month - 1, day);
-        const dateKey = formatDateKey(prevDate);
-        const isSelected = selectedDate && formatDateKey(selectedDate) === dateKey;
+        const dateKey = calendarDateKey(year, month - 1, day);
+        const isSelected = selectedDateKey === dateKey;
         const selectedClass = isSelected ? 'selected' : '';
         html += `<div class="calendar-day other-month ${selectedClass}" data-date-key="${dateKey}" onclick="selectDate('${dateKey}')"><span class="day-number">${day}</span></div>`;
       }
       
       // Days of the month
       for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        const dateKey = formatDateKey(date);
+        const dateKey = calendarDateKey(year, month, day);
         const meetings = meetingsMap.get(dateKey) || [];
         const hasMeeting = meetings.length > 0;
-        const todayClass = isToday(date) ? 'today' : '';
+        const todayClass = isTodayDateKey(dateKey) ? 'today' : '';
         const meetingClass = hasMeeting ? 'has-meeting' : '';
-        const isSelected = selectedDate && formatDateKey(selectedDate) === dateKey;
+        const isSelected = selectedDateKey === dateKey;
         const selectedClass = isSelected ? 'selected' : '';
         
         html += `
@@ -2543,9 +2571,8 @@
       const totalCells = firstDay + daysInMonth;
       const remainingCells = 42 - totalCells; // 6 rows * 7 days
       for (let day = 1; day <= remainingCells; day++) {
-        const nextDate = new Date(year, month + 1, day);
-        const dateKey = formatDateKey(nextDate);
-        const isSelected = selectedDate && formatDateKey(selectedDate) === dateKey;
+        const dateKey = calendarDateKey(year, month + 1, day);
+        const isSelected = selectedDateKey === dateKey;
         const selectedClass = isSelected ? 'selected' : '';
         html += `<div class="calendar-day other-month ${selectedClass}" data-date-key="${dateKey}" onclick="selectDate('${dateKey}')"><span class="day-number">${day}</span></div>`;
       }
@@ -2564,6 +2591,11 @@
       clubDb.collection('users').doc(userId).get().then((doc) => {
         if (doc.exists) {
           const userData = doc.data();
+          clubTimezone = userData?.club_timezone || null;
+          updateMeetingTimezoneHint();
+          if (window.ClubTimezone) {
+            selectedDateKey = ClubTimezone.todayDateKey(clubTimezone || undefined);
+          }
           const subscriptionStatus = userData?.subscription;
           const trialEndDate = userData?.trial_end_date;
           
@@ -2585,8 +2617,13 @@
           // User can create meetings if either subscription is active OR trial is active
           canCreateMeetings = isSubscriptionActive || isTrialActive;
           
-          // Update UI
           updateSelectedDateDetails();
+          if (clubAuth && clubAuth.currentUser && meetingsUnsubscribe) {
+            clubDb.collection('users').doc(clubAuth.currentUser.uid)
+              .collection('meetings').get()
+              .then(applyMeetingsSnapshot)
+              .catch(function(e) { console.warn('Could not refresh meetings for timezone:', e); });
+          }
         } else {
           canCreateMeetings = false;
           updateSelectedDateDetails();
@@ -2607,14 +2644,16 @@
           return;
         }
         
-        const selectedDateKey = formatDateKey(selectedDate);
-        const selectedMeetings = meetingsMap.get(selectedDateKey) || [];
-        const dateStr = selectedDate.toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        });
+        const activeDateKey = selectedDateKey || formatDateKey(selectedDate);
+        const selectedMeetings = meetingsMap.get(activeDateKey) || [];
+        const dateStr = window.ClubTimezone
+          ? ClubTimezone.formatDateKeyLabel(activeDateKey, clubTimezone || undefined)
+          : selectedDate.toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            });
         
         // Escape HTML helper
         function escapeHtml(text) {
@@ -2630,7 +2669,10 @@
             if (meeting.meetingDateTime) {
               try {
                 let t = meeting.meetingDateTime.toDate ? meeting.meetingDateTime.toDate() : (meeting.meetingDateTime instanceof Date ? meeting.meetingDateTime : new Date(meeting.meetingDateTime));
-                if (!isNaN(t.getTime())) timeStr = t.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                if (!isNaN(t.getTime())) {
+                  const tzOpts = clubTimezone ? { timeZone: clubTimezone } : {};
+                  timeStr = t.toLocaleTimeString('en-US', Object.assign({ hour: '2-digit', minute: '2-digit' }, tzOpts));
+                }
               } catch (e) {}
             }
             const titleEsc = escapeHtml(meeting.title || 'Untitled Meeting');
@@ -2692,178 +2734,70 @@
     
     // Select a date
     window.selectDate = function(dateKey) {
+      selectedDateKey = dateKey;
       const [year, month, day] = dateKey.split('-').map(Number);
       selectedDate = new Date(year, month - 1, day);
-      
       renderCalendar();
       updateSelectedDateDetails();
     };
+
+    (function initSelectedDateKey() {
+      selectedDateKey = window.ClubTimezone
+        ? ClubTimezone.todayDateKey(null)
+        : formatDateKey(new Date());
+    })();
     
-    // Create meeting (make globally accessible)
-    window.createMeeting = async function() {
-      const clubUser = clubAuth ? clubAuth.currentUser : null;
-      if (!clubUser) {
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Please log in to create a meeting');
-        }
-        return;
-      }
-      
-      const titleInput = document.getElementById('meeting-title');
-      const dateInput = document.getElementById('meeting-date');
-      const timeInput = document.getElementById('meeting-time');
-      const createBtn = document.getElementById('create-meeting-btn');
-      
-      if (!titleInput || !dateInput || !timeInput) return;
-      
-      const title = titleInput.value.trim();
-      const dateStr = dateInput.value;
-      const timeStr = timeInput.value;
-      
-      if (!title) {
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Please enter a meeting title');
-        }
-        return;
-      }
-      
-      if (!dateStr) {
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Please select a date');
-        }
-        return;
-      }
-      
-      if (!timeStr) {
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Please select a time');
-        }
-        return;
-      }
-      
-      // Combine date and time
-      const [year, month, day] = dateStr.split('-').map(Number);
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      const meetingDateTime = new Date(year, month - 1, day, hours, minutes);
-      
-      // Disable button
-      if (createBtn) {
-        createBtn.disabled = true;
-        createBtn.textContent = 'Creating...';
-      }
-      
-      try {
-        // Call Firebase function to create meeting
-        const createMeetingFn = clubFunctions.httpsCallable('create_meeting');
-        const result = await createMeetingFn({
-          title: title,
-          creator_id: clubUser.uid
-        });
-        
-        // If meeting created, update it with datetime
-        if (result.data && result.data.success && result.data.meeting && result.data.meeting.id) {
-          const meetingId = result.data.meeting.id;
-          
-          // Update the meeting with datetime using Firestore Timestamp
-          const timestamp = firebase.firestore.Timestamp.fromDate(meetingDateTime);
-          
-          // Update user's meetings collection
-          await clubDb.collection('users').doc(clubUser.uid)
-            .collection('meetings').doc(meetingId)
-            .update({
-              meeting_datetime: timestamp
-            });
-          
-          // Also update active_meetings
-          await clubDb.collection('active_meetings').doc(meetingId)
-            .update({
-              meeting_datetime: timestamp
-            });
-          
-          // Clear form
-          if (titleInput) titleInput.value = '';
-          if (dateInput && selectedDate) {
-            const dateKey = formatDateKey(selectedDate);
-            const [y, m, d] = dateKey.split('-').map(Number);
-            dateInput.value = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    function applyMeetingsSnapshot(snapshot) {
+      meetingsMap.clear();
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (!data.meeting_datetime) return;
+        try {
+          let meetingDate;
+          if (data.meeting_datetime.toDate) {
+            meetingDate = data.meeting_datetime.toDate();
+          } else if (data.meeting_datetime instanceof Date) {
+            meetingDate = data.meeting_datetime;
+          } else {
+            meetingDate = new Date(data.meeting_datetime);
           }
-          if (timeInput) timeInput.value = '19:00';
-          
-          if (typeof notifications !== 'undefined') {
-            notifications.success('Meeting created successfully');
+          if (isNaN(meetingDate.getTime())) {
+            console.warn('Invalid meeting_datetime for doc:', doc.id, data.meeting_datetime);
+            return;
           }
-        } else {
-          throw new Error('No meeting ID returned');
+          const dateKey = window.ClubTimezone
+            ? ClubTimezone.dateKeyFromInstant(meetingDate, clubTimezone || undefined)
+            : formatDateKey(meetingDate);
+          if (!meetingsMap.has(dateKey)) {
+            meetingsMap.set(dateKey, []);
+          }
+          meetingsMap.get(dateKey).push({
+            id: doc.id,
+            title: data.title || 'Untitled Meeting',
+            meetingDateTime: data.meeting_datetime,
+            agendaUrl: data.agenda_url || data.agendaUrl
+          });
+        } catch (e) {
+          console.error('Error processing meeting:', e, doc.id, data);
         }
-      } catch (error) {
-        console.error('Error creating meeting:', error);
-        if (typeof notifications !== 'undefined') {
-          notifications.error('Failed to create meeting. Please try again.');
-        }
-      } finally {
-        if (createBtn) {
-          createBtn.disabled = false;
-          createBtn.textContent = 'Create Meeting';
-        }
-      }
-    };
-    
+      });
+      meetingsLoaded = true;
+      renderCalendar();
+      updateSelectedDateDetails();
+    }
+
     function loadMeetings(userId) {
       if (!clubDb || !userId) return;
       
-      // Unsubscribe from previous listener if exists
       if (meetingsUnsubscribe) {
         meetingsUnsubscribe();
         meetingsUnsubscribe = null;
       }
       
-      // Set up real-time listener
       meetingsUnsubscribe = clubDb.collection('users').doc(userId)
         .collection('meetings')
         .onSnapshot((snapshot) => {
-          meetingsMap.clear();
-          
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.meeting_datetime) {
-            try {
-              // Convert Firestore timestamp to local date
-              let meetingDate;
-              if (data.meeting_datetime.toDate) {
-                meetingDate = data.meeting_datetime.toDate();
-              } else if (data.meeting_datetime instanceof Date) {
-                meetingDate = data.meeting_datetime;
-              } else {
-                meetingDate = new Date(data.meeting_datetime);
-              }
-              
-              // Validate date
-              if (isNaN(meetingDate.getTime())) {
-                console.warn('Invalid meeting_datetime for doc:', doc.id, data.meeting_datetime);
-                return;
-              }
-              
-              const dateKey = formatDateKey(meetingDate);
-              
-              if (!meetingsMap.has(dateKey)) {
-                meetingsMap.set(dateKey, []);
-              }
-              
-              meetingsMap.get(dateKey).push({
-                id: doc.id,
-                title: data.title || 'Untitled Meeting',
-                meetingDateTime: data.meeting_datetime,
-                agendaUrl: data.agenda_url || data.agendaUrl
-              });
-            } catch (e) {
-              console.error('Error processing meeting:', e, doc.id, data);
-            }
-          }
-        });
-          
-          meetingsLoaded = true;
-          renderCalendar();
-          updateSelectedDateDetails();
+          applyMeetingsSnapshot(snapshot);
         }, (error) => {
           console.error('Error loading meetings:', error);
           const container = document.getElementById('calendar-container');
@@ -2936,17 +2870,15 @@
       
       if (!overlay || !selectedDate) return;
       
-      // Set default date to selected date
-      if (dateInput && selectedDate) {
-        const dateKey = formatDateKey(selectedDate);
-        const [y, m, d] = dateKey.split('-').map(Number);
-        dateInput.value = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      if (dateInput && selectedDateKey) {
+        dateInput.value = selectedDateKey;
       }
       
       // Set default time
       if (timeInput) {
         timeInput.value = '19:00';
       }
+      updateMeetingTimezoneHint();
       
       // Clear title
       if (titleInput) {
@@ -4019,14 +3951,10 @@
         return;
       }
       
-      // Combine date and time
-      const [year, month, day] = dateStr.split('-').map(Number);
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      const meetingDateTime = new Date(year, month - 1, day, hours, minutes);
+      const meetingDateTime = buildMeetingDateTimeUtc(dateStr, timeStr);
       
-      // Check 3 meetings per day limit
-      const dateKey = formatDateKey(meetingDateTime);
-      const selectedDateMeetings = meetingsMap.get(dateKey) || [];
+      // Check 3 meetings per day limit (dateStr is club-local calendar day)
+      const selectedDateMeetings = meetingsMap.get(dateStr) || [];
       if (selectedDateMeetings.length >= 3) {
         if (typeof notifications !== 'undefined') {
           notifications.error('You can only create a maximum of 3 meetings per day.');
@@ -4106,6 +4034,7 @@
             <input type="time" id="dialog-meeting-time" class="dialog-input" value="19:00" required />
           </div>
         </div>
+        <p id="meeting-timezone-hint" class="dialog-hint" style="font-size:13px;color:#64748b;margin:0 0 12px 0;"></p>
         <div class="dialog-actions">
           <button type="button" class="dialog-btn dialog-btn-cancel" onclick="hideCreateMeetingDialog()">Cancel</button>
           <button type="submit" class="dialog-btn dialog-btn-submit" id="dialog-create-btn">Create Meeting</button>

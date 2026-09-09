@@ -943,6 +943,7 @@
   <script src="../js/firebase-config.js"></script>
   <script src="../js/auth-utils.js"></script>
   <script src="../js/guest-entry.js"></script>
+  <script src="../js/club-timezone.js"></script>
   
   <script>
     // Extract club code from URL pathname
@@ -1034,6 +1035,7 @@
     
     let clubNameForWelcome = null;
     let shouldShowWelcomeScreen = false;
+    let clubTimezone = null;
     
     async function loadClubData() {
       const clubCode = getClubCodeFromUrl();
@@ -1084,6 +1086,7 @@
         }
         
         const userData = userDoc.data();
+        clubTimezone = userData?.club_timezone || null;
         const clubName = userData?.club_name || 'Unnamed Club';
         document.getElementById('club-name').textContent = clubName;
         
@@ -1122,21 +1125,26 @@
       }
     }
     
-    // Format date helper
-    function formatDate(date) {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function formatMeetingDisplay(date) {
+      if (window.ClubTimezone) {
+        return ClubTimezone.formatMeetingInTimezone(date, clubTimezone);
+      }
       const d = new Date(date);
-      return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}, ${d.getFullYear()}`;
+      return {
+        dateStr: d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+        timeStr: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        tzAbbr: '',
+        dayName: d.toLocaleDateString('en-US', { weekday: 'long' }),
+      };
     }
-    
-    // Format time helper
+
+    function formatDate(date) {
+      return formatMeetingDisplay(date).dateStr;
+    }
+
     function formatTime(date) {
-      const d = new Date(date);
-      let hour = d.getHours();
-      const minute = String(d.getMinutes()).padStart(2, '0');
-      const period = hour < 12 ? 'AM' : 'PM';
-      hour = hour % 12 || 12;
-      return `${hour}:${minute} ${period}`;
+      const f = formatMeetingDisplay(date);
+      return f.timeStr + (f.tzAbbr ? ' ' + f.tzAbbr : '');
     }
     
     // Load meetings
@@ -1233,9 +1241,10 @@
           if (todaysMeeting) {
             const meetingDate = todaysMeeting.meeting_datetime?.toDate();
             if (meetingDate) {
-              const dateStr = formatDate(meetingDate);
+              const formatted = formatMeetingDisplay(meetingDate);
+              const dateStr = formatted.dateStr;
               const timeStr = formatTime(meetingDate);
-              const dayName = meetingDate.toLocaleDateString('en-US', { weekday: 'long' });
+              const dayName = formatted.dayName;
               
               // Render in hero section
               if (heroTodaysMeeting) {

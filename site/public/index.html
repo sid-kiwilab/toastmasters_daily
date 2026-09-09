@@ -991,7 +991,8 @@
       }
 
       .chat-msg.bot .chat-msg-body { display: block; }
-      .chat-msg.bot .chat-msg-body + .chat-join-card { margin-top: 12px; }
+      .chat-msg.bot .chat-msg-body + .chat-join-cards { margin-top: 12px; }
+      .chat-join-cards { display: flex; flex-direction: column; gap: 12px; }
       .chat-msg.bot p { margin: 0 0 0.5em 0; }
       .chat-msg.bot p:last-child { margin-bottom: 0; }
       .chat-msg.bot ul, .chat-msg.bot ol { margin: 0.25em 0 0.5em 1em; padding-left: 1em; }
@@ -1025,6 +1026,12 @@
         margin: 0;
         letter-spacing: 0.02em;
       }
+      .chat-join-card-sub {
+        font-size: 12px;
+        color: #64748b;
+        margin: 0;
+        line-height: 1.4;
+      }
       .chat-join-card-btn {
         display: inline-flex;
         align-items: center;
@@ -1047,6 +1054,16 @@
       .chat-join-card-btn:hover {
         background: #003049;
         color: #ffffff !important;
+      }
+      .chat-join-card-btn-secondary {
+        background: #ffffff;
+        color: #004165 !important;
+        border: 2px solid #004165;
+        box-shadow: none;
+      }
+      .chat-join-card-btn-secondary:hover {
+        background: #f0f7fb;
+        color: #003049 !important;
       }
       .chat-join-card-btn svg {
         width: 20px;
@@ -1846,12 +1863,16 @@
 
         // User location for "nearest to me" — browser geolocation + Nominatim reverse to place name
         var chatUserLocation = null;
+        var chatUserLat = null;
+        var chatUserLng = null;
         function ensureChatLocation() {
-          if (chatUserLocation || !navigator.geolocation) return;
+          if ((chatUserLocation || (chatUserLat != null && chatUserLng != null)) || !navigator.geolocation) return;
           navigator.geolocation.getCurrentPosition(
             function(pos) {
               var lat = pos.coords.latitude;
               var lon = pos.coords.longitude;
+              chatUserLat = lat;
+              chatUserLng = lon;
               fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lon + '&format=json', {
                 headers: { 'Accept': 'application/json', 'User-Agent': 'ToastmastersDaily/1.0 (https://toastmastersdaily.com)' }
               }).then(function(r) { return r.json(); }).then(function(data) {
@@ -1925,26 +1946,67 @@
           return html.replace(/<a /gi, '<a target="_blank" rel="noopener noreferrer" ');
         }
 
-        function getJoinUrl(text) {
-          if (!text) return null;
-          var m = text.match(/(https?:\/\/[^\s\)\]"]*\/clubs\/\d{8}[^\s\)\]"]*)/);
-          return m ? m[1] : null;
+        function getClubUrls(text) {
+          if (!text) return [];
+          var re = /https?:\/\/[^\s\)\]"]*\/clubs\/\d{8}[^\s\)\]"]*/g;
+          var m, urls = [];
+          while ((m = re.exec(text)) !== null) urls.push(m[0]);
+          return urls.filter(function(u, i, arr) { return arr.indexOf(u) === i; });
         }
 
-        function renderJoinCard(url) {
-          return '<div class="chat-join-card">' +
-            '<p class="chat-join-card-title">Join this meeting</p>' +
-            '<a href="' + url.replace(/"/g, '&quot;') + '" class="chat-join-card-btn" target="_blank" rel="noopener noreferrer">' +
+        function getMeetingUrls(text) {
+          if (!text) return [];
+          var re = /https?:\/\/[^\s\)\]"]*\/meetings\/[A-Za-z0-9_-]+[^\s\)\]"]*/g;
+          var m, urls = [];
+          while ((m = re.exec(text)) !== null) urls.push(m[0]);
+          return urls.filter(function(u, i, arr) { return arr.indexOf(u) === i; });
+        }
+
+        function extractClubCards(text) {
+          if (!text) return [];
+          var blocks = text.split(/--- Club \d+[^\n]*/);
+          var cards = [];
+          if (blocks.length <= 1) {
+            var clubUrls = getClubUrls(text);
+            var meetingUrls = getMeetingUrls(text);
+            clubUrls.forEach(function(clubUrl, i) {
+              cards.push({ clubUrl: clubUrl, meetingUrl: meetingUrls[i] || (clubUrls.length === 1 ? meetingUrls[0] : null) });
+            });
+            return cards;
+          }
+          blocks.slice(1).forEach(function(block) {
+            var clubUrls = getClubUrls(block);
+            var meetingUrls = getMeetingUrls(block);
+            if (clubUrls.length) {
+              cards.push({ clubUrl: clubUrls[0], meetingUrl: meetingUrls[0] || null });
+            }
+          });
+          return cards;
+        }
+
+        function renderJoinCard(clubUrl, meetingUrl) {
+          var safeClub = clubUrl.replace(/"/g, '&quot;');
+          var html = '<div class="chat-join-card">' +
+            '<p class="chat-join-card-title">View club / join as guest</p>' +
+            '<p class="chat-join-card-sub">Temporary guest visit on Toastmasters Daily — not official Toastmasters International membership.</p>' +
+            '<a href="' + safeClub + '" class="chat-join-card-btn" target="_blank" rel="noopener noreferrer">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-            ' Join meeting</a></div>';
+            ' View club page</a>';
+          if (meetingUrl) {
+            html += '<a href="' + meetingUrl.replace(/"/g, '&quot;') + '" class="chat-join-card-btn chat-join-card-btn-secondary" target="_blank" rel="noopener noreferrer">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>' +
+              ' Join meeting</a>';
+          }
+          return html + '</div>';
         }
 
         function setBotMessageContent(el, text) {
           if (!el) return;
-          var joinUrl = getJoinUrl(text || '');
+          var cards = extractClubCards(text || '');
           el.innerHTML = '<div class="chat-msg-body">' + renderMarkdown(text || '') + '</div>';
-          if (joinUrl) {
-            el.insertAdjacentHTML('beforeend', renderJoinCard(joinUrl));
+          if (cards.length) {
+            var cardsHtml = cards.map(function(c) { return renderJoinCard(c.clubUrl, c.meetingUrl); }).join('');
+            el.insertAdjacentHTML('beforeend', '<div class="chat-join-cards">' + cardsHtml + '</div>');
           }
         }
         
@@ -2024,6 +2086,10 @@
 
           var payload = { message: text, history: history, stream: true };
           if (chatUserLocation) payload.location = chatUserLocation;
+          if (chatUserLat != null && chatUserLng != null) {
+            payload.lat = chatUserLat;
+            payload.lng = chatUserLng;
+          }
           fetch(base + '/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
