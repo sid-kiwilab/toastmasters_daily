@@ -7,7 +7,6 @@ import logging
 import math
 import os
 import urllib.parse
-from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from zoneinfo import ZoneInfo
 
@@ -154,77 +153,6 @@ def _club_coords(club: dict) -> tuple[float, float] | None:
     return None
 
 
-def _format_meeting_datetime(dt, club_timezone: str) -> str:
-    if dt is None:
-        return "No upcoming meeting scheduled"
-    try:
-        if hasattr(dt, "to_datetime"):
-            d = dt.to_datetime().replace(tzinfo=timezone.utc)
-        elif hasattr(dt, "timestamp"):
-            d = datetime.fromtimestamp(dt.timestamp(), tz=timezone.utc)
-        elif isinstance(dt, datetime):
-            d = dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-        else:
-            return "No upcoming meeting scheduled"
-        tz_name = club_timezone or "UTC"
-        try:
-            local = d.astimezone(ZoneInfo(tz_name))
-        except Exception:
-            local = d.astimezone(ZoneInfo("UTC"))
-            tz_name = "UTC"
-        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        hour = local.hour % 12 or 12
-        period = "AM" if local.hour < 12 else "PM"
-        tz_label = local.tzname() or tz_name
-        return (
-            f"{days[local.weekday()]} {local.day} {months[local.month - 1]} {local.year}, "
-            f"{hour}:{local.minute:02d} {period} {tz_label}"
-        )
-    except Exception:
-        return "Upcoming meeting scheduled"
-
-
-def _next_meeting(db, uid: str) -> dict | None:
-    if db is None:
-        return None
-    try:
-        now = datetime.now(timezone.utc)
-        meetings_ref = db.collection("users").document(uid).collection("meetings")
-        snap = meetings_ref.where("meeting_datetime", ">=", now).order_by("meeting_datetime").limit(1).get()
-        for doc in snap:
-            data = doc.to_dict() or {}
-            return {
-                "id": doc.id,
-                "title": (data.get("title") or "Meeting").strip(),
-                "meeting_datetime": data.get("meeting_datetime"),
-            }
-        all_snap = meetings_ref.limit(20).get()
-        candidates = []
-        for doc in all_snap:
-            data = doc.to_dict() or {}
-            dt = data.get("meeting_datetime")
-            if not dt:
-                continue
-            try:
-                d = dt.to_datetime().replace(tzinfo=timezone.utc) if hasattr(dt, "to_datetime") else None
-            except Exception:
-                d = None
-            if d and d >= now:
-                candidates.append((d, doc.id, data))
-        if candidates:
-            candidates.sort(key=lambda x: x[0])
-            _, mid, data = candidates[0]
-            return {
-                "id": mid,
-                "title": (data.get("title") or "Meeting").strip(),
-                "meeting_datetime": data.get("meeting_datetime"),
-            }
-    except Exception as e:
-        logger.warning("Could not load next meeting for %s: %s", uid, e)
-    return None
-
-
 def load_all_clubs(db) -> list[dict]:
     """Load clubs with name + code from Firestore."""
     if db is None:
@@ -252,30 +180,18 @@ def load_all_clubs(db) -> list[dict]:
     return clubs
 
 
-def format_club_block(club: dict, db, distance_km: float | None = None) -> str:
-    """Format a club with details, next meeting, and join URLs."""
-    club_tz = resolve_club_timezone(club)
-    lines = [club["club_name"]]
+def _format_distance(distance_km: float) -> str:
+    if distance_km < 1:
+        return f" (~{int(round(distance_km * 1000))} m)"
+    return f" (~{distance_km:.1f} km)"
+
+
+def format_club_block(club: dict, distance_km: float | None = None) -> str:
+    """Name, location, guest-join URL."""
     loc = club.get("club_location") or "Location not listed"
-    if distance_km is not None:
-        if distance_km < 1:
-            dist = f" (~{int(round(distance_km * 1000))} m away)"
-        else:
-            dist = f" (~{distance_km:.1f} km away)"
-        lines.append(f"Location: {loc}{dist}")
-    else:
-        lines.append(f"Location: {loc}")
-    if club.get("club_info"):
-        lines.append(f"About: {club['club_info']}")
-    meeting = _next_meeting(db, club["uid"])
-    if meeting:
-        when = _format_meeting_datetime(meeting.get("meeting_datetime"), club_tz)
-        lines.append(f"Next meeting: {when} — {meeting['title']}")
-        lines.append(f"Meeting link: {_BASE_URL}/meetings/{meeting['id']}")
-    else:
-        lines.append("Next meeting: No upcoming meeting scheduled on Toastmasters Daily")
-    lines.append(f"Club page (guest join): {_BASE_URL}/clubs/{club['club_code']}")
-    return "\n".join(lines)
+    dist = _format_distance(distance_km) if distance_km is not None else ""
+    guest = f"{_BASE_URL}/clubs/{club['club_code']}"
+    return "\n".join([club["club_name"], f"{loc}{dist}", f"Guest join: {guest}"])
 
 
 def find_clubs_by_name(db, query: str) -> list[dict]:
@@ -292,43 +208,43 @@ def find_clubs_by_name(db, query: str) -> list[dict]:
     return matches
 
 
+NEARBY_RADIUS_KM = 80
+
+
 def find_nearby_clubs(
     db,
     place: str,
     limit: int = 3,
     user_lat: float | None = None,
     user_lng: float | None = None,
-) -> tuple[list[tuple[dict, float]], str | None, dict]:
-    """
-    Find clubs nearest to place. Returns ([(club, km), ...], error_message, meta).
-    """
-    meta: dict = {"skipped_no_coords": 0, "nearest_km": None}
+    max_km: float | None = NEARBY_RADIUS_KM,
+) -> tuple[list[tuple[dict, float]], str | None]:
+    """Signed-up clubs within max_km of place or coords. Empty list + no error → web search."""
+    coords = None
     if user_lat is not None and user_lng is not None:
         try:
             coords = (float(user_lat), float(user_lng))
         except (TypeError, ValueError):
             coords = None
-    else:
-        coords = None
     if coords is None:
         coords = geocode_place(place)
     if coords is None:
         label = place.strip() or "your location"
-        return [], f"Could not find coordinates for '{label}'. Try a city or suburb name.", meta
+        return [], f"Could not find coordinates for '{label}'."
     user_lat, user_lng = coords
     all_clubs = load_all_clubs(db)
     if not all_clubs:
-        return [], "No clubs are registered on Toastmasters Daily yet.", meta
+        return [], None
     ranked: list[tuple[dict, float]] = []
     for club in all_clubs:
         cc = _club_coords(club)
         if cc is None:
-            meta["skipped_no_coords"] += 1
             continue
         km = haversine_km(user_lat, user_lng, cc[0], cc[1])
         ranked.append((club, km))
     if not ranked:
-        return [], "Clubs exist but none have location data yet.", meta
+        return [], None
     ranked.sort(key=lambda x: x[1])
-    meta["nearest_km"] = ranked[0][1]
-    return ranked[:limit], None, meta
+    if max_km is not None:
+        ranked = [(c, km) for c, km in ranked if km <= max_km]
+    return ranked[:limit], None

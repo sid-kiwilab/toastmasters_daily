@@ -51,7 +51,7 @@ Example with optional flags:
 
 | Path   | Method | Description |
 |--------|--------|-------------|
-| `/chat` | POST  | Body: `{ "message": "...", "history": [], "stream": true, "location": "optional place name", "lat": -36.89, "lng": 174.91 }`. Optional `location` + `lat`/`lng` (from browser geolocation) power `find_nearby_clubs` for "nearest/near me". `stream: true` → SSE; `stream: false` → JSON `{ "response": "..." }`. |
+| `/chat` | POST  | Body: `{ "message": "...", "history": [], "stream": true, "location": "optional place name", "lat": -36.89, "lng": 174.91 }`. GPS is used for "near me"; a named city is geocoded instead. `find_nearby_clubs` returns signed-up clubs within ~80 km, else official TI clubs via web search. `stream: true` → SSE; `stream: false` → JSON `{ "response": "..." }`. |
 
 ## Seed demo clubs (NZ)
 

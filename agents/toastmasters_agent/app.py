@@ -46,20 +46,21 @@ if _ACTIONS_DIR not in sys.path:
     sys.path.insert(0, _ACTIONS_DIR)
 
 
-def _load_action(name: str):
+def _load_action_module(name: str):
     path = os.path.join(_ACTIONS_DIR, f"{name}.py")
     spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    return mod.run
+    return mod
 
-web_search_run = _load_action("web_search")
-join_meeting_run = _load_action("join_meeting")
-find_nearby_clubs_run = _load_action("find_nearby_clubs")
+_web_search_mod = _load_action_module("web_search")
+_join_mod = _load_action_module("join_meeting")
+_nearby_mod = _load_action_module("find_nearby_clubs")
 
-_request_location: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "request_location", default=None
-)
+web_search_run = _web_search_mod.run
+join_meeting_run = _join_mod.run
+find_nearby_clubs_run = _nearby_mod.run
+
 _request_coords: contextvars.ContextVar[tuple[float, float] | None] = contextvars.ContextVar(
     "request_coords", default=None
 )
@@ -77,34 +78,25 @@ app.add_middleware(
 MAX_MESSAGE_CHARS = 1000
 MAX_TOTAL_INPUT_CHARS = 6000
 
-SYSTEM_PROMPT = """You are Toasty, the assistant for Toastmasters Daily. You are warm, friendly, and happy to chat.
+SYSTEM_PROMPT = """You are Toasty, the assistant for Toastmasters Daily. Warm, friendly, concise.
 
-IMPORTANT: Treat the LATEST user message as the primary intent. Do not get confused by earlier messages—respond to what they just said.
+Respond to the LATEST user message. Use tools when needed:
 
-You have exactly three action types; use them only when the latest message clearly fits. Otherwise, reply with normal chat (no tools).
+- find_nearby_clubs(place): when the user wants clubs near a location. If they name a city or area, pass it as place (GPS is ignored). If they mean their current location ("near me"), pass an empty place. Returns signed-up clubs with guest join, or official web results if none nearby.
+- find_club(name): join or look up a specific club by name on Toastmasters Daily.
+- web_search(query): general Toastmasters info (Pathways, TI facts).
 
-1) NEARBY CLUBS — When the user asks for clubs "near me", "nearest", "closest", "clubs near [place]", or wants to join their nearest/closest club, call find_nearby_clubs. Pass their location from context, or a place name they typed. Do NOT use web_search for finding nearby clubs. Do NOT use find_club for geographic search (never pass "nearest" or a suburb to find_club).
-
-2) JOIN A NAMED CLUB — When the user wants to JOIN a specific club by name (e.g. "join Botany Toastmasters", "get link for Pakuranga"), call find_club with that club name. If they only ask "what is X club?" without join intent, you may use find_club to show details or answer in chat.
-
-3) GENERAL TOASTMASTERS INFO — Use web_search only for general Toastmasters facts, Pathways, official TI info, or things not stored on Toastmasters Daily. Never use web_search to find clubs near the user.
-
-LOCATION: If the user's location is provided below, use it for find_nearby_clubs. Do not ask for location when it is already in context.
-
-RESPONSE FORMAT: When presenting clubs from find_club or find_nearby_clubs, always show the tool output details (name, location, about, next meeting, links). Then briefly explain that "Club page (guest join)" is a temporary guest visit on Toastmasters Daily, not official TI membership. Include the URLs from the tool output so the user can click through.
-
-You cannot perform any other actions (no creating meetings, QR codes, voting, or opening agendas). You can describe what the site can do so users know where to go.
-
-What Toastmasters Daily lets users do on the site: QR codes for meetings, manage meetings online, vote in meetings, view agendas. Direct users to the site for those. You can give speech tips and Toastmasters advice. Keep answers concise. If off-topic, stay friendly and briefly engage, then offer to help with meetings or speaking when they'd like."""
+Keep answers short. Echo club tool output without inventing links."""
 
 
 def _system_prompt_with_datetime(location: str | None = None) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     out = f"Current date and time: {now}.\n\n{SYSTEM_PROMPT}"
     if location and location.strip():
-        out += f"\n\nThe user's location is: {location.strip()}. Use find_nearby_clubs with this location when they ask for clubs 'near me', 'nearest', or 'closest'—do not ask them for it."
-    else:
-        out += "\n\nThe user's location was not provided. If they ask for clubs 'near me' or 'closest', reply in chat and suggest they share location or type their city—or call find_nearby_clubs with a city they mention."
+        out += (
+            f"\n\nUser GPS area: {location.strip()}. "
+            "Only use GPS (empty place) when they mean near me — never pass this as place if they named another city."
+        )
     return out
 
 
@@ -130,11 +122,13 @@ def find_club(query: str) -> str:
 
 @tool
 def find_nearby_clubs(place: str = "") -> str:
-    """Find Toastmasters Daily clubs closest to a location. Use for 'near me', 'nearest', 'closest', or 'clubs near [place]'. Pass the user's location from context, or a city/suburb they typed. Returns club details, distance, next meeting, and guest join URLs."""
-    loc = (place or "").strip() or (_request_location.get() or "")
+    """Clubs near a location. Pass the city/area as place, or empty for GPS near me."""
+    typed = (place or "").strip()
+    if typed:
+        return find_nearby_clubs_run(typed)
     coords = _request_coords.get()
     lat, lng = (coords if coords else (None, None))
-    return find_nearby_clubs_run(loc, lat=lat, lng=lng)
+    return find_nearby_clubs_run("", lat=lat, lng=lng)
 
 
 def _get_agent():
@@ -201,7 +195,6 @@ async def stream_agent_response(
         yield f"data: {json.dumps({'error': 'OPENAI_API_KEY not configured'})}\n\n"
         yield "data: [DONE]\n\n"
         return
-    loc_token = _request_location.set(str(location).strip() if location else None)
     coord_token = _request_coords.set(coords)
     state = {"messages": messages}
     if location and str(location).strip():
@@ -217,7 +210,6 @@ async def stream_agent_response(
         yield f"data: {json.dumps({'error': str(e)})}\n\n"
         yield "data: [DONE]\n\n"
     finally:
-        _request_location.reset(loc_token)
         _request_coords.reset(coord_token)
 
 
@@ -279,7 +271,6 @@ async def chat(request: Request):
                 headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
             )
 
-        loc_token = _request_location.set(location)
         coord_token = _request_coords.set(coords)
         state = {"messages": messages}
         if location:
@@ -287,7 +278,6 @@ async def chat(request: Request):
         try:
             result = agent.invoke(state)
         finally:
-            _request_location.reset(loc_token)
             _request_coords.reset(coord_token)
         msgs = result.get("messages", [])
         for m in reversed(msgs):

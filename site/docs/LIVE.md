@@ -94,7 +94,7 @@ Rules: [`firestore.rules`](../firestore.rules).
 - Path: `agents/toastmasters_agent/`
 - Deploy: Cloud Run (`gcloud run deploy toastmasters-agent …`)
 - API: `POST /chat` (SSE when `stream: true`; optional `location`, `lat`, `lng` from browser geolocation)
-- Tools: `find_nearby_clubs` (Firestore + haversine), `find_club` (name lookup + details), `web_search` (general TI info only — not for nearest club)
+- Tools: `find_nearby_clubs` (Firestore clubs within ~80 km + web_search fallback for official TI clubs), `find_club` (name lookup), `web_search` (general TI info; also used when no signed-up club is nearby)
 - Warmth: Firebase pinger + optional `--min-instances 1`
 - Seed/backfill: `scripts/seed_nz_clubs.py`, `scripts/backfill_club_geo.py`
 

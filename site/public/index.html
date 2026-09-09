@@ -991,8 +991,14 @@
       }
 
       .chat-msg.bot .chat-msg-body { display: block; }
-      .chat-msg.bot .chat-msg-body + .chat-join-cards { margin-top: 12px; }
-      .chat-join-cards { display: flex; flex-direction: column; gap: 12px; }
+      .chat-msg.bot .chat-msg-body + .chat-join-cards { margin-top: 10px; }
+      .chat-join-cards { display: flex; flex-direction: column; gap: 8px; }
+      .chat-join-cards-note {
+        font-size: 12px;
+        color: #64748b;
+        margin: 0;
+        line-height: 1.35;
+      }
       .chat-msg.bot p { margin: 0 0 0.5em 0; }
       .chat-msg.bot p:last-child { margin-bottom: 0; }
       .chat-msg.bot ul, .chat-msg.bot ol { margin: 0.25em 0 0.5em 1em; padding-left: 1em; }
@@ -1009,65 +1015,50 @@
       .chat-join-card-btn::after { display: none; }
       .chat-join-card {
         display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 14px;
-        padding: 18px 20px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
         background: #fff;
-        border: 2px solid #004165;
-        border-radius: 12px;
-        text-align: center;
-        box-shadow: 0 2px 12px rgba(0, 65, 101, 0.12);
+        border: 1px solid #004165;
+        border-radius: 10px;
+        text-align: left;
+        box-shadow: none;
       }
       .chat-join-card-title {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
         color: #1a1f3a;
         margin: 0;
-        letter-spacing: 0.02em;
-      }
-      .chat-join-card-sub {
-        font-size: 12px;
-        color: #64748b;
-        margin: 0;
-        line-height: 1.4;
+        flex: 1 1 auto;
       }
       .chat-join-card-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
-        padding: 14px 20px;
+        gap: 6px;
+        padding: 8px 12px;
         background: #004165;
         color: #ffffff !important;
         border: none;
-        border-radius: 10px;
-        font-size: 16px;
-        font-weight: 700;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
         font-family: 'GoogleSans', -apple-system, sans-serif;
         text-decoration: none !important;
         cursor: pointer;
         transition: background 0.2s ease;
-        box-shadow: 0 2px 8px rgba(0, 65, 101, 0.3);
+        box-shadow: none;
         -webkit-font-smoothing: antialiased;
       }
       .chat-join-card-btn:hover {
         background: #003049;
         color: #ffffff !important;
       }
-      .chat-join-card-btn-secondary {
-        background: #ffffff;
-        color: #004165 !important;
-        border: 2px solid #004165;
-        box-shadow: none;
-      }
-      .chat-join-card-btn-secondary:hover {
-        background: #f0f7fb;
-        color: #003049 !important;
-      }
       .chat-join-card-btn svg {
-        width: 20px;
-        height: 20px;
+        width: 14px;
+        height: 14px;
         flex-shrink: 0;
         stroke: currentColor;
       }
@@ -1954,60 +1945,18 @@
           return urls.filter(function(u, i, arr) { return arr.indexOf(u) === i; });
         }
 
-        function getMeetingUrls(text) {
-          if (!text) return [];
-          var re = /https?:\/\/[^\s\)\]"]*\/meetings\/[A-Za-z0-9_-]+[^\s\)\]"]*/g;
-          var m, urls = [];
-          while ((m = re.exec(text)) !== null) urls.push(m[0]);
-          return urls.filter(function(u, i, arr) { return arr.indexOf(u) === i; });
-        }
-
-        function extractClubCards(text) {
-          if (!text) return [];
-          var blocks = text.split(/--- Club \d+[^\n]*/);
-          var cards = [];
-          if (blocks.length <= 1) {
-            var clubUrls = getClubUrls(text);
-            var meetingUrls = getMeetingUrls(text);
-            clubUrls.forEach(function(clubUrl, i) {
-              cards.push({ clubUrl: clubUrl, meetingUrl: meetingUrls[i] || (clubUrls.length === 1 ? meetingUrls[0] : null) });
-            });
-            return cards;
-          }
-          blocks.slice(1).forEach(function(block) {
-            var clubUrls = getClubUrls(block);
-            var meetingUrls = getMeetingUrls(block);
-            if (clubUrls.length) {
-              cards.push({ clubUrl: clubUrls[0], meetingUrl: meetingUrls[0] || null });
-            }
-          });
-          return cards;
-        }
-
-        function renderJoinCard(clubUrl, meetingUrl) {
-          var safeClub = clubUrl.replace(/"/g, '&quot;');
-          var html = '<div class="chat-join-card">' +
-            '<p class="chat-join-card-title">View club / join as guest</p>' +
-            '<p class="chat-join-card-sub">Temporary guest visit on Toastmasters Daily — not official Toastmasters International membership.</p>' +
-            '<a href="' + safeClub + '" class="chat-join-card-btn" target="_blank" rel="noopener noreferrer">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-            ' View club page</a>';
-          if (meetingUrl) {
-            html += '<a href="' + meetingUrl.replace(/"/g, '&quot;') + '" class="chat-join-card-btn chat-join-card-btn-secondary" target="_blank" rel="noopener noreferrer">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>' +
-              ' Join meeting</a>';
-          }
-          return html + '</div>';
-        }
-
         function setBotMessageContent(el, text) {
           if (!el) return;
-          var cards = extractClubCards(text || '');
           el.innerHTML = '<div class="chat-msg-body">' + renderMarkdown(text || '') + '</div>';
-          if (cards.length) {
-            var cardsHtml = cards.map(function(c) { return renderJoinCard(c.clubUrl, c.meetingUrl); }).join('');
-            el.insertAdjacentHTML('beforeend', '<div class="chat-join-cards">' + cardsHtml + '</div>');
-          }
+          var clubUrls = getClubUrls(text || '');
+          if (!clubUrls.length) return;
+          var note = '<p class="chat-join-cards-note">Guest visit on Toastmasters Daily — not official Toastmasters International membership.</p>';
+          var cardsHtml = clubUrls.map(function(url) {
+            var safe = url.replace(/"/g, '&quot;');
+            return '<div class="chat-join-card"><p class="chat-join-card-title">Join as guest</p>' +
+              '<a href="' + safe + '" class="chat-join-card-btn" target="_blank" rel="noopener noreferrer">View club</a></div>';
+          }).join('');
+          el.insertAdjacentHTML('beforeend', '<div class="chat-join-cards">' + note + cardsHtml + '</div>');
         }
         
         function appendUserMessage(text) {

@@ -46,7 +46,7 @@ Club hosts need an **active Stripe subscription or 30-day trial** to create meet
 - Club officers get a shareable club code (`club_codes` collection)
 - Public club pages under `/clubs/**`
 - Club location save geocodes via `geocode_club_location` → `club_lat`, `club_lng`, `club_timezone`
-- Toasty (homepage chat): nearest-club search over registered Firestore clubs (not toastmasters.org web scrape); shows club details + guest join links
+- Toasty (homepage chat): nearby search uses signed-up Firestore clubs within ~80 km (guest join). If none, web_search lists official Toastmasters International clubs (no guest join until they sign up).
 - Meeting times displayed and created in **club timezone** (`club-timezone.js`)
 
 ### Subscriptions (Stripe)
