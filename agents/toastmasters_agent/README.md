@@ -8,7 +8,7 @@ LangGraph chat agent with streaming for **toastmasters-daily**.
   ```yaml
   OPENAI_API_KEY: "sk-proj-your-key-here"
   ```
-  Copy `env.yaml.example` → `env.yaml`, set your key. `env.yaml` is gitignored.
+  Copy [`env.yaml.example`](env.yaml.example) → `env.yaml`, set your keys. `env.yaml` is gitignored.
 - **Deploy:** gcloud uses it via `--env-vars-file=env.yaml`.
 - **Local Docker:** mount with `-v "%CD%\env.yaml:/app/env.yaml"`.  
   **Windows:** if the mount fails, use `-e OPENAI_API_KEY=your-key-here` instead.
